@@ -1,0 +1,52 @@
+= 1er Pizarron de naushika =
+
+== Plugin ==
+
+ * registrar comandos y eventos
+ * acceder DB
+ * colgarse de eventos
+   * connectionMade
+   * connectionLost
+   * signedOn
+   * joined
+   * privmsg
+     * privmsg (user, msg)
+     * talkedToMe (default?) (user, channel, msg)
+     * publicMsg (user, channel, msg)
+     * command (user, channel, ---, *args)
+   * (user, channel, msg)
+     * msg = @command | '<#channel> | 'lalita'
+   * action
+   * dcc ?
+   * match_sarasa
+
+   * register ('event_<>', callback)
+              ('event_command', callback, [c])
+              ('privmsg', callback, [regex])
+
+ * matar a Lucio
+
+= 2do Pizarron de naushika =
+
+ * NO: say_public (channel, text)
+ * NO: say_private (user, text)
+
+----
+
+ * return [(user, txt)] / yield
+ * return [(channel, txt)] / yield
+
+ * matar a lucio 
+
+= 3er pizarron =
+
+ * acceder BD
+   * canal / plugin.sqlite
+   * NO: ORM (sqlobject)
+   * un directorio por canal y una base de datos por plugin
+
+ * matar a lucio
+
+= 4to pizarron =
+
+ * matar a lucio
