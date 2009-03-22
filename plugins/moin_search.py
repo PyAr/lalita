@@ -2,16 +2,23 @@
 
 import urllib
 from BeautifulSoup import BeautifulSoup, Tag
+from dispatcher import dispatcher
 
 def register ():
     pass
+
+
+class
+
+
+
 
 def txtize(soup):
     if not isinstance(soup,Tag):
         return soup
     return ''.join(map(txtize,soup.childGenerator()))
 
-class MoinSearch(object):
+class _MoinSearch(object):
     _site = 'http://www.python.com.ar'
     _places = {'body':
                      {'path':'/moin?action=fullsearch&context=180&value=%s&fullsearch=Texto',
@@ -22,6 +29,8 @@ class MoinSearch(object):
                     }
 
     def __init__(self,query,site=None,places=None):
+
+
         self.query = query
         if site is not None:
             self._site = site
