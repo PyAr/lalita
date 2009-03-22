@@ -17,8 +17,9 @@
    * (user, channel, msg)
      * msg = @command | '<#channel> | 'lalita'
    * action
+   * nick
    * dcc ?
-   * match_sarasa
+   * NO: match_sarasa
 
    * register ('event_<>', callback)
               ('event_command', callback, [c])
@@ -36,7 +37,7 @@
  * return [(user, txt)] / yield
  * return [(channel, txt)] / yield
 
- * matar a lucio 
+ * matar a lucio
 
 = 3er pizarron =
 
