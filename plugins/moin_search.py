@@ -29,24 +29,21 @@ class MoinSearch(object):
         return '%s/%s' % (self._site,self._places[where]['path'] % query)
 
     def process(self, command, user, channel, *args):
+        print 'me llamaron, query es %s' % args
         query = ' '.join(map(str,args))
         d = client.getPage(self.get_full_query('title',query))
-        d.addCallback(self.parse_page)
+        d.addCallback(self.parse_page,'title')
         #d.addCallback(self.otro)
         return d
 
-    def otro(self,titleresults):
-        if titleresults:
-            return titleresults
-        d = client.getPage(self.get_full_query('body',query))
-        d.addCallback(self.parse_page)
 
-    def parse_page(page):
-        soup = BeautifulSoup(page.read())
-        if page.geturl() != url:
-            # If there was only one result, moin redirected me to it
-            title = txtize(soup.find('head').find('title'))
-            return ['%s: %s' % (title,page.geturl())]
+    def parse_page(self,page,where):
+        print 'estoy parseando'
+        soup = BeautifulSoup(page)
+        #if page.geturl() != url:
+            ## If there was only one result, moin redirected me to it
+            #title = txtize(soup.find('head').find('title'))
+            #return ['%s: %s' % (title,page.geturl())]
         div = soup.find('div','searchresults')
         results = []
         for item in div.findAll(self._places[where]['tag']):
@@ -57,10 +54,15 @@ class MoinSearch(object):
         return results
 
 
+    #def otro(self,titleresults):
+        #if titleresults:
+            #return titleresults
+        #d = client.getPage(self.get_full_query('body',query))
+        #d.addCallback(self.parse_page)
 
 
 
-    def process(self):
+    def __process(self):
         results = []
         for place in ['title','body']: #I want first title results!
             d = self.get_results(place)
@@ -88,10 +90,6 @@ def main():
 
 if __name__ == '__main__':
     main()
-else:
-    print __name__
-
-
 
 
 #class _MoinSearch(object):
