@@ -16,6 +16,7 @@ logger.setLevel (logging.INFO)
 # local imports
 from core import events
 from core.dispatcher import Dispatcher
+import config
 
 class IrcBot (irc.IRCClient):
     """A IRC bot."""
@@ -30,17 +31,17 @@ class IrcBot (irc.IRCClient):
         irc.IRCClient.connectionMade (self)
         logger.info ("connected to %s:%d" %
             (self.config['host'], self.config['port']))
-        self.dispatcher.push (events.connection_made)
+        self.dispatcher.push (events.CONNECTION_MADE)
 
     def connectionLost (self, reason):
         irc.IRCClient.connectionLost(self, reason)
         logger.info ("disconnected from %s:%d" %
             (self.config['host'], self.config['port']))
-        self.dispatcher.push (events.connection_lost)
+        self.dispatcher.push (events.CONNECTION_LOST)
 
     def signedOn(self):
         logger.debug ("signed on %s:%d" %
-        self.dispatcher.push (events.signed_on)
+        self.dispatcher.push (events.SIGNED_ON)
         for channel in config.get ('channels', []):
             logger.debug ("joining %s on %s:%d" %
                 (channel, self.config['host'], self.config['port']))
@@ -49,7 +50,7 @@ class IrcBot (irc.IRCClient):
     def joined(self, channel):
         """This will get called when the bot joins the channel."""
         logger.info ("joined to %s" % channel)
-        self.dispatcher.push (events.joined, channel)
+        self.dispatcher.push (events.JOINED, channel)
 
     def privmsg(self, user, channel, msg):
         """This will get called when the bot receives a message."""
@@ -58,15 +59,17 @@ class IrcBot (irc.IRCClient):
 
         # Check to see if they're sending me a private message
         if channel==self.nickname:
-            self.dispatcher.push (events.privmsg, user, msg)
+            self.dispatcher.push (events.PRIVATE_MESSAGE, user, msg)
         # Otherwise check to see if it is a message directed at me
         elif msg.startswith (self.nickname + ":"):
-            self.dispatcher.push (events.talkedtome, user, channel, msg)
+            self.dispatcher.push (events.TALKED_TO_ME, user, channel, msg)
             pass
         elif msg[0]=='@':
             args= msg.split()
             command= args.pop (0)[1:]
-            self.dispatcher.push (events.command, command user, channel, args)
+            self.dispatcher.push (events.COMMAND, command, user, channel, args)
+        else:
+            self.dispatcher.push (events.PUBLIC_MESSAGE, user, channel, msg)
 
     def action(self, user, channel, msg):
         """This will get called when the bot sees someone do an action."""
@@ -82,32 +85,38 @@ class IrcBot (irc.IRCClient):
         self.logger.log("%s is now known as %s" % (old_nick, new_nick))
 
 
-class IrcBotFactory(protocol.ClientFactory):
+class IRCBotFactory(protocol.ClientFactory):
+    """
+    A factory for PyAr Bots.
+    A new protocol instance will be created each time we connect to the server.
+    """
+
     # the class of the protocol to build when new connection is made
     protocol = IrcBot
 
-    def __init__(self, channel, filename):
-        self.channel = channel
-        self.filename = filename
+    def __init__(self, server_config):
+        self.config = server_config
 
     def clientConnectionLost(self, connector, reason):
-        """If we get disconnected, reconnect to server."""
+        """
+        If we get disconnected, reconnect to server.
+        """
+        logger.debug("We got disconnected because of %s" % str(reason))
         connector.connect()
 
     def clientConnectionFailed(self, connector, reason):
-        print "connection failed:", reason
+        """
+        Stop main loop if connection failed, this should be changed to stop
+        only when no client remains connected
+        """
+        logger.debug("Connection failed because of %s" % str(reason))
         reactor.stop()
 
 
+
 if __name__ == '__main__':
-    # initialize logging
-    log.startLogging(sys.stdout)
+    for server in irc_servers:
+        bot = IRCBotFactory(irc_servers[server])
+        reactor.connectTCP(irc_servers[server].get('host', 'localhost'), irc_servers[server].get('port', 6667), bot)
 
-    # create factory protocol and application
-    f = LogBotFactory(sys.argv[1], sys.argv[2])
-
-    # connect factory to this host and port
-    reactor.connectTCP("irc.freenode.net", 6667, f)
-
-    # run bot
     reactor.run()
