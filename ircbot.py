@@ -114,7 +114,7 @@ class IRCBotFactory(protocol.ClientFactory):
 
 if __name__ == '__main__':
     for server in irc_servers:
-        bot = PyArBotFactory(irc_servers[server])
+        bot = IRCBotFactory(irc_servers[server])
         reactor.connectTCP(irc_servers[server].get('host', 'localhost'), irc_servers[server].get('port', 6667), bot)
 
     reactor.run()
