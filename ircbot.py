@@ -41,6 +41,7 @@ class IrcBot (irc.IRCClient):
 
     def signedOn(self):
         logger.debug ("signed on %s:%d" %
+            (self.config['host'], self.config['port']))
         self.dispatcher.push (events.SIGNED_ON)
         for channel in config.get ('channels', []):
             logger.debug ("joining %s on %s:%d" %
@@ -117,6 +118,7 @@ class IRCBotFactory(protocol.ClientFactory):
 if __name__ == '__main__':
     for server in irc_servers:
         bot = IRCBotFactory(irc_servers[server])
-        reactor.connectTCP(irc_servers[server].get('host', 'localhost'), irc_servers[server].get('port', 6667), bot)
+        reactor.connectTCP(irc_servers[server].get('host', '10.100.0.194'),
+            irc_servers[server].get('port', 6667), bot)
 
     reactor.run()
