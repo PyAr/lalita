@@ -16,6 +16,7 @@ logger.setLevel (logging.INFO)
 # local imports
 from core import events
 from core.dispatcher import Dispatcher
+import config
 
 class IrcBot (irc.IRCClient):
     """A IRC bot."""
@@ -82,32 +83,38 @@ class IrcBot (irc.IRCClient):
         self.logger.log("%s is now known as %s" % (old_nick, new_nick))
 
 
-class IrcBotFactory(protocol.ClientFactory):
+class IRCBotFactory(protocol.ClientFactory):
+    """
+    A factory for PyAr Bots.
+    A new protocol instance will be created each time we connect to the server.
+    """
+
     # the class of the protocol to build when new connection is made
     protocol = IrcBot
 
-    def __init__(self, channel, filename):
-        self.channel = channel
-        self.filename = filename
+    def __init__(self, server_config):
+        self.config = server_config
 
     def clientConnectionLost(self, connector, reason):
-        """If we get disconnected, reconnect to server."""
+        """
+        If we get disconnected, reconnect to server.
+        """
+        logger.debug("We got disconnected because of %s" % str(reason))
         connector.connect()
 
     def clientConnectionFailed(self, connector, reason):
-        print "connection failed:", reason
+        """
+        Stop main loop if connection failed, this should be changed to stop
+        only when no client remains connected
+        """
+        logger.debug("Connection failed because of %s" % str(reason))
         reactor.stop()
 
 
+
 if __name__ == '__main__':
-    # initialize logging
-    log.startLogging(sys.stdout)
+    for server in irc_servers:
+        bot = IRCBotFactory(irc_servers[server])
+        reactor.connectTCP(irc_servers[server].get('host', 'localhost'), irc_servers[server].get('port', 6667), bot)
 
-    # create factory protocol and application
-    f = LogBotFactory(sys.argv[1], sys.argv[2])
-
-    # connect factory to this host and port
-    reactor.connectTCP("irc.freenode.net", 6667, f)
-
-    # run bot
     reactor.run()
