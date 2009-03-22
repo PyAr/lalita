@@ -33,8 +33,15 @@ class MoinSearch(object):
         query = ' '.join(map(str,args))
         d = client.getPage(self.get_full_query('title',query))
         d.addCallback(self.parse_page,'title')
-        #d.addCallback(self.otro)
+        #d.addCallback(self.otro,query)
         return d
+
+    def otro(self,titleresults,query):
+        print 'estoy en otro'
+        if titleresults:
+            return titleresults
+        d = client.getPage(self.get_full_query('body',query))
+        d.addCallback(self.parse_page)
 
 
     def parse_page(self,page,where):
@@ -53,12 +60,6 @@ class MoinSearch(object):
             results.append('%s: %s' % (name,href))
         return results
 
-
-    #def otro(self,titleresults):
-        #if titleresults:
-            #return titleresults
-        #d = client.getPage(self.get_full_query('body',query))
-        #d.addCallback(self.parse_page)
 
 
 
@@ -85,7 +86,7 @@ class MoinSearch(object):
 def main():
     disp = dispatcher.Dispatcher()
     ms = MoinSearch(disp)
-    disp.push(COMMAND,'wiki', 'rafen', '#pyar', 'pycamp')
+    disp.push(COMMAND,'wiki', 'rafen', '#pyar', 'karma')
     reactor.run()
 
 if __name__ == '__main__':
