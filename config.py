@@ -1,34 +1,18 @@
 servers = {
-        'perrito':{
-            'host' : "10.100.0.175",
+        'javito':{
+            'host' : "10.100.0.164",
             'port' : 6667,
-            'nickname' : "lalita",
+            'nickname' : "manyula",
             'channels':{
                 'humites':{
-                    'modules':{ 'Log':{} }
+                    'modules':{ 'Log':{} , 'moin_search.MoinSearch': {'fruta': 'banana'}}
                     },
                 'perrites':{
-                    'modules':{ 'Log':{} }
+                    'modules':{ 'Log':{'arbol':5} }
                     }
                 },
             'modules':{
                 'Log': {}
                 }
             },
-        'perrito1':{
-            'host' : "10.100.0.194",
-            'port' : 6668,
-            'nickname' : "lolita",
-                'channels':{
-                    'humites':{
-                        'modules':{ 'Log':{} }
-                        },
-                    'perrites':{
-                        'modules':{ 'Log':{} }
-                        }
-                    },
-                'modules':{
-                    'Log': {}
-                    }
-                }
         }

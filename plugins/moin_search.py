@@ -22,8 +22,10 @@ class MoinSearch(object):
                     }
     _max_results = 1
 
-    def __init__(self):
-        dispatcher.register(COMMAND,self.process,command_names = ['wiki'])
+    def __init__(self,config,params):
+        print config
+        print params
+        dispatcher.register(COMMAND,self.search,['wiki'])
 
     def get_full_query(self,where,query):
         return '%s/%s' % (self._site,self._places[where]['path'] % query)
@@ -54,10 +56,10 @@ class MoinSearch(object):
             href = self._site + anchor.get('href')
             name = txtize(anchor)
             results.append('%s: %s' % (name,href))
-        return self.process_resutls(results)
+        return self.process_resutls(results,where)
 
-    def process_resutls(self,results):
-
+    def process_resutls(self,results,where):
+        return results
 
 #def main():
     #disp = dispatcher.Dispatcher()

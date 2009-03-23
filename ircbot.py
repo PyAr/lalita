@@ -10,6 +10,9 @@ from twisted.python import log
 import time
 import sys
 import logging
+import os
+import os.path
+import inspect
 
 handler = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter("%(asctime)s %(levelname)-8s %(message)s",
@@ -28,22 +31,55 @@ from config import servers
 class IrcBot (irc.IRCClient):
     """A IRC bot."""
     def __init__ (self):
-        self.dispatcher= dispatcher.dispatcher
+        self.dispatcher = dispatcher.dispatcher
+        self._plugins = {}
         logger.debug ("we're in(ited)!")
 
-    def connectionMade (self):
-        self.config= self.factory.config
-        self.nickname= self.config.get ('nickname', 'lalita')
+    def load_plugins(self):
+        plugdir = 'plugins'
+        path = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),'plugins')
+        plugconf = self.factory.config['modules']
+        plugchannelconf = {}
+        for ch,kw in self.config['channels'].items():
+            for plug,conf in kw['modules'].items():
+                plugchannelconf.setdefault(plug,{})[ch] = conf
+        params = {'register': self.dispatcher.register,
+                  'nickname': self.nickname }
+        for filename in os.listdir(path):
+            if not filename.endswith('.py'):
+                continue
+            modname = filename[:-3]
+            module = __import__('%s.%s' % (plugdir,modname),fromlist=[plugdir])
+            for k,v in module.__dict__.items():
+                if k.startswith('_'): continue
+                if inspect.isclass(v):
+                    if v.__module__ != module.__name__:
+                        # We will ignore classes defined somewhere else
+                        continue
+                    klassname = '%s.%s' % (modname,k)
+                    conf = {'general':plugconf.get(klassname,{}),
+                            'channels': plugchannelconf.get(klassname,{})}
+                    try:
+                        self._plugins[klassname] = v(config=conf,params=params)
+                    except Exception, e:
+                        logger.debug('%s not instanced: %s' % (klassname,e))
+                    else:
+                        logger.debug('%s instanced' % klassname)
+
+    def connectionMade(self):
+        self.config = self.factory.config
+        self.nickname = self.config.get ('nickname', 'lalita')
         irc.IRCClient.connectionMade (self)
-        logger.info ("connected to %s:%d" %
+        logger.info("connected to %s:%d" %
             (self.config['host'], self.config['port']))
-        self.dispatcher.push (events.CONNECTION_MADE)
+        self.load_plugins()
+        self.dispatcher.push(events.CONNECTION_MADE)
 
     def connectionLost (self, reason):
         irc.IRCClient.connectionLost(self, reason)
         logger.info ("disconnected from %s:%d" %
             (self.config.get('host'), self.config.get('port')))
-        self.dispatcher.push (events.CONNECTION_LOST)
+        self.dispatcher.push(events.CONNECTION_LOST)
 
     def signedOn (self):
         logger.debug ("signed on %s:%d" %
@@ -128,7 +164,7 @@ class IRCBotFactory(protocol.ClientFactory):
 if __name__ == '__main__':
     for server in servers:
         bot = IRCBotFactory(servers[server])
-        reactor.connectTCP(servers[server].get('host', '10.100.0.194'),
+        reactor.connectTCP(servers[server].get('host', '10.100.0.164'),
             servers[server].get('port', 6667), bot)
 
     reactor.run()
