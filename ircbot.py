@@ -31,6 +31,9 @@ class IrcBot (irc.IRCClient):
     def __init__ (self):
         self.dispatcher= dispatcher.dispatcher
         logger.debug ("we're in(ited)!")
+#        # FIXME: this is for develop only
+#        from core.tests import testbot
+#        testbot.TestPlugin({"test_side":"a"})
 
     def connectionMade (self):
         self.config= self.factory.config
@@ -157,11 +160,9 @@ if __name__ == '__main__':
 
     # get all servers or the indicated ones
     if all_servers:
-        to_use = servers.values()
-        if "testbot" in to_use:
-            del to_use["testbot"]
+        to_use = [x for x in servers.values() if not x.startswith("testbot")]
     elif test:
-        to_use = servers["testbot"]
+        to_use = [servers[x] for x in ("testbot-a", "testbot-b")]
     else:
         to_use = [servers[x] for x in args]
 
