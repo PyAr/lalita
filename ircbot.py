@@ -10,6 +10,7 @@ from twisted.python import log
 import time
 import sys
 import logging
+import optparse
 
 handler = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter("%(asctime)s %(levelname)-8s %(message)s",
@@ -30,6 +31,9 @@ class IrcBot (irc.IRCClient):
     def __init__ (self):
         self.dispatcher= dispatcher.dispatcher
         logger.debug ("we're in(ited)!")
+#        # FIXME: this is for develop only
+#        from core.tests import testbot
+#        testbot.TestPlugin({"test_side":"a"})
 
     def connectionMade (self):
         self.config= self.factory.config
@@ -86,7 +90,6 @@ class IrcBot (irc.IRCClient):
     def action(self, user, channel, msg):
         """This will get called when the bot sees someone do an action."""
         user = user.split('!', 1)[0]
-        self.logger.log("* %s %s" % (user, msg))
         # FIXME: la llamada al push!!
 
     # irc callbacks
@@ -95,7 +98,6 @@ class IrcBot (irc.IRCClient):
         """Called when an IRC user changes their nickname."""
         old_nick = prefix.split('!')[0]
         new_nick = params[0]
-        self.logger.log("%s is now known as %s" % (old_nick, new_nick))
 
 
 class IRCBotFactory(protocol.ClientFactory):
@@ -125,10 +127,43 @@ class IRCBotFactory(protocol.ClientFactory):
         logger.debug("Connection failed because of %s" % str(reason))
         # reactor.stop()
 
-if __name__ == '__main__':
-    for server in servers:
-        bot = IRCBotFactory(servers[server])
-        reactor.connectTCP(servers[server].get('host', '10.100.0.194'),
-            servers[server].get('port', 6667), bot)
-
+def main(to_use):
+    for server in to_use:
+        bot = IRCBotFactory(server)
+        reactor.connectTCP(server.get('host', '10.100.0.194'),
+                           server.get('port', 6667),
+                           bot)
     reactor.run()
+
+
+if __name__ == '__main__':
+    msg = u"""
+  ircbot.py [-t][-a] [server1, [...]]
+
+  the servers are optional if -a is passed
+"""
+
+    parser = optparse.OptionParser()
+    parser.set_usage(msg)
+    parser.add_option("-t", "--test", action="store_true", dest="test",
+                      help="runs two bots that talk to each other, tesing")
+    parser.add_option("-a", "--all", action="store_true", dest="all_servers",
+                      help="runs the bot to all the configured servers")
+
+    (options, args) = parser.parse_args()
+    test = bool(options.test)
+    all_servers = bool(options.all_servers)
+
+    if not args and not all_servers and not test:
+        parser.print_help()
+        exit()
+
+    # get all servers or the indicated ones
+    if all_servers:
+        to_use = [x for x in servers.values() if not x.startswith("testbot")]
+    elif test:
+        to_use = [servers[x] for x in ("testbot-a", "testbot-b")]
+    else:
+        to_use = [servers[x] for x in args]
+
+    main(to_use)

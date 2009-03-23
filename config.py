@@ -1,17 +1,40 @@
 servers = {
         'perrito':{
-            'host' : "10.100.0.175",
+            'host' : "10.100.0.164",
             'port' : 6667,
-            'nickname' : "lalita",
+            'nickname' : "_morelia",
             'channels':{
                 'humites':{
-                    'modules':{ 'Log':{} }
+                    'plugins':{ 'Log':{} }
                     },
-                'perrites':{
-                    'modules':{ 'Log':{} }
-                    }
                 },
-            'modules':{
+            'plugins':{
+                'Log': {}
+                }
+            },
+        'testbot-a':{
+            'host' : "10.100.0.164",
+            'port' : 6667,
+            'nickname' : "itchy",
+            'channels':{
+                'humites':{
+                    'plugins': { 'test_side': 'a' }
+                    },
+                },
+            'plugins':{
+                'Log': {}
+                }
+            },
+        'testbot-b':{
+            'host' : "10.100.0.164",
+            'port' : 6667,
+            'nickname' : "scratchy",
+            'channels':{
+                'humites':{
+                    'plugins': { 'test_side': 'b' }
+                    },
+                },
+            'plugins':{
                 'Log': {}
                 }
             },
@@ -21,13 +44,13 @@ servers = {
             'nickname' : "lolita",
                 'channels':{
                     'humites':{
-                        'modules':{ 'Log':{} }
+                        'plugins':{ 'Log':{} }
                         },
                     'perrites':{
-                        'modules':{ 'Log':{} }
+                        'plugins':{ 'Log':{} }
                         }
                     },
-                'modules':{
+                'plugins':{
                     'Log': {}
                     }
                 }
