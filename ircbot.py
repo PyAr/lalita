@@ -196,7 +196,7 @@ if __name__ == '__main__':
 
     # get all servers or the indicated ones
     if all_servers:
-        to_use = [x for x in servers.values() if not x.startswith("testbot")]
+        to_use = [v for k,v in servers.items() if not k.startswith("testbot")]
     elif test:
         to_use = [servers[x] for x in ("testbot-a", "testbot-b")]
     else:
