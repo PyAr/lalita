@@ -268,6 +268,77 @@ class TestEvents(EasyDeferredTests):
         self.disp.push(events.COMMAND, "user", "channel", "command")
         return self.deferred
 
+    def test_command_specific_cmd(self):
+        '''Test COMMAND with specific commands.'''
+        def f(a, b, c):
+            self.deferredAssertEqual(self.deferred, a, "user")
+            self.deferredAssertEqual(self.deferred, b, "channel")
+            self.deferredAssertEqual(self.deferred, c, "cmd1")
+            self.deferred.callback(True)
+            return ""
+
+        self.disp.register(events.COMMAND, f, ["cmd1"])
+        self.disp.push(events.COMMAND, "user", "channel", "command") # este no
+        self.disp.push(events.COMMAND, "user", "channel", "cmd1") # sip
+        return self.deferred
+
+    def test_command_specific_cmds(self):
+        '''Test COMMAND with several specific commands.'''
+        class Helper(object):
+            def __init__(innerself):
+                innerself.counter = 0
+            def met1(innerself, a, b, c):
+                if innerself.counter != 0:
+                    self.deferred.errback(ValueError("counter with bad value"))
+                self.deferredAssertEqual(self.deferred, a, "user")
+                self.deferredAssertEqual(self.deferred, b, "channel")
+                self.deferredAssertEqual(self.deferred, c, "cmd1")
+                innerself.counter += 1
+
+            def met2(innerself, a, b, c):
+                if innerself.counter != 1:
+                    self.deferred.errback(ValueError("counter with bad value"))
+                self.deferredAssertEqual(self.deferred, a, "user")
+                self.deferredAssertEqual(self.deferred, b, "channel")
+                self.deferredAssertEqual(self.deferred, c, "cmd2")
+                self.deferred.callback(True)
+                return ""
+        h = Helper()
+
+        self.disp.register(events.COMMAND, h.met1, ["cmd1"])
+        self.disp.register(events.COMMAND, h.met2, ["cmd2"])
+        self.disp.push(events.COMMAND, "user", "channel", "command") # este no
+        self.disp.push(events.COMMAND, "user", "channel", "cmd1") # sip
+        self.disp.push(events.COMMAND, "user", "channel", "cmd2") # sip
+        return self.deferred
+
+    def test_command_specific_cmds_samemeth(self):
+        '''Test COMMAND with several specific commands to the same method.'''
+        class Helper(object):
+            def __init__(innerself):
+                innerself.counter = 0
+            def met(innerself, a, b, c):
+                if innerself.counter == 0:
+                    self.deferredAssertEqual(self.deferred, a, "user")
+                    self.deferredAssertEqual(self.deferred, b, "channel")
+                    self.deferredAssertEqual(self.deferred, c, "cmd1")
+                    innerself.counter += 1
+                elif innerself.counter == 1:
+                    self.deferredAssertEqual(self.deferred, a, "user")
+                    self.deferredAssertEqual(self.deferred, b, "channel")
+                    self.deferredAssertEqual(self.deferred, c, "cmd2")
+                    self.deferred.callback(True)
+                else:
+                    self.deferred.errback(ValueError("counter with bad value"))
+                return ""
+        h = Helper()
+
+        self.disp.register(events.COMMAND, h.met, ["cmd1", "cmd2"])
+        self.disp.push(events.COMMAND, "user", "channel", "command") # este no
+        self.disp.push(events.COMMAND, "user", "channel", "cmd1") # sip
+        self.disp.push(events.COMMAND, "user", "channel", "cmd2") # sip
+        return self.deferred
+
     def test_command_onearg(self):
         '''Test COMMAND with one argument.'''
         def f(a, b, c, d):
