@@ -10,6 +10,9 @@ from twisted.python import log
 import time
 import sys
 import logging
+import os
+import os.path
+import inspect
 import optparse
 
 handler = logging.StreamHandler(sys.stdout)
@@ -29,30 +32,63 @@ from config import servers
 class IrcBot (irc.IRCClient):
     """A IRC bot."""
     def __init__ (self):
-        self.dispatcher= dispatcher.dispatcher
+        self.dispatcher = dispatcher.Dispatcher(self)
+        self._plugins = {}
         logger.debug ("we're in(ited)!")
 #        # FIXME: this is for develop only
 #        from core.tests import testbot
-#        testbot.TestPlugin({"test_side":"a"})
+#        testbot.TestPlugin(self, {"test_side":"a"})
 
-    def connectionMade (self):
-        self.config= self.factory.config
-        self.nickname= self.config.get ('nickname', 'lalita')
+    def load_plugins(self):
+        plugdir = 'plugins'
+        path = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),'plugins')
+        plugconf = self.factory.config['plugins']
+        plugchannelconf = {}
+        for ch,kw in self.config['channels'].items():
+            for plug,conf in kw['plugins'].items():
+                plugchannelconf.setdefault(plug,{})[ch] = conf
+        params = {'register': self.dispatcher.register,
+                  'nickname': self.nickname }
+        for filename in os.listdir(path):
+            if not filename.endswith('.py'):
+                continue
+            modname = filename[:-3]
+            module = __import__('%s.%s' % (plugdir,modname),fromlist=[plugdir])
+            for k,v in module.__dict__.items():
+                if k.startswith('_'): continue
+                if inspect.isclass(v):
+                    if v.__module__ != module.__name__:
+                        # We will ignore classes defined somewhere else
+                        continue
+                    klassname = '%s.%s' % (modname,k)
+                    conf = {'general':plugconf.get(klassname,{}),
+                            'channels': plugchannelconf.get(klassname,{})}
+                    try:
+                        self._plugins[klassname] = v(config=conf,params=params)
+                    except Exception, e:
+                        logger.debug('%s not instanced: %s' % (klassname,e))
+                    else:
+                        logger.debug('%s instanced' % klassname)
+
+    def connectionMade(self):
+        self.config = self.factory.config
+        self.nickname = self.config.get ('nickname', 'lalita')
         irc.IRCClient.connectionMade (self)
-        logger.info ("connected to %s:%d" %
+        logger.info("connected to %s:%d" %
             (self.config['host'], self.config['port']))
-        self.dispatcher.push (events.CONNECTION_MADE)
+        self.load_plugins()
+        self.dispatcher.push(events.CONNECTION_MADE)
 
     def connectionLost (self, reason):
         irc.IRCClient.connectionLost(self, reason)
         logger.info ("disconnected from %s:%d" %
             (self.config.get('host'), self.config.get('port')))
-        self.dispatcher.push (events.CONNECTION_LOST)
+        self.dispatcher.push(events.CONNECTION_LOST)
 
     def signedOn (self):
         logger.debug ("signed on %s:%d" %
             (self.config['host'], self.config['port']))
-        self.dispatcher.push (events.SIGNED_ON)
+        self.dispatcher.push(events.SIGNED_ON)
         for channel in self.config.get ('channels', []):
             logger.debug ("joining %s on %s:%d" %
                 (channel, self.config['host'], self.config['port']))
@@ -65,7 +101,7 @@ class IrcBot (irc.IRCClient):
     def joined (self, channel):
         """This will get called when the bot joins the channel."""
         logger.info ("joined to %s" % channel)
-        self.dispatcher.push (events.JOINED, channel)
+        self.dispatcher.push(events.JOINED, channel)
 
     def privmsg (self, user, channel, msg):
         """This will get called when the bot receives a message."""
@@ -75,10 +111,10 @@ class IrcBot (irc.IRCClient):
 
         # Check to see if they're sending me a private message
         if channel == self.nickname:
-            self.dispatcher.push (events.PRIVATE_MESSAGE, user, msg)
+            self.dispatcher.push(events.PRIVATE_MESSAGE, user, msg)
         # Otherwise check to see if it is a message directed at me
         elif msg.startswith (self.nickname + ":"):   # FIXME ":" puede ser cualquier signo de puntuacion o espacio
-            self.dispatcher.push (events.TALKED_TO_ME, user, channel, msg)
+            self.dispatcher.push(events.TALKED_TO_ME, user, channel, msg)
             pass
         elif msg[0] == '@':   # FIXME: esta @ hay que sacarla de la config
             args = msg.split()
@@ -160,7 +196,7 @@ if __name__ == '__main__':
 
     # get all servers or the indicated ones
     if all_servers:
-        to_use = [x for x in servers.values() if not x.startswith("testbot")]
+        to_use = [v for k,v in servers.items() if not k.startswith("testbot")]
     elif test:
         to_use = [servers[x] for x in ("testbot-a", "testbot-b")]
     else:

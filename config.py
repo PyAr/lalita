@@ -53,5 +53,21 @@ servers = {
                 'plugins':{
                     'Log': {}
                     }
+                },
+        'javito':{
+            'host' : "10.100.0.164",
+            'port' : 6667,
+            'nickname' : "manyula",
+            'channels':{
+                'humites':{
+                    'plugins':{ 'Log':{} , 'moin_search.MoinSearch': {'fruta': 'banana'}}
+                    },
+                'perrites':{
+                    'plugins':{ 'Log':{'arbol':5} }
+                    }
+                },
+            'plugins':{
+                    'Log': {}
+                    }
                 }
         }
