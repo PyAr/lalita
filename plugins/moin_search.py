@@ -29,20 +29,18 @@ class MoinSearch(object):
         return '%s/%s' % (self._site,self._places[where]['path'] % query)
 
     def process(self, command, user, channel, *args):
-        print 'me llamaron, query es %s' % args
         query = ' '.join(map(str,args))
         d = client.getPage(self.get_full_query('title',query))
         d.addCallback(self.parse_page,'title')
-        #d.addCallback(self.otro,query)
+        d.addCallback(self.otro,query)
         return d
 
     def otro(self,titleresults,query):
-        print 'estoy en otro'
         if titleresults:
             return titleresults
         d = client.getPage(self.get_full_query('body',query))
-        d.addCallback(self.parse_page)
-
+        d.addCallback(self.parse_page,'body')
+        return d
 
     def parse_page(self,page,where):
         print 'estoy parseando'
