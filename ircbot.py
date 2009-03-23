@@ -22,9 +22,9 @@ class IrcBot (irc.IRCClient):
     """A IRC bot."""
     def __init__ (self):
         irc.IRCClient.__init__ (self)
-        self.dispatcher= Dispatcher ()
-        self.config= self.factory.config
         self.nickname= self.config.get ('nickname', 'lalita')
+        self.dispatcher= Dispatcher (self.nickname)
+        self.config= self.factory.config
         logger.debug ("we're in(ited)!")
 
     def connectionMade (self):

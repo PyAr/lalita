@@ -4,6 +4,9 @@ from twisted.internet import defer
 
 from core import events
 from core import dispatcher
+import config
+
+MY_NICKNAME = config.['nickname']
 
 class EasyDeferredTests(TwistedTestCase):
     def setUp(self):
@@ -90,6 +93,19 @@ class TestPush(EasyDeferredTests):
         self.disp.push(events.CONNECTION_LOST, "reason")
         return self.deferred
 
+    def test_deferred(self):
+        '''Test pushing events with deferred results.'''
+
+        def f():
+            d = defer.deferred()
+            self.deferred.callback(True)
+            return d
+
+        self.disp.register(events.CONNECTION_MADE, f)
+        self.disp.push(events.CONNECTION_MADE)
+        return self.deferred
+
+
 class TestEvents(EasyDeferredTests):
 
 #   * register ('event_<>', callback)
@@ -151,7 +167,7 @@ class TestEvents(EasyDeferredTests):
             return ""
 
         self.disp.register(events.PRIVATE_MESSAGE, f)
-        self.disp.privmsg("user", "channel", "msg")
+        self.disp.privmsg("user", MY_NICKNAME, "msg")
         return self.deferred
 
     def test_private_message_regexp(self):
@@ -164,7 +180,136 @@ class TestEvents(EasyDeferredTests):
 
         regexp = re.compile("^hola.*$")
         self.disp.register(events.PRIVATE_MESSAGE, f, regexp)
+        self.disp.privmsg("user", MY_NICKNAME, "esta no pasa")
+        self.disp.privmsg("user", MY_NICKNAME, "hola mundo")
+        return self.deferred
+
+    def test_talked_to_me_raw(self):
+        '''Test TALKED_TO_ME simple.'''
+        def f(a, b):
+            self.deferredAssertEqual(self.deferred, a, "user")
+            self.deferredAssertEqual(self.deferred, b, "msg")
+            self.deferred.callback(True)
+            return ""
+
+        self.disp.register(events.TALKED_TO_ME, f)
+        self.disp.privmsg("user", "channel", MY_NICKNAME + " msg")
+        return self.deferred
+
+    def test_talked_to_me_raw_nicenicks(self):
+        '''Test TALKED_TO_ME recognizing well the nickname.'''
+        cant = []
+        class Helper(object):
+            def __init__(innerself):
+                innerself.counter = 0
+            def met(self, a, b):
+                self.deferredAssertEqual(self.deferred, a, "user")
+                self.deferredAssertEqual(self.deferred, b, "msg")
+                innerself.counter += 1
+                if innerself.counter == 3:
+                    self.deferred.callback(True)
+                return ""
+        helper = helper()
+
+        self.disp.register(events.TALKED_TO_ME, helper.met)
+        self.disp.privmsg("user", "channel", MY_NICKNAME + "msg")  # nop
+        self.disp.privmsg("user", "channel", MY_NICKNAME + ":msg") # yes
+        self.disp.privmsg("user", "channel", MY_NICKNAME + ",msg") # yes
+        self.disp.privmsg("user", "channel", MY_NICKNAME + " msg") # yes
+        return self.deferred
+
+    def test_talked_to_me_regexp(self):
+        '''Test TALKED_TO_ME with regexp.'''
+        def f(a, b):
+            self.deferredAssertEqual(self.deferred, a, "user")
+            self.deferredAssertEqual(self.deferred, b, "hola mundo")
+            self.deferred.callback(True)
+            return ""
+
+        regexp = re.compile("^hola.*$")
+        self.disp.register(events.PRIVATE_MESSAGE, f, regexp)
+        self.disp.privmsg("user", "channel", MY_NICKNAME + " esta no pasa")
+        self.disp.privmsg("user", "channel", MY_NICKNAME + " hola mundo")
+        return self.deferred
+
+    def test_public_raw(self):
+        '''Test PUBLIC_MESSAGES simple.'''
+        def f(a, b):
+            self.deferredAssertEqual(self.deferred, a, "user")
+            self.deferredAssertEqual(self.deferred, b, "msg")
+            self.deferred.callback(True)
+            return ""
+
+        self.disp.register(events.PUBLIC_MESSAGES, f)
+        self.disp.privmsg("user", "channel", "msg")
+        return self.deferred
+
+    def test_public_regexp(self):
+        '''Test PUBLIC_MESSAGES with regexp.'''
+        def f(a, b):
+            self.deferredAssertEqual(self.deferred, a, "user")
+            self.deferredAssertEqual(self.deferred, b, "hola mundo")
+            self.deferred.callback(True)
+            return ""
+
+        regexp = re.compile("^hola.*$")
+        self.disp.register(events.PRIVATE_MESSAGE, f, regexp)
         self.disp.privmsg("user", "channel", "esta no pasa")
         self.disp.privmsg("user", "channel", "hola mundo")
+        return self.deferred
+
+    def test_command_noargs(self):
+        '''Test COMMAND with no arguments.'''
+        def f(a, b, c):
+            self.deferredAssertEqual(self.deferred, a, "user")
+            self.deferredAssertEqual(self.deferred, b, "channel")
+            self.deferredAssertEqual(self.deferred, c, "command")
+            self.deferred.callback(True)
+            return ""
+
+        self.disp.register(events.COMMAND, f)
+        self.disp.privmsg("user", "channel", "@command")
+        return self.deferred
+
+    def test_command_onearg(self):
+        '''Test COMMAND with one argument.'''
+        def f(a, b, c, d):
+            self.deferredAssertEqual(self.deferred, a, "user")
+            self.deferredAssertEqual(self.deferred, b, "channel")
+            self.deferredAssertEqual(self.deferred, c, "command")
+            self.deferredAssertEqual(self.deferred, d, "foo")
+            self.deferred.callback(True)
+            return ""
+
+        self.disp.register(events.COMMAND, f)
+        self.disp.privmsg("user", "channel", "@command foo")
+        return self.deferred
+
+    def test_command_twoargs(self):
+        '''Test COMMAND with two arguments.'''
+        def f(a, b, c, d, e):
+            self.deferredAssertEqual(self.deferred, a, "user")
+            self.deferredAssertEqual(self.deferred, b, "channel")
+            self.deferredAssertEqual(self.deferred, c, "command")
+            self.deferredAssertEqual(self.deferred, d, "foo")
+            self.deferredAssertEqual(self.deferred, e, "bar")
+            self.deferred.callback(True)
+            return ""
+
+        self.disp.register(events.COMMAND, f)
+        self.disp.privmsg("user", "channel", "@command foo bar")
+        return self.deferred
+
+    def test_action(self):
+        '''Test ACTION.'''
+        def f(a, b, c):
+            self.deferredAssertEqual(self.deferred, a, "user")
+            self.deferredAssertEqual(self.deferred, b, "channel")
+            self.deferredAssertEqual(self.deferred, c, "msg")
+            self.deferred.callback(True)
+            return ""
+
+        self.disp.register(events.ACTION, f)
+        self.disp.privmsg("user", "channel", "msg")
         return self.deferred
 
