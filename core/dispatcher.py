@@ -47,7 +47,6 @@ class Dispatcher(object):
     def push(self, event, *args):
         '''Pushes the received event to the registered method(s).'''
         all_registered = self._callbacks.get(event)
-        print all_registered
         if all_registered is None:
             # nothing registered for this event
             return
