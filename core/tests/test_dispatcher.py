@@ -4,9 +4,12 @@ from twisted.internet import defer
 
 from core import events
 from core import dispatcher
-import config
+from config import servers
+import ircbot
 
-MY_NICKNAME = config.['nickname']
+ircbot_factory = ircbot.IRCBotFactory(servers["perrito"])
+MY_NICKNAME = servers["perrito"]['nickname']
+import pdb;pdb.set_trace()
 
 class EasyDeferredTests(TwistedTestCase):
     def setUp(self):
