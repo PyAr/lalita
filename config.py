@@ -18,12 +18,13 @@ servers = {
             'nickname' : "itchy",
             'channels':{
                 'humites':{
-                    'plugins': { 'test_side': 'a' }
+                    'plugins': {}
                     },
                 },
             'plugins':{
-                'Log': {}
-                }
+                'testbot.TestPlugin': {'other': 'scratchy'}
+                },
+            'plugins_dir': "./core/tests/plugins",
             },
         'testbot-b':{
             'host' : "10.100.0.164",
@@ -31,12 +32,13 @@ servers = {
             'nickname' : "scratchy",
             'channels':{
                 'humites':{
-                    'plugins': { 'test_side': 'b' }
+                    'plugins': {}
                     },
                 },
             'plugins':{
-                'Log': {}
-                }
+                'testbot.TestPlugin': {'other':'itchy'}
+                },
+            'plugins_dir': "./core/tests/plugins",
             },
         'perrito1':{
             'host' : "10.100.0.194",

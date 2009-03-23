@@ -18,6 +18,7 @@ MAP_EVENTS = {
 SILENTS = set((
     events.CONNECTION_MADE,
     events.CONNECTION_LOST,
+    events.SIGNED_ON,
 ))
 
 class Dispatcher(object):
@@ -47,7 +48,6 @@ class Dispatcher(object):
     def push(self, event, *args):
         '''Pushes the received event to the registered method(s).'''
         all_registered = self._callbacks.get(event)
-        print all_registered
         if all_registered is None:
             # nothing registered for this event
             return
@@ -58,6 +58,12 @@ class Dispatcher(object):
                 if extra is not None and not meth(extra, *args):
                     # have an extra, and the handle says "this is not for us"
                     continue
+
+            # FIXME: for commands only, we need to answer an specific error if
+            # that command is not supported by any plugin
+            # Also, we should support "meta-commands" here:
+            #  - help: will return the docstring of the callback
+            #  - list: will list all the available commands
 
             # dispatch!
             d = defer.maybeDeferred(regist, *args)
