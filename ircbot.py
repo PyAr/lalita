@@ -22,13 +22,13 @@ logger.setLevel (logging.DEBUG)
 
 # local imports
 from core import events
-from core.dispatcher import Dispatcher
+from core import dispatcher
 from config import servers
 
 class IrcBot (irc.IRCClient):
     """A IRC bot."""
     def __init__ (self):
-        self.dispatcher= Dispatcher ()
+        self.dispatcher= dispatcher.dispatcher
         logger.debug ("we're in(ited)!")
 
     def connectionMade (self):
@@ -42,7 +42,7 @@ class IrcBot (irc.IRCClient):
     def connectionLost (self, reason):
         irc.IRCClient.connectionLost(self, reason)
         logger.info ("disconnected from %s:%d" %
-            (self.config['host'], self.config['port']))
+            (self.config.get('host'), self.config.get('port')))
         self.dispatcher.push (events.CONNECTION_LOST)
 
     def signedOn (self):
@@ -70,23 +70,24 @@ class IrcBot (irc.IRCClient):
         # self.logger.log("<%s> %s" % (user, msg))
 
         # Check to see if they're sending me a private message
-        if channel==self.nickname:
+        if channel == self.nickname:
             self.dispatcher.push (events.PRIVATE_MESSAGE, user, msg)
         # Otherwise check to see if it is a message directed at me
-        elif msg.startswith (self.nickname + ":"):
+        elif msg.startswith (self.nickname + ":"):   # FIXME ":" puede ser cualquier signo de puntuacion o espacio
             self.dispatcher.push (events.TALKED_TO_ME, user, channel, msg)
             pass
-        elif msg[0]=='@':
-            args= msg.split()
-            command= args.pop (0)[1:]
-            self.dispatcher.push (events.COMMAND, command, user, channel, args)
+        elif msg[0] == '@':   # FIXME: esta @ hay que sacarla de la config
+            args = msg.split()
+            command = args.pop(0)[1:]
+            self.dispatcher.push(events.COMMAND, user, channel, command, *args)
         else:
-            self.dispatcher.push (events.PUBLIC_MESSAGE, user, channel, msg)
+            self.dispatcher.push(events.PUBLIC_MESSAGE, user, channel, msg)
 
     def action(self, user, channel, msg):
         """This will get called when the bot sees someone do an action."""
         user = user.split('!', 1)[0]
         self.logger.log("* %s %s" % (user, msg))
+        # FIXME: la llamada al push!!
 
     # irc callbacks
 
