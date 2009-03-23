@@ -1,6 +1,6 @@
 servers = {
         'perrito':{
-            'host' : "localhost",
+            'host' : "10.100.0.194",
             'port' : 6667,
             'nickname' : "lalita",
             'channels':{
@@ -16,7 +16,7 @@ servers = {
                 }
             },
         'perrito1':{
-            'host' : "localhost",
+            'host' : "10.100.0.194",
             'port' : 6668,
             'nickname' : "lolita",
                 'channels':{
