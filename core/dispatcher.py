@@ -36,6 +36,10 @@ class Dispatcher(object):
         self._callbacks.setdefault(event, []).append((func, extra))
 
     def _callback_done(self, result):
+        # support the plugin method returning nothing
+        if result is None:
+            return
+
         try:
             where, msg = result
         except ValueError:
