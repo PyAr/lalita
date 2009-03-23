@@ -1,6 +1,6 @@
 servers = {
         'perrito':{
-            'host' : "10.100.0.164",
+            'host' : "10.100.0.175",
             'port' : 6667,
             'nickname' : "_morelia",
             'channels':{
@@ -13,30 +13,32 @@ servers = {
                 }
             },
         'testbot-a':{
-            'host' : "10.100.0.164",
+            'host' : "10.100.0.175",
             'port' : 6667,
             'nickname' : "itchy",
             'channels':{
                 'humites':{
-                    'plugins': { 'test_side': 'a' }
+                    'plugins': {}
                     },
                 },
             'plugins':{
-                'Log': {}
-                }
+                'testbot.TestPlugin': {'other': 'scratchy'}
+                },
+            'plugins_dir': "./core/tests/plugins",
             },
         'testbot-b':{
-            'host' : "10.100.0.164",
+            'host' : "10.100.0.175",
             'port' : 6667,
             'nickname' : "scratchy",
             'channels':{
                 'humites':{
-                    'plugins': { 'test_side': 'b' }
+                    'plugins': {}
                     },
                 },
             'plugins':{
-                'Log': {}
-                }
+                'testbot.TestPlugin': {'other':'itchy'}
+                },
+            'plugins_dir': "./core/tests/plugins",
             },
         'perrito1':{
             'host' : "10.100.0.194",
@@ -55,7 +57,7 @@ servers = {
                     }
                 },
         'javito':{
-            'host' : "10.100.0.164",
+            'host' : "10.100.0.175",
             'port' : 6667,
             'nickname' : "manyula",
             'channels':{

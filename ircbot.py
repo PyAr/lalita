@@ -35,13 +35,13 @@ class IrcBot (irc.IRCClient):
         self.dispatcher = dispatcher.Dispatcher(self)
         self._plugins = {}
         logger.debug ("we're in(ited)!")
-#        # FIXME: this is for develop only
-#        from core.tests import testbot
-#        testbot.TestPlugin(self, {"test_side":"a"})
 
     def load_plugins(self):
-        plugdir = 'plugins'
-        path = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),'plugins')
+        if "plugins_dir" in self.config:
+            path = self.config["plugins_dir"]
+        else:
+            path = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),
+                                'plugins')
         plugconf = self.factory.config['plugins']
         plugchannelconf = {}
         for ch,kw in self.config['channels'].items():
@@ -49,11 +49,14 @@ class IrcBot (irc.IRCClient):
                 plugchannelconf.setdefault(plug,{})[ch] = conf
         params = {'register': self.dispatcher.register,
                   'nickname': self.nickname }
+
+        sys.path.append(path)
         for filename in os.listdir(path):
             if not filename.endswith('.py'):
                 continue
             modname = filename[:-3]
-            module = __import__('%s.%s' % (plugdir,modname),fromlist=[plugdir])
+            module = __import__(modname)
+
             for k,v in module.__dict__.items():
                 if k.startswith('_'): continue
                 if inspect.isclass(v):

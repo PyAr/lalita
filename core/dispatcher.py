@@ -18,6 +18,7 @@ MAP_EVENTS = {
 SILENTS = set((
     events.CONNECTION_MADE,
     events.CONNECTION_LOST,
+    events.SIGNED_ON,
 ))
 
 class Dispatcher(object):
@@ -35,6 +36,10 @@ class Dispatcher(object):
         self._callbacks.setdefault(event, []).append((func, extra))
 
     def _callback_done(self, result):
+        # support the plugin method returning nothing
+        if result is None:
+            return
+
         try:
             where, msg = result
         except ValueError:
@@ -57,6 +62,12 @@ class Dispatcher(object):
                 if extra is not None and not meth(extra, *args):
                     # have an extra, and the handle says "this is not for us"
                     continue
+
+            # FIXME: for commands only, we need to answer an specific error if
+            # that command is not supported by any plugin
+            # Also, we should support "meta-commands" here:
+            #  - help: will return the docstring of the callback
+            #  - list: will list all the available commands
 
             # dispatch!
             d = defer.maybeDeferred(regist, *args)
