@@ -16,8 +16,6 @@ ircbot_factory = ircbot.IRCBotFactory(server)
 bot = ircbot.IrcBot()
 bot.factory = ircbot_factory
 
-#boo = reactor.connectTCP(server.get('host', '10.100.0.175'),
-
 MY_NICKNAME = server['nickname']
 
 
@@ -35,7 +33,7 @@ class EasyDeferredTests(TwistedTestCase):
 
 class TestRegister(unittest.TestCase):
     def setUp(self):
-        self.disp = dispatcher.Dispatcher()
+        self.disp = dispatcher.Dispatcher(bot)
 
     def test_method_exists(self):
         self.assertTrue(hasattr(self.disp, "register"))
@@ -88,13 +86,17 @@ class TestPush(EasyDeferredTests):
 
     def setUp(self):
         super(TestPush, self).setUp()
-        self.disp = dispatcher.Dispatcher()
+        self.disp = dispatcher.Dispatcher(bot)
+
+        class FakeBot(object):
+            def msg(innserself, *a, **k):
+                pass
+        self.disp.bot = FakeBot()
 
     def test_event_noarg(self):
         '''Test pushing events with no args.'''
         def f():
             self.deferred.callback(True)
-            return ""
 
         self.disp.register(events.CONNECTION_MADE, f)
         self.disp.push(events.CONNECTION_MADE)
@@ -105,7 +107,6 @@ class TestPush(EasyDeferredTests):
         def f(arg):
             self.deferredAssertEqual(self.deferred, arg, "reason")
             self.deferred.callback(True)
-            return ""
 
         self.disp.register(events.CONNECTION_LOST, f)
         self.disp.push(events.CONNECTION_LOST, "reason")
@@ -128,14 +129,13 @@ class TestEvents(EasyDeferredTests):
 
     def setUp(self):
         super(TestEvents, self).setUp()
-        self.disp = dispatcher.dispatcher
-        self.disp._callbacks = {}
+        self.disp = dispatcher.Dispatcher(bot)
 
     def test_connection_made(self):
         '''Test connection made.'''
         def f():
             self.deferred.callback(True)
-            return ""
+            return ("", "")
 
         self.disp.register(events.CONNECTION_MADE, f)
         self.disp.push(events.CONNECTION_MADE)
@@ -146,7 +146,7 @@ class TestEvents(EasyDeferredTests):
         def f(arg):
             self.deferredAssertEqual(self.deferred, arg, "reason")
             self.deferred.callback(True)
-            return ""
+            return ("", "")
 
         self.disp.register(events.CONNECTION_LOST, f)
         self.disp.push(events.CONNECTION_LOST, "reason")
@@ -156,7 +156,7 @@ class TestEvents(EasyDeferredTests):
         '''Test SIGNED_ON.'''
         def f():
             self.deferred.callback(True)
-            return ""
+            return ("", "")
 
         self.disp.register(events.SIGNED_ON, f)
         self.disp.push(events.SIGNED_ON)
@@ -167,7 +167,7 @@ class TestEvents(EasyDeferredTests):
         def f(arg):
             self.deferredAssertEqual(self.deferred, arg, "channel")
             self.deferred.callback(True)
-            return ""
+            return ("", "")
 
         self.disp.register(events.JOINED, f)
         self.disp.push(events.JOINED, "channel")
@@ -179,7 +179,7 @@ class TestEvents(EasyDeferredTests):
             self.deferredAssertEqual(self.deferred, a, "user")
             self.deferredAssertEqual(self.deferred, b, "msg")
             self.deferred.callback(True)
-            return ""
+            return ("", "")
 
         self.disp.register(events.PRIVATE_MESSAGE, f)
         self.disp.push(events.PRIVATE_MESSAGE, "user", "msg")
@@ -191,7 +191,7 @@ class TestEvents(EasyDeferredTests):
             self.deferredAssertEqual(self.deferred, a, "user")
             self.deferredAssertEqual(self.deferred, b, "hola mundo")
             self.deferred.callback(True)
-            return ""
+            return ("", "")
 
         regexp = re.compile("^hola.*$")
         self.disp.register(events.PRIVATE_MESSAGE, f, regexp)
@@ -206,7 +206,7 @@ class TestEvents(EasyDeferredTests):
             self.deferredAssertEqual(self.deferred, b, "channel")
             self.deferredAssertEqual(self.deferred, c, "msg")
             self.deferred.callback(True)
-            return ""
+            return ("", "")
 
         self.disp.register(events.TALKED_TO_ME, f)
         self.disp.push(events.TALKED_TO_ME, "user", "channel", "msg")
@@ -219,7 +219,7 @@ class TestEvents(EasyDeferredTests):
             self.deferredAssertEqual(self.deferred, b, "channel")
             self.deferredAssertEqual(self.deferred, c, "hola mundo")
             self.deferred.callback(True)
-            return ""
+            return ("", "")
 
         regexp = re.compile("^hola.*$")
         self.disp.register(events.TALKED_TO_ME, f, regexp)
@@ -234,7 +234,7 @@ class TestEvents(EasyDeferredTests):
             self.deferredAssertEqual(self.deferred, b, "channel")
             self.deferredAssertEqual(self.deferred, c, "msg")
             self.deferred.callback(True)
-            return ""
+            return ("", "")
 
         self.disp.register(events.PUBLIC_MESSAGE, f)
         self.disp.push(events.PUBLIC_MESSAGE, "user", "channel", "msg")
@@ -247,7 +247,7 @@ class TestEvents(EasyDeferredTests):
             self.deferredAssertEqual(self.deferred, b, "channel")
             self.deferredAssertEqual(self.deferred, c, "hola mundo")
             self.deferred.callback(True)
-            return ""
+            return ("", "")
 
         regexp = re.compile("^hola.*$")
         self.disp.register(events.PUBLIC_MESSAGE, f, regexp)
@@ -262,7 +262,7 @@ class TestEvents(EasyDeferredTests):
             self.deferredAssertEqual(self.deferred, b, "channel")
             self.deferredAssertEqual(self.deferred, c, "command")
             self.deferred.callback(True)
-            return ""
+            return ("", "")
 
         self.disp.register(events.COMMAND, f)
         self.disp.push(events.COMMAND, "user", "channel", "command")
@@ -275,7 +275,7 @@ class TestEvents(EasyDeferredTests):
             self.deferredAssertEqual(self.deferred, b, "channel")
             self.deferredAssertEqual(self.deferred, c, "cmd1")
             self.deferred.callback(True)
-            return ""
+            return ("", "")
 
         self.disp.register(events.COMMAND, f, ["cmd1"])
         self.disp.push(events.COMMAND, "user", "channel", "command") # este no
@@ -294,6 +294,7 @@ class TestEvents(EasyDeferredTests):
                 self.deferredAssertEqual(self.deferred, b, "channel")
                 self.deferredAssertEqual(self.deferred, c, "cmd1")
                 innerself.counter += 1
+                return ("", "")
 
             def met2(innerself, a, b, c):
                 if innerself.counter != 1:
@@ -302,7 +303,7 @@ class TestEvents(EasyDeferredTests):
                 self.deferredAssertEqual(self.deferred, b, "channel")
                 self.deferredAssertEqual(self.deferred, c, "cmd2")
                 self.deferred.callback(True)
-                return ""
+                return ("", "")
         h = Helper()
 
         self.disp.register(events.COMMAND, h.met1, ["cmd1"])
@@ -330,7 +331,7 @@ class TestEvents(EasyDeferredTests):
                     self.deferred.callback(True)
                 else:
                     self.deferred.errback(ValueError("counter with bad value"))
-                return ""
+                return ("", "")
         h = Helper()
 
         self.disp.register(events.COMMAND, h.met, ["cmd1", "cmd2"])
@@ -347,7 +348,7 @@ class TestEvents(EasyDeferredTests):
             self.deferredAssertEqual(self.deferred, c, "command")
             self.deferredAssertEqual(self.deferred, d, "foo")
             self.deferred.callback(True)
-            return ""
+            return ("", "")
 
         self.disp.register(events.COMMAND, f)
         self.disp.push(events.COMMAND, "user", "channel", "command", "foo")
@@ -362,7 +363,7 @@ class TestEvents(EasyDeferredTests):
             self.deferredAssertEqual(self.deferred, d, "foo")
             self.deferredAssertEqual(self.deferred, e, "bar")
             self.deferred.callback(True)
-            return ""
+            return ("", "")
 
         self.disp.register(events.COMMAND, f)
         self.disp.push(events.COMMAND,
@@ -376,7 +377,7 @@ class TestEvents(EasyDeferredTests):
             self.deferredAssertEqual(self.deferred, b, "channel")
             self.deferredAssertEqual(self.deferred, c, "msg")
             self.deferred.callback(True)
-            return ""
+            return ("", "")
 
         self.disp.register(events.ACTION, f)
         self.disp.push(events.ACTION, "user", "channel", "msg")

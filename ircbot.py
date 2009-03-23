@@ -29,11 +29,11 @@ from config import servers
 class IrcBot (irc.IRCClient):
     """A IRC bot."""
     def __init__ (self):
-        self.dispatcher= dispatcher.dispatcher
+        self.dispatcher = dispatcher.Dispatcher(self)
         logger.debug ("we're in(ited)!")
 #        # FIXME: this is for develop only
 #        from core.tests import testbot
-#        testbot.TestPlugin({"test_side":"a"})
+#        testbot.TestPlugin(self, {"test_side":"a"})
 
     def connectionMade (self):
         self.config= self.factory.config
@@ -41,18 +41,18 @@ class IrcBot (irc.IRCClient):
         irc.IRCClient.connectionMade (self)
         logger.info ("connected to %s:%d" %
             (self.config['host'], self.config['port']))
-        self.dispatcher.push (events.CONNECTION_MADE)
+        self.dispatcher.push(events.CONNECTION_MADE)
 
     def connectionLost (self, reason):
         irc.IRCClient.connectionLost(self, reason)
         logger.info ("disconnected from %s:%d" %
             (self.config.get('host'), self.config.get('port')))
-        self.dispatcher.push (events.CONNECTION_LOST)
+        self.dispatcher.push(events.CONNECTION_LOST)
 
     def signedOn (self):
         logger.debug ("signed on %s:%d" %
             (self.config['host'], self.config['port']))
-        self.dispatcher.push (events.SIGNED_ON)
+        self.dispatcher.push(events.SIGNED_ON)
         for channel in self.config.get ('channels', []):
             logger.debug ("joining %s on %s:%d" %
                 (channel, self.config['host'], self.config['port']))
@@ -65,7 +65,7 @@ class IrcBot (irc.IRCClient):
     def joined (self, channel):
         """This will get called when the bot joins the channel."""
         logger.info ("joined to %s" % channel)
-        self.dispatcher.push (events.JOINED, channel)
+        self.dispatcher.push(events.JOINED, channel)
 
     def privmsg (self, user, channel, msg):
         """This will get called when the bot receives a message."""
@@ -75,10 +75,10 @@ class IrcBot (irc.IRCClient):
 
         # Check to see if they're sending me a private message
         if channel == self.nickname:
-            self.dispatcher.push (events.PRIVATE_MESSAGE, user, msg)
+            self.dispatcher.push(events.PRIVATE_MESSAGE, user, msg)
         # Otherwise check to see if it is a message directed at me
         elif msg.startswith (self.nickname + ":"):   # FIXME ":" puede ser cualquier signo de puntuacion o espacio
-            self.dispatcher.push (events.TALKED_TO_ME, user, channel, msg)
+            self.dispatcher.push(events.TALKED_TO_ME, user, channel, msg)
             pass
         elif msg[0] == '@':   # FIXME: esta @ hay que sacarla de la config
             args = msg.split()
