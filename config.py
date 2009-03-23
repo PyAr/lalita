@@ -1,15 +1,12 @@
 servers = {
         'perrito':{
-            'host' : "10.100.0.175",
+            'host' : "10.100.0.164",
             'port' : 6667,
-            'nickname' : "lalita",
+            'nickname' : "_morelia",
             'channels':{
                 'humites':{
                     'modules':{ 'Log':{} }
                     },
-                'perrites':{
-                    'modules':{ 'Log':{} }
-                    }
                 },
             'modules':{
                 'Log': {}
