@@ -10,24 +10,30 @@ from twisted.python import log
 import time
 import sys
 import logging
+
+handler = logging.StreamHandler(sys.stdout)
+formatter = logging.Formatter("%(asctime)s %(levelname)-8s %(message)s",
+                              '%H:%M:%S')
+handler.setFormatter(formatter)
 logger = logging.getLogger ('ircbot')
-logger.setLevel (logging.INFO)
+logger.addHandler(handler)
+logger.setLevel (logging.DEBUG)
+# logger.setLevel (logging.INFO)
 
 # local imports
 from core import events
 from core.dispatcher import Dispatcher
-import config
+from config import servers
 
 class IrcBot (irc.IRCClient):
     """A IRC bot."""
     def __init__ (self):
-        irc.IRCClient.__init__ (self)
         self.dispatcher= Dispatcher ()
-        self.config= self.factory.config
-        self.nickname= self.config.get ('nickname', 'lalita')
         logger.debug ("we're in(ited)!")
 
     def connectionMade (self):
+        self.config= self.factory.config
+        self.nickname= self.config.get ('nickname', 'lalita')
         irc.IRCClient.connectionMade (self)
         logger.info ("connected to %s:%d" %
             (self.config['host'], self.config['port']))
@@ -39,22 +45,27 @@ class IrcBot (irc.IRCClient):
             (self.config['host'], self.config['port']))
         self.dispatcher.push (events.CONNECTION_LOST)
 
-    def signedOn(self):
+    def signedOn (self):
         logger.debug ("signed on %s:%d" %
             (self.config['host'], self.config['port']))
         self.dispatcher.push (events.SIGNED_ON)
-        for channel in config.get ('channels', []):
+        for channel in self.config.get ('channels', []):
             logger.debug ("joining %s on %s:%d" %
                 (channel, self.config['host'], self.config['port']))
             self.join (channel)
 
-    def joined(self, channel):
+    def receivedMOTD (self, motd):
+        logger.debug ("motd from %s:%d" %
+            (self.config['host'], self.config['port']))
+
+    def joined (self, channel):
         """This will get called when the bot joins the channel."""
         logger.info ("joined to %s" % channel)
         self.dispatcher.push (events.JOINED, channel)
 
-    def privmsg(self, user, channel, msg):
+    def privmsg (self, user, channel, msg):
         """This will get called when the bot receives a message."""
+        logger.debug (msg)
         user = user.split('!', 1)[0]
         # self.logger.log("<%s> %s" % (user, msg))
 
@@ -111,14 +122,12 @@ class IRCBotFactory(protocol.ClientFactory):
         only when no client remains connected
         """
         logger.debug("Connection failed because of %s" % str(reason))
-        reactor.stop()
-
-
+        # reactor.stop()
 
 if __name__ == '__main__':
-    for server in irc_servers:
-        bot = IRCBotFactory(irc_servers[server])
-        reactor.connectTCP(irc_servers[server].get('host', '10.100.0.194'),
-            irc_servers[server].get('port', 6667), bot)
+    for server in servers:
+        bot = IRCBotFactory(servers[server])
+        reactor.connectTCP(servers[server].get('host', '10.100.0.194'),
+            servers[server].get('port', 6667), bot)
 
     reactor.run()
