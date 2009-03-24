@@ -50,7 +50,7 @@ class TestPlugin(object):
 
     def joined(self, channel):
         self._check_state("signed", "joined")
-        print "==================== Joined!"
+        print "==================== Joined!", self.nickname
         if self.nickname == "itchy":
             msg = u"Hola! Soy itchy!"
         else:
@@ -59,28 +59,28 @@ class TestPlugin(object):
 
     def talked_to_me(self, user, channel, msg):
         print "==================== Talked to me!", user
-        if self.state == "joined":
-            self.state = "msg1"
-            if msg.strip() != "Hola!":
+        if self.nickname == "itchy" and self.state == "joined":
+            self.state = "msg"
+            if msg != "Hola!":
                 raise ValueError("Bad message 1: %r" % msg)
             return (channel, u"%s, ¿cómo estás?" % user) # itchy says
-        elif self.state == "msg1":
-            self.state = "msg2"
-            if msg.strip() != u"¿cómo estás?":
+        elif self.nickname == "scratchy" and self.state == "joined":
+            self.state = "msg"
+            if msg != u"¿cómo estás?":
                 raise ValueError("Bad message 2: %r" % msg)
             return (channel, u"@foo") # scratchy says
         else:
             raise ValueError("Bad state in talked_to_me")
 
     def command_foo(self, user, channel, command, *args):
-        print "==================== Command! Foo", user, command, args
-        if self.state == "msg2":
-            self.state = "cmd1"
+        print "==================== Command from", user, command, args
+        if self.nickname == "itchy" and self.state == "msg":
+            self.state = "cmd"
             if command != "foo" or args:
                 raise ValueError("Bad info in cmd1: %r %r" % (command, args))
             return (channel, u"@bar baz") # itchy says
-        elif self.state == "cmd2":
-            self.state = "cmd3"
+        elif self.nickname == "itchy" and self.state == "cmd":
+            self.state = "done"
             if command != "foo" or args != ("mate", "esta"):
                 raise ValueError("Bad info in cmd3: %r %r" % (command, args))
             return (channel, u":D") # itchy says
@@ -88,9 +88,9 @@ class TestPlugin(object):
             raise ValueError("Bad state in command")
 
     def command_bar(self, user, channel, command, *args):
-        print "==================== Command!", user, command, args
-        if self.state == "cmd1":
-            self.state = "cmd2"
+        print "==================== Command from", user, command, args
+        if self.nickname == "scratchy" and self.state == "msg":
+            self.state = "done"
             if command != "bar" or args != ("baz",):
                 raise ValueError("Bad info in cmd2: %r %r" % (command, args))
             return (channel, u"@foo mate esta") # scratchy says

@@ -75,7 +75,11 @@ class IrcBot (irc.IRCClient):
 
     def connectionMade(self):
         self.config = self.factory.config
-        self.nickname = self.config.get ('nickname', 'lalita')
+        self.nickname = self.config.get('nickname', 'lalita')
+        self.encoding_server = self.config.get('encoding', 'utf8')
+        self.encoding_channels = dict((k, v["encoding"])
+                                    for k,v in self.config["channels"].items()
+                                      if "encoding" in v)
         irc.IRCClient.connectionMade (self)
         logger.info("connected to %s:%d" %
             (self.config['host'], self.config['port']))
@@ -108,6 +112,10 @@ class IrcBot (irc.IRCClient):
 
     def privmsg (self, user, channel, msg):
         """This will get called when the bot receives a message."""
+        # decode according to channel (that can be an user), or server/default
+        encoding = self.encoding_channels.get(channel, self.encoding_server)
+        msg = msg.decode(encoding)
+
         logger.debug (msg)
         user = user.split('!', 1)[0]
         # self.logger.log("<%s> %s" % (user, msg))
@@ -116,9 +124,11 @@ class IrcBot (irc.IRCClient):
         if channel == self.nickname:
             self.dispatcher.push(events.PRIVATE_MESSAGE, user, msg)
         # Otherwise check to see if it is a message directed at me
-        elif msg.startswith (self.nickname + ":"):   # FIXME ":" puede ser cualquier signo de puntuacion o espacio
-            self.dispatcher.push(events.TALKED_TO_ME, user, channel, msg)
-            pass
+        elif msg.startswith (self.nickname):
+            msg = msg[len(self.nickname):]
+            if msg[0] in (":", " ", ","):
+                msg = msg[1:].strip()
+                self.dispatcher.push(events.TALKED_TO_ME, user, channel, msg)
         elif msg[0] == '@':   # FIXME: esta @ hay que sacarla de la config
             args = msg.split()
             command = args.pop(0)[1:]
@@ -128,6 +138,9 @@ class IrcBot (irc.IRCClient):
 
     def action(self, user, channel, msg):
         """This will get called when the bot sees someone do an action."""
+        # decode according to channel (that can be an user), or server/default
+        encoding = self.encoding_channels.get(channel, self.encoding_server)
+        msg = msg.decode(encoding)
         user = user.split('!', 1)[0]
         # FIXME: la llamada al push!!
 

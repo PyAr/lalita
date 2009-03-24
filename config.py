@@ -1,11 +1,13 @@
 servers = {
         'perrito':{
+            'encoding': 'utf8',
             'host' : "10.100.0.175",
             'port' : 6667,
             'nickname' : "_morelia",
             'channels':{
                 'humites':{
-                    'plugins':{ 'Log':{} }
+                    'plugins':{ 'Log':{} },
+                    'encoding': 'utf8',
                     },
                 },
             'plugins':{
@@ -13,6 +15,7 @@ servers = {
                 }
             },
         'testbot-a':{
+            'encoding': 'utf8',
             'host' : "10.100.0.175",
             'port' : 6667,
             'nickname' : "itchy",
@@ -27,6 +30,7 @@ servers = {
             'plugins_dir': "./core/tests/plugins",
             },
         'testbot-b':{
+            'encoding': 'utf8',
             'host' : "10.100.0.175",
             'port' : 6667,
             'nickname' : "scratchy",
@@ -41,12 +45,14 @@ servers = {
             'plugins_dir': "./core/tests/plugins",
             },
         'perrito1':{
+            'encoding': 'utf8',
             'host' : "10.100.0.194",
             'port' : 6668,
             'nickname' : "lolita",
                 'channels':{
                     'humites':{
-                        'plugins':{ 'Log':{} }
+                        'plugins':{ 'Log':{} },
+                        'encoding': 'utf8',
                         },
                     'perrites':{
                         'plugins':{ 'Log':{} }
@@ -57,15 +63,18 @@ servers = {
                     }
                 },
         'javito':{
+            'encoding': 'utf8',
             'host' : "10.100.0.175",
             'port' : 6667,
             'nickname' : "manyula",
             'channels':{
                 'humites':{
-                    'plugins':{ 'Log':{} , 'moin_search.MoinSearch': {'fruta': 'banana'}}
+                    'plugins':{ 'Log':{} , 'moin_search.MoinSearch': {'fruta': 'banana'}},
+                    'encoding': 'utf8',
                     },
                 'perrites':{
-                    'plugins':{ 'Log':{'arbol':5} }
+                    'plugins':{ 'Log':{'arbol':5} },
+                    'encoding': 'utf8',
                     }
                 },
             'plugins':{
