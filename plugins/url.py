@@ -3,7 +3,7 @@
 import re
 from twisted.web import client
 from twisted.internet import defer
-from BeautifulSoup import BeautifulStoneSoup, HTMLParser
+#from BeautifulSoup import BeautifulStoneSoup, HTMLParser
 
 import logging
 logger = logging.getLogger ('ircbot.url')
@@ -12,7 +12,7 @@ logger.setLevel (logging.DEBUG)
 from core import dispatcher
 from core import events
 
-class _HTMLParser (HTMLParser):
+class _HTMLParser (object):
     def __init__ (self, deferred):
         HTMLParser.__init__ (self)
         self.foundTitleTag= False

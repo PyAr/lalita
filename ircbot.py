@@ -158,7 +158,6 @@ class IrcBot (irc.IRCClient):
         # FIXME: la llamada al push!!
 
     # irc callbacks
-
     def irc_NICK(self, prefix, params):
         """Called when an IRC user changes their nickname."""
         old_nick = nick (prefix)
