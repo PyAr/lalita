@@ -170,6 +170,12 @@ class IrcBot (irc.IRCClient):
         nickname= nick (prefix)
         self.dispatcher.push (events.JOIN, channel, nickname)
 
+    def irc_PART (self, prefix, params):
+        logger.debug ("part: %s: %s" % (prefix, params))
+        channel= params[0]
+        nickname= nick (prefix)
+        self.dispatcher.push (events.PART, channel, nickname)
+
 class IRCBotFactory(protocol.ClientFactory):
     """
     A factory for PyAr Bots.

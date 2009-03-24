@@ -15,23 +15,33 @@ class Seen (object):
         self.nickname= params['nickname']
         self.seenlog= {}
 
-        register (events.JOIN, self.log)
+        register (events.JOIN, self.joined)
+        register (events.PART, self.parted)
+        # register (event
         register (events.COMMAND, self.seen, ['seen'])
 
-    def log (self, channel, nick):
+    def joined (self, channel, nick):
         logger.debug ("%s joined %s" % (nick, channel))
         if nick!=self.nickname:
-            self.seenlog[nick]= ('joined', time.time ())
-            logger.debug ("logged %s %s %s" % (nick, 'joined', time.time ()))
+            self.log (channel, nick, 'joined')
+
+    def parted (self, channel, nick):
+        logger.debug ("%s parted %s" % (nick, channel))
+        if nick!=self.nickname:
+            self.log (channel, nick, 'parted')
+
+    def log (self, channel, nick, what):
+        self.seenlog[nick]= (what, time.time ())
+        logger.debug ("logged %s %s %s" % (nick, 'joined', time.time ()))
 
     def seen (self, user, channel, command, nick):
-        # logger.debug ('seen command called w/ '+ str ())
-        # logger.debug (self.seenlog)
         try:
             what, when= self.seenlog[nick]
             now= time.time ()
             if what=='joined':
                 return (channel, "%s: le vi entrar hace un rato..." % user)
+            elif what=='parted':
+                return (channel, "%s: creo que se fua a hacer una paja y no volvio..." % user)
         except KeyError:
             return (channel, "%s: me lo deje en la otra pollera" % user)
 
