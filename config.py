@@ -1,4 +1,15 @@
 servers = {
+        'example': dict (
+            encoding='utf8',
+            host='10.100.0.156', port=6667,
+            nickname='examplia',
+            channels= {
+                'humites': dict(plugins={}),
+            },
+            plugins= {
+                'example.Example': { },
+            },
+        ),
         'freenode': dict (
             encoding='utf8',
             host='irc.freenode.net', port=6667,
