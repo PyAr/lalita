@@ -57,6 +57,7 @@ class IrcBot (irc.IRCClient):
         else:
             logger.debug('%s instanced' % klassname)
 
+    # instance: (channel|None)
 
     def load_server_plugins(self):
         params = {'register': self.dispatcher.register,

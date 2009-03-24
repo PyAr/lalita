@@ -17,15 +17,26 @@ servers = {
             'nickname' : "morelia",
             'channels':{
                 'humites':{
-                    'plugins':{ 'url.Url':{} },
+                    'plugins':{
+                        'url.Url': dict (
+                            database= 'url_public',
+                        )
+                    },
                     'encoding': 'utf8',
                     },
                 'perrites':{
                     'encoding': 'utf8',
+                    'plugins':{
+                        'url.Url': dict (
+                            database= 'url_perrites_private',
+                        )
+                    },
                     },
                 },
             'plugins':{
-                # 'url.Url': {}
+                'url.Url': dict (
+                    database= 'url_public',
+                )
                 }
             },
         'testbot-a':{

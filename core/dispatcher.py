@@ -25,6 +25,7 @@ class Dispatcher(object):
     def __init__(self, ircclient):
         self._callbacks = {}
         self.bot = ircclient
+        # FIXME: restringir i/o según canal
 
     def register(self, event, func, extra=None):
         '''Register one function to an event.
@@ -33,6 +34,7 @@ class Dispatcher(object):
         it should be a regexp telling if the message is useful, for
         command is a list of which commands, etc.
         '''
+        instance= func.im_self
         self._callbacks.setdefault(event, []).append((func, extra))
 
     def _callback_done(self, result):
