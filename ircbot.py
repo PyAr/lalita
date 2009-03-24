@@ -101,7 +101,18 @@ class IrcBot (irc.IRCClient):
         params = {'register': self.dispatcher.register,
                   'nickname': self.nickname }
 
-        plugins= self.config['plugins']
+        plugins= self.config.get ('plugins', {})
+        logger.debug (plugins)
+        for plugin, config in plugins.items ():
+            self.load_plugin (plugin, config, params)
+
+    def load_channel_plugins(self, channel):
+        params = {'register': self.dispatcher.register,
+                  'nickname': self.nickname,
+                  'channel': channel,
+                  }
+
+        plugins= self.config['channels'][channel].get ('plugins', {})
         logger.debug (plugins)
         for plugin, config in plugins.items ():
             self.load_plugin (plugin, config, params)
@@ -141,6 +152,8 @@ class IrcBot (irc.IRCClient):
     def joined (self, channel):
         """This will get called when the bot joins the channel."""
         logger.info ("joined to %s" % channel)
+        # strip the leading #
+        self.load_channel_plugins (channel[1:])
         self.dispatcher.push(events.JOINED, channel)
         # for plugin, args in self.config['channels'][channel]['plugins']:
             # module= __import__ ("plugins.%s" % plugin.lower ())

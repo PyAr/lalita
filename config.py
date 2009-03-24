@@ -17,12 +17,15 @@ servers = {
             'nickname' : "morelia",
             'channels':{
                 'humites':{
-                    'plugins':{ 'Url':{} },
+                    'plugins':{ 'url.Url':{} },
+                    'encoding': 'utf8',
+                    },
+                'perrites':{
                     'encoding': 'utf8',
                     },
                 },
             'plugins':{
-                'url.Url': {}
+                # 'url.Url': {}
                 }
             },
         'testbot-a':{
