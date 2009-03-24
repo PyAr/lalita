@@ -1,3 +1,5 @@
+# -*- coding: utf8 -*-
+
 servers = {
         'freenode': dict (
             encoding='utf8',
@@ -16,27 +18,29 @@ servers = {
             'port' : 6667,
             'nickname' : "morelia",
             'channels':{
-                'humites':{
-                    '#plugins':{
+                '#humites':{
+                    'plugins':{
                         'url.Url': dict (
                             database= 'url_public',
-                        )
+                        ),
+                        'seen.Seen': {},
                     },
                     'encoding': 'utf8',
                     },
-                'perrites':{
+                '#perrites':{
                     'encoding': 'utf8',
-                    '#plugins':{
+                    'plugins':{
                         'url.Url': dict (
                             database= 'url_perrites_private',
-                        )
+                        ),
                     },
                     },
                 },
             'plugins':{
                 'url.Url': dict (
                     database= 'url_public',
-                )
+                ),
+                'seen.Seen': {},
                 }
             },
         'testbot-a':{
