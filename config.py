@@ -1,4 +1,13 @@
 servers = {
+        'freenode': dict (
+            encoding='utf8',
+            host='irc.freenode.net', port=6667,
+            nickname='lalita',
+            channels= {
+                'not-grulic': dict (plugins={})
+            },
+            plugins={}
+        ),
         'perrito':{
             'encoding': 'utf8',
             'host' : "10.100.0.175",
@@ -6,7 +15,7 @@ servers = {
             'nickname' : "_morelia",
             'channels':{
                 'humites':{
-                    'plugins':{ 'Log':{} },
+                    'plugins':{ 'Url':{} },
                     'encoding': 'utf8',
                     },
                 },

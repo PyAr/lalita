@@ -3,14 +3,14 @@
 import re
 from twisted.web import client
 from twisted.internet import defer
-import BeautifulSoup
+from BeautifulSoup import BeautifulStoneSoup, HTMLParser
 
 from core import dispatcher
 from core import events
 
-class _HTMLParser (BeautifulSoup.HTMLParser):
+class _HTMLParser (HTMLParser):
     def __init__ (self, deferred):
-        BeautifulSoup.HTMLParser.__init__ (self)
+        HTMLParser.__init__ (self)
         self.foundTitleTag= False
         self.deferred= deferred
         self.title= u''
@@ -28,9 +28,24 @@ class _HTMLParser (BeautifulSoup.HTMLParser):
             # TODO: set the correct encoding
             self.title+= unicode (data, 'iso-8859-1')
 
+    def handle_entityref (self, ref, *args):
+        if self.foundTitleTag:
+            print 'found title: %s' % ref
+            # TODO: set the correct encoding
+            self.title+= unicode ("&%s;" % ref, 'iso-8859-1')
+
+    def handle_charref (self, ref, *args):
+        if self.foundTitleTag:
+            print 'found title: %s' % ref
+            # TODO: set the correct encoding
+            self.title+= unicode ("&#%s;" % ref, 'iso-8859-1')
+
+
     def handle_endtag (self, tag, *args):
         if tag=='title':
-            self.deferred.callback (self.title.strip ())
+            title= BeautifulStoneSoup (self.title,
+                convertEntities=BeautifulStoneSoup.XHTML_ENTITIES).contents[0]
+            self.deferred.callback (title.strip ())
 
 class Url (object):
     re= re.compile ('((https?|ftp)://[^ ]*)')
@@ -50,7 +65,6 @@ class Url (object):
             return promise
 
     def parsePage (self, page, channel, url):
-        # print u'got %s, parsing... [%s]' % (url, page[:4096])
         promise= defer.Deferred ()
         parse= _HTMLParser (promise, )
         parse.feed (page)
