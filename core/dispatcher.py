@@ -59,6 +59,7 @@ class Dispatcher(object):
     def push(self, event, *args):
         '''Pushes the received event to the registered method(s).'''
         all_registered = self._callbacks.get(event)
+        print all_registered,event
         if all_registered is None:
             # nothing registered for this event
             return
@@ -84,6 +85,7 @@ class Dispatcher(object):
                 d.addCallbacks(self._callback_done, self._callback_error)
 
     def handle_private_message(self, extra, user, msg):
+        print 'handling private'
         '''The extra is a regexp that says if the msg is useful or not.'''
         return extra.match(msg)
 

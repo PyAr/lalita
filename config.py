@@ -16,7 +16,7 @@ servers = {
             'port' : 6667,
             'nickname' : "morelia",
             'channels':{
-                'humites':{
+                '#humites':{
                     '#plugins':{
                         'url.Url': dict (
                             database= 'url_public',
@@ -87,23 +87,35 @@ servers = {
                     'Log': {}
                     }
                 },
+        'pyar2':{
+            'encoding': 'utf8',
+            'host' : "irc.freenode.net",
+            'port' : 6667,
+            'nickname' : "apu",
+            'channels':{
+                'pyar':{
+                    'plugins':{ 'Log':{} },
+                    'encoding': 'utf8',
+                    },
+                },
+            'plugins':{
+                'Log': {}
+                }
+            },
         'javito':{
             'encoding': 'utf8',
-            'host' : "10.100.0.175",
+            'host' : "10.100.0.156",
             'port' : 6667,
             'nickname' : "manyula",
             'channels':{
                 '#humites':{
-                    'plugins':{ 'Log':{} , 'moin_search.MoinSearch': {'fruta': 'banana'}},
+                    'plugins':{
+                        'randomer.Randomer': dict (
+                            database= 'url_public',
+                        )
+                    },
                     'encoding': 'utf8',
                     },
-                '#perrites':{
-                    'plugins':{ 'Log':{'arbol':5} },
-                    'encoding': 'utf8',
-                    }
                 },
-            'plugins':{
-                    'Log': {}
-                    }
-                }
+        }
         }

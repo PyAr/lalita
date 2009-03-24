@@ -22,7 +22,6 @@ class MoinSearch(object):
     _max_results = 1
 
     def __init__(self,config,params):
-        # import pdb; pdb.set_trace()
         self._internals = {}
         params['register'](COMMAND,self.search,['wiki'])
 
