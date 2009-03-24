@@ -69,6 +69,7 @@ class MoinSearch(object):
             try:
                 href = soup.find('ul',attrs = {'id':'navibar'}).find('li','current').find('a').get('href')
             except AttributeError, e:
+                href = None
                 results = ['Encontré un problema: %s' % e]
             results = ['Hay 1 solo resultado: %s%s' % (self._site,href)]
         else:
@@ -80,7 +81,7 @@ class MoinSearch(object):
                 results.append('%s: %s' % (name,href))
         return self.process_resutls(results,id)
 
-    def drop_internal(se;f,id):
+    def drop_internal(self,id):
         del self._internals[id]
 
     def process_resutls(self,results,id):

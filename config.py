@@ -6,7 +6,8 @@ servers = {
             'nickname' : "_morelia",
             'channels':{
                 'humites':{
-                    'plugins':{ 'Log':{} }
+                    'plugins':{ 'Log':{} },
+                    'encoding': 'utf8',
                     },
                 },
             'plugins':{

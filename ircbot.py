@@ -80,7 +80,6 @@ class IrcBot (irc.IRCClient):
         self.encoding_channels = dict((k, v["encoding"])
                                     for k,v in self.config["channels"].items()
                                       if "encoding" in v)
-        print "======== DDDDDDDD", self.encoding_channels
         irc.IRCClient.connectionMade (self)
         logger.info("connected to %s:%d" %
             (self.config['host'], self.config['port']))
