@@ -5,6 +5,10 @@ from twisted.web import client
 from twisted.internet import defer
 from BeautifulSoup import BeautifulStoneSoup, HTMLParser
 
+import logging
+logger = logging.getLogger ('ircbot.url')
+logger.setLevel (logging.DEBUG)
+
 from core import dispatcher
 from core import events
 
@@ -22,21 +26,17 @@ class _HTMLParser (HTMLParser):
             self.foundTitleTag= False
 
     def handle_data (self, data, *args):
-        # print data, args
         if self.foundTitleTag:
-            print 'found title: %s' % data
             # TODO: set the correct encoding
             self.title+= unicode (data, 'iso-8859-1')
 
     def handle_entityref (self, ref, *args):
         if self.foundTitleTag:
-            print 'found title: %s' % ref
             # TODO: set the correct encoding
             self.title+= unicode ("&%s;" % ref, 'iso-8859-1')
 
     def handle_charref (self, ref, *args):
         if self.foundTitleTag:
-            print 'found title: %s' % ref
             # TODO: set the correct encoding
             self.title+= unicode ("&#%s;" % ref, 'iso-8859-1')
 
@@ -45,6 +45,7 @@ class _HTMLParser (HTMLParser):
         if tag=='title':
             title= BeautifulStoneSoup (self.title,
                 convertEntities=BeautifulStoneSoup.XHTML_ENTITIES).contents[0]
+            logger.debug ('found title: %s' % title)
             self.deferred.callback (title.strip ())
 
 class Url (object):
