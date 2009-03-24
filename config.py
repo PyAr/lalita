@@ -4,17 +4,17 @@ servers = {
             host='irc.freenode.net', port=6667,
             nickname='lalita',
             channels= {
-                'not-grulic': dict (plugins={})
+                'not-grulic': dict (plugins={}),
             },
-            plugins= dict (
-                Register= { 'password': 'zaraza' }
-            ),
+            plugins= {
+                'register.Register': { 'password': 'zaraza' },
+            },
         ),
         'perrito':{
             'encoding': 'utf8',
-            'host' : "10.100.0.175",
+            'host' : "10.100.0.156",
             'port' : 6667,
-            'nickname' : "_morelia",
+            'nickname' : "morelia",
             'channels':{
                 'humites':{
                     'plugins':{ 'Url':{} },
@@ -22,7 +22,7 @@ servers = {
                     },
                 },
             'plugins':{
-                'Log': {}
+                'url.Url': {}
                 }
             },
         'testbot-a':{

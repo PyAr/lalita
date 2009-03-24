@@ -76,6 +76,36 @@ class IrcBot (irc.IRCClient):
                     else:
                         logger.debug('%s instanced' % klassname)
 
+    def load_plugin (self, plugin_name, config, params):
+        if "plugins_dir" in self.config:
+            path = self.config["plugins_dir"]
+        else:
+            path = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),
+                                'plugins')
+        sys.path.append(path)
+
+        modname, klassname= plugin_name.split ('.')
+        module = __import__(modname)
+
+        klass= getattr (module, klassname)
+        try:
+            self._plugins[klassname] = klass (config=config, params=params)
+        except Exception, e:
+            logger.debug('%s not instanced: %s' % (klassname, e))
+            print_exc (e)
+        else:
+            logger.debug('%s instanced' % klassname)
+
+
+    def load_server_plugins(self):
+        params = {'register': self.dispatcher.register,
+                  'nickname': self.nickname }
+
+        plugins= self.config['plugins']
+        logger.debug (plugins)
+        for plugin, config in plugins.items ():
+            self.load_plugin (plugin, config, params)
+
     def connectionMade(self):
         self.config = self.factory.config
         self.nickname = self.config.get('nickname', 'lalita')
@@ -86,7 +116,7 @@ class IrcBot (irc.IRCClient):
         irc.IRCClient.connectionMade (self)
         logger.info("connected to %s:%d" %
             (self.config['host'], self.config['port']))
-        self.load_plugins()
+        self.load_server_plugins()
         self.dispatcher.push(events.CONNECTION_MADE)
 
     def connectionLost (self, reason):
