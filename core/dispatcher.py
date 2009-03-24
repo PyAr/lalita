@@ -1,3 +1,5 @@
+# -*- coding: utf8 -*-
+
 from twisted.internet import defer
 
 from core import events
@@ -27,7 +29,7 @@ class Dispatcher(object):
         self.bot = ircclient
         # FIXME: restringir i/o según canal
 
-    def new_plugin (plugin, channel):
+    def new_plugin (self, plugin, channel):
         pass
 
     def register(self, event, func, extra=None):
