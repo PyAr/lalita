@@ -37,45 +37,6 @@ class IrcBot (irc.IRCClient):
         self._plugins = {}
         logger.debug ("we're in(ited)!")
 
-    def load_plugins(self):
-        if "plugins_dir" in self.config:
-            path = self.config["plugins_dir"]
-        else:
-            path = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),
-                                'plugins')
-        plugconf = self.factory.config['plugins']
-        plugchannelconf = {}
-        for ch,kw in self.config['channels'].items():
-            # TODO: handle lack of plugins for this channel
-            for plug,conf in kw['plugins'].items():
-                plugchannelconf.setdefault(plug,{})[ch] = conf
-        params = {'register': self.dispatcher.register,
-                  'nickname': self.nickname }
-
-        sys.path.append(path)
-        for filename in os.listdir(path):
-            if not filename.endswith('.py'):
-                continue
-            modname = filename[:-3]
-            module = __import__(modname)
-
-            for k,v in module.__dict__.items():
-                if k.startswith('_'): continue
-                if inspect.isclass(v):
-                    if v.__module__ != module.__name__:
-                        # We will ignore classes defined somewhere else
-                        continue
-                    klassname = '%s.%s' % (modname,k)
-                    conf = {'general':plugconf.get(klassname,{}),
-                            'channels': plugchannelconf.get(klassname,{})}
-                    try:
-                        self._plugins[klassname] = v(config=conf,params=params)
-                    except Exception, e:
-                        logger.debug('%s not instanced: %s' % (klassname,e))
-                        print_exc (e)
-                    else:
-                        logger.debug('%s instanced' % klassname)
-
     def load_plugin (self, plugin_name, config, params):
         if "plugins_dir" in self.config:
             path = self.config["plugins_dir"]
