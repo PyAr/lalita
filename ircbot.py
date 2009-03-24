@@ -119,9 +119,6 @@ class IrcBot (irc.IRCClient):
         logger.info ("joined to %s" % channel)
         self.load_channel_plugins (channel)
         self.dispatcher.push(events.JOINED, channel)
-        # for plugin, args in self.config['channels'][channel]['plugins']:
-            # module= __import__ ("plugins.%s" % plugin.lower ())
-            # classes= None
 
     def privmsg (self, user, channel, msg):
         """This will get called when the bot receives a message."""

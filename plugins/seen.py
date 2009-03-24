@@ -17,7 +17,8 @@ class Seen (object):
 
         register (events.JOIN, self.joined)
         register (events.PART, self.parted)
-        # register (event
+        register (events.PUBLIC_MESSAGE, self.message)
+        register (events.TALKED_TO_ME, self.message)
         register (events.COMMAND, self.seen, ['seen'])
 
     def joined (self, channel, nick):
@@ -30,19 +31,26 @@ class Seen (object):
         if nick!=self.nickname:
             self.log (channel, nick, 'parted')
 
+    def message (self, nick, channel, msg):
+        logger.debug ("%s said %s" % (nick, msg))
+        if nick!=self.nickname:
+            self.log (channel, nick, msg)
+
     def log (self, channel, nick, what):
         self.seenlog[nick]= (what, time.time ())
-        logger.debug ("logged %s %s %s" % (nick, 'joined', time.time ()))
+        logger.debug ("logged %s %s %s" % (nick, what, time.time ()))
 
     def seen (self, user, channel, command, nick):
         try:
             what, when= self.seenlog[nick]
             now= time.time ()
             if what=='joined':
-                return (channel, "%s: le vi entrar hace un rato..." % user)
+                return (channel, u"%s: le vi entrar hace un rato..." % user)
             elif what=='parted':
-                return (channel, "%s: creo que se fua a hacer una paja y no volvio..." % user)
+                return (channel, u"%s: creo que se fua a hacer una paja y no volvio..." % user)
+            else:
+                return (channel, u"%s: hace un rato lo escuche decir «%s» o una gansada por el estilo" % (user, what))
         except KeyError:
-            return (channel, "%s: me lo deje en la otra pollera" % user)
+            return (channel, u"%s: me lo deje en la otra pollera :|" % user)
 
 # end
