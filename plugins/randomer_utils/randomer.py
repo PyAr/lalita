@@ -13,7 +13,7 @@ cursor = conn.cursor()
 def magic(line):
     count = 0
     if not line: return count
-    for i,c in enumerate(line.encode('utf-8')):
+    for i,c in enumerate(line):
         count += i*ord(c)
     return float(count)/len(line)
 
@@ -39,12 +39,6 @@ try:
     conn.commit()
 except sqlite3.OperationalError:
     pass
-
-#def contestame(comment,delta=0.1):
-    #n = magic(comment)
-    #fetchs = cursor.execute('select next from logs where magic > ? and magic < ?',(n-delta,n+delta)).fetchall()
-    #which = fetchs[randrange(len(fetchs))][0]
-    #return cursor.execute('select txt from logs where id = ?', (which,)).fetchone()[0]
 
 _repeating_you = ['repitiendote','lo mismo digo','igual que vos decis','haciendote eco','repeating you']
 def repeating():
