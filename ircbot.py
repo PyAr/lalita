@@ -35,13 +35,13 @@ class IrcBot (irc.IRCClient):
         self.dispatcher = dispatcher.Dispatcher(self)
         self._plugins = {}
         logger.debug ("we're in(ited)!")
-#        # FIXME: this is for develop only
-#        from core.tests import testbot
-#        testbot.TestPlugin(self, {"test_side":"a"})
 
     def load_plugins(self):
-        plugdir = 'plugins'
-        path = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),'plugins')
+        if "plugins_dir" in self.config:
+            path = self.config["plugins_dir"]
+        else:
+            path = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),
+                                'plugins')
         plugconf = self.factory.config['plugins']
         plugchannelconf = {}
         for ch,kw in self.config['channels'].items():
@@ -49,11 +49,14 @@ class IrcBot (irc.IRCClient):
                 plugchannelconf.setdefault(plug,{})[ch] = conf
         params = {'register': self.dispatcher.register,
                   'nickname': self.nickname }
+
+        sys.path.append(path)
         for filename in os.listdir(path):
             if not filename.endswith('.py'):
                 continue
             modname = filename[:-3]
-            module = __import__('%s.%s' % (plugdir,modname),fromlist=[plugdir])
+            module = __import__(modname)
+
             for k,v in module.__dict__.items():
                 if k.startswith('_'): continue
                 if inspect.isclass(v):
@@ -72,7 +75,11 @@ class IrcBot (irc.IRCClient):
 
     def connectionMade(self):
         self.config = self.factory.config
-        self.nickname = self.config.get ('nickname', 'lalita')
+        self.nickname = self.config.get('nickname', 'lalita')
+        self.encoding_server = self.config.get('encoding', 'utf8')
+        self.encoding_channels = dict((k, v["encoding"])
+                                    for k,v in self.config["channels"].items()
+                                      if "encoding" in v)
         irc.IRCClient.connectionMade (self)
         logger.info("connected to %s:%d" %
             (self.config['host'], self.config['port']))
@@ -105,6 +112,10 @@ class IrcBot (irc.IRCClient):
 
     def privmsg (self, user, channel, msg):
         """This will get called when the bot receives a message."""
+        # decode according to channel (that can be an user), or server/default
+        encoding = self.encoding_channels.get(channel, self.encoding_server)
+        msg = msg.decode(encoding)
+
         logger.debug (msg)
         user = user.split('!', 1)[0]
         # self.logger.log("<%s> %s" % (user, msg))
@@ -113,9 +124,11 @@ class IrcBot (irc.IRCClient):
         if channel == self.nickname:
             self.dispatcher.push(events.PRIVATE_MESSAGE, user, msg)
         # Otherwise check to see if it is a message directed at me
-        elif msg.startswith (self.nickname + ":"):   # FIXME ":" puede ser cualquier signo de puntuacion o espacio
-            self.dispatcher.push(events.TALKED_TO_ME, user, channel, msg)
-            pass
+        elif msg.startswith (self.nickname):
+            msg = msg[len(self.nickname):]
+            if msg[0] in (":", " ", ","):
+                msg = msg[1:].strip()
+                self.dispatcher.push(events.TALKED_TO_ME, user, channel, msg)
         elif msg[0] == '@':   # FIXME: esta @ hay que sacarla de la config
             args = msg.split()
             command = args.pop(0)[1:]
@@ -125,6 +138,9 @@ class IrcBot (irc.IRCClient):
 
     def action(self, user, channel, msg):
         """This will get called when the bot sees someone do an action."""
+        # decode according to channel (that can be an user), or server/default
+        encoding = self.encoding_channels.get(channel, self.encoding_server)
+        msg = msg.decode(encoding)
         user = user.split('!', 1)[0]
         # FIXME: la llamada al push!!
 

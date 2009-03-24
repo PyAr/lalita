@@ -1,11 +1,13 @@
 servers = {
         'perrito':{
-            'host' : "10.100.0.164",
+            'encoding': 'utf8',
+            'host' : "10.100.0.175",
             'port' : 6667,
             'nickname' : "_morelia",
             'channels':{
                 'humites':{
-                    'plugins':{ 'Log':{} }
+                    'plugins':{ 'Log':{} },
+                    'encoding': 'utf8',
                     },
                 },
             'plugins':{
@@ -13,38 +15,44 @@ servers = {
                 }
             },
         'testbot-a':{
-            'host' : "10.100.0.164",
+            'encoding': 'utf8',
+            'host' : "10.100.0.175",
             'port' : 6667,
             'nickname' : "itchy",
             'channels':{
                 'humites':{
-                    'plugins': { 'test_side': 'a' }
+                    'plugins': {}
                     },
                 },
             'plugins':{
-                'Log': {}
-                }
+                'testbot.TestPlugin': {'other': 'scratchy'}
+                },
+            'plugins_dir': "./core/tests/plugins",
             },
         'testbot-b':{
-            'host' : "10.100.0.164",
+            'encoding': 'utf8',
+            'host' : "10.100.0.175",
             'port' : 6667,
             'nickname' : "scratchy",
             'channels':{
                 'humites':{
-                    'plugins': { 'test_side': 'b' }
+                    'plugins': {}
                     },
                 },
             'plugins':{
-                'Log': {}
-                }
+                'testbot.TestPlugin': {'other':'itchy'}
+                },
+            'plugins_dir': "./core/tests/plugins",
             },
         'perrito1':{
+            'encoding': 'utf8',
             'host' : "10.100.0.194",
             'port' : 6668,
             'nickname' : "lolita",
                 'channels':{
                     'humites':{
-                        'plugins':{ 'Log':{} }
+                        'plugins':{ 'Log':{} },
+                        'encoding': 'utf8',
                         },
                     'perrites':{
                         'plugins':{ 'Log':{} }
@@ -55,15 +63,18 @@ servers = {
                     }
                 },
         'javito':{
-            'host' : "10.100.0.164",
+            'encoding': 'utf8',
+            'host' : "10.100.0.175",
             'port' : 6667,
             'nickname' : "manyula",
             'channels':{
                 'humites':{
-                    'plugins':{ 'Log':{} , 'moin_search.MoinSearch': {'fruta': 'banana'}}
+                    'plugins':{ 'Log':{} , 'moin_search.MoinSearch': {'fruta': 'banana'}},
+                    'encoding': 'utf8',
                     },
                 'perrites':{
-                    'plugins':{ 'Log':{'arbol':5} }
+                    'plugins':{ 'Log':{'arbol':5} },
+                    'encoding': 'utf8',
                     }
                 },
             'plugins':{
