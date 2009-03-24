@@ -14,6 +14,7 @@ import os
 import os.path
 import inspect
 import optparse
+from traceback import print_exc
 
 handler = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter("%(asctime)s %(levelname)-8s %(message)s",
@@ -45,6 +46,7 @@ class IrcBot (irc.IRCClient):
         plugconf = self.factory.config['plugins']
         plugchannelconf = {}
         for ch,kw in self.config['channels'].items():
+            # TODO: handle lack of plugins for this channel
             for plug,conf in kw['plugins'].items():
                 plugchannelconf.setdefault(plug,{})[ch] = conf
         params = {'register': self.dispatcher.register,
@@ -70,6 +72,7 @@ class IrcBot (irc.IRCClient):
                         self._plugins[klassname] = v(config=conf,params=params)
                     except Exception, e:
                         logger.debug('%s not instanced: %s' % (klassname,e))
+                        print_exc (e)
                     else:
                         logger.debug('%s instanced' % klassname)
 
@@ -109,6 +112,9 @@ class IrcBot (irc.IRCClient):
         """This will get called when the bot joins the channel."""
         logger.info ("joined to %s" % channel)
         self.dispatcher.push(events.JOINED, channel)
+        # for plugin, args in self.config['channels'][channel]['plugins']:
+            # module= __import__ ("plugins.%s" % plugin.lower ())
+            # classes= None
 
     def privmsg (self, user, channel, msg):
         """This will get called when the bot receives a message."""
@@ -116,7 +122,7 @@ class IrcBot (irc.IRCClient):
         encoding = self.encoding_channels.get(channel, self.encoding_server)
         msg = msg.decode(encoding)
 
-        logger.debug (msg)
+        logger.debug ("[%s] %s: %s" % (channel, user, msg))
         user = user.split('!', 1)[0]
         # self.logger.log("<%s> %s" % (user, msg))
 
