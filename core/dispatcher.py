@@ -1,4 +1,4 @@
-# -*- encoding: utf8 -*-
+# -*- coding: utf8 -*-
 
 import itertools
 
@@ -38,6 +38,9 @@ class Dispatcher(object):
         self.bot = ircclient
         # FIXME: restringir i/o según canal
 
+    def new_plugin (self, plugin, channel):
+        pass
+
     def register(self, event, func, extra=None):
         '''Register one function to an event.
 
@@ -49,7 +52,6 @@ class Dispatcher(object):
         self._callbacks.setdefault(event, []).append((func, extra))
 
     def msg(self, result):
-        print "callback done!", result
         # support the plugin method returning nothing
         if result is None:
             return

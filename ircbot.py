@@ -1,5 +1,6 @@
-# Copyright (c) 2001-2004 Twisted Matrix Laboratories.
-# See LICENSE for details.
+# -*- coding: utf8 -*-
+
+# based on irc client example, Copyright (c) 2001-2004 Twisted Matrix Laboratories.
 
 # twisted imports
 from twisted.words.protocols import irc
@@ -30,6 +31,9 @@ from core import events
 from core import dispatcher
 from config import servers
 
+def nick (user):
+    return user.split('!')[0]
+
 class IrcBot (irc.IRCClient):
     """A IRC bot."""
     def __init__ (self):
@@ -37,7 +41,7 @@ class IrcBot (irc.IRCClient):
         self._plugins = {}
         logger.debug ("we're in(ited)!")
 
-    def load_plugin (self, plugin_name, config, params):
+    def load_plugin (self, plugin_name, config, params, channel=None):
         if "plugins_dir" in self.config:
             path = self.config["plugins_dir"]
         else:
@@ -50,34 +54,33 @@ class IrcBot (irc.IRCClient):
 
         klass= getattr (module, klassname)
         try:
-            self._plugins[klassname] = klass (config=config, params=params)
+            instance = klass (config=config, params=params)
+            self.dispatcher.new_plugin (instance, channel)
         except Exception, e:
-            logger.debug('%s not instanced: %s' % (klassname, e))
+            logger.warning('%s not instanced: %s' % (klassname, e))
             print_exc (e)
         else:
             logger.debug('%s instanced' % klassname)
 
-    # instance: (channel|None)
-
     def load_server_plugins(self):
         params = {'register': self.dispatcher.register,
-                  'nickname': self.nickname }
+                  'nickname': self.nickname,
+                  }
 
         plugins= self.config.get ('plugins', {})
-        logger.debug (plugins)
+        logger.debug ("server plugins: %s" % plugins)
         for plugin, config in plugins.items ():
             self.load_plugin (plugin, config, params)
 
     def load_channel_plugins(self, channel):
         params = {'register': self.dispatcher.register,
                   'nickname': self.nickname,
-                  'channel': channel,
                   }
 
         plugins= self.config['channels'][channel].get ('plugins', {})
-        logger.debug (plugins)
+        logger.debug ("channel plugins: %s" % plugins)
         for plugin, config in plugins.items ():
-            self.load_plugin (plugin, config, params)
+            self.load_plugin (plugin, config, params, channel)
 
     def connectionMade(self):
         self.config = self.factory.config
@@ -114,12 +117,8 @@ class IrcBot (irc.IRCClient):
     def joined (self, channel):
         """This will get called when the bot joins the channel."""
         logger.info ("joined to %s" % channel)
-        # strip the leading #
-        self.load_channel_plugins (channel[1:])
+        self.load_channel_plugins (channel)
         self.dispatcher.push(events.JOINED, channel)
-        # for plugin, args in self.config['channels'][channel]['plugins']:
-            # module= __import__ ("plugins.%s" % plugin.lower ())
-            # classes= None
 
     def privmsg (self, user, channel, msg):
         """This will get called when the bot receives a message."""
@@ -156,12 +155,23 @@ class IrcBot (irc.IRCClient):
         # FIXME: la llamada al push!!
 
     # irc callbacks
-
     def irc_NICK(self, prefix, params):
         """Called when an IRC user changes their nickname."""
-        old_nick = prefix.split('!')[0]
+        old_nick = nick (prefix)
         new_nick = params[0]
+        # FIXME: la llamada al push!!
 
+    def irc_JOIN (self, prefix, params):
+        logger.debug ("join: %s: %s" % (prefix, params))
+        channel= params[0]
+        nickname= nick (prefix)
+        self.dispatcher.push (events.JOIN, channel, nickname)
+
+    def irc_PART (self, prefix, params):
+        logger.debug ("part: %s: %s" % (prefix, params))
+        channel= params[0]
+        nickname= nick (prefix)
+        self.dispatcher.push (events.PART, channel, nickname)
 
 class IRCBotFactory(protocol.ClientFactory):
     """

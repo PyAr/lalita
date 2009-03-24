@@ -1,3 +1,5 @@
+# -*- coding: utf8 -*-
+
 servers = {
         'example': dict (
             encoding='utf8',
@@ -15,7 +17,7 @@ servers = {
             host='irc.freenode.net', port=6667,
             nickname='lalita',
             channels= {
-                'not-grulic': dict (plugins={}),
+                '#not-grulic': dict (plugins={}),
             },
             plugins= {
                 'register.Register': { 'password': 'zaraza' },
@@ -27,27 +29,29 @@ servers = {
             'port' : 6667,
             'nickname' : "morelia",
             'channels':{
-                'humites':{
+                '#humites':{
                     'plugins':{
                         'url.Url': dict (
                             database= 'url_public',
-                        )
+                        ),
+                        'seen.Seen': {},
                     },
                     'encoding': 'utf8',
                     },
-                'perrites':{
+                '#perrites':{
                     'encoding': 'utf8',
                     'plugins':{
                         'url.Url': dict (
                             database= 'url_perrites_private',
-                        )
+                        ),
                     },
                     },
                 },
             'plugins':{
                 'url.Url': dict (
                     database= 'url_public',
-                )
+                ),
+                'seen.Seen': {},
                 }
             },
         'testbot-a':{
@@ -56,7 +60,7 @@ servers = {
             'port' : 6667,
             'nickname' : "itchy",
             'channels':{
-                'humites':{
+                '#humites':{
                     'plugins': {}
                     },
                 },
@@ -71,7 +75,7 @@ servers = {
             'port' : 6667,
             'nickname' : "scratchy",
             'channels':{
-                'humites':{
+                '#humites':{
                     'plugins': {}
                     },
                 },
@@ -86,11 +90,11 @@ servers = {
             'port' : 6668,
             'nickname' : "lolita",
                 'channels':{
-                    'humites':{
+                    '#humites':{
                         'plugins':{ 'Log':{} },
                         'encoding': 'utf8',
                         },
-                    'perrites':{
+                    '#perrites':{
                         'plugins':{ 'Log':{} }
                         }
                     },
@@ -98,23 +102,35 @@ servers = {
                     'Log': {}
                     }
                 },
+        'pyar2':{
+            'encoding': 'utf8',
+            'host' : "irc.freenode.net",
+            'port' : 6667,
+            'nickname' : "apu",
+            'channels':{
+                'pyar':{
+                    'plugins':{ 'Log':{} },
+                    'encoding': 'utf8',
+                    },
+                },
+            'plugins':{
+                'Log': {}
+                }
+            },
         'javito':{
             'encoding': 'utf8',
-            'host' : "10.100.0.175",
+            'host' : "10.100.0.156",
             'port' : 6667,
             'nickname' : "manyula",
             'channels':{
-                'humites':{
-                    'plugins':{ 'Log':{} , 'moin_search.MoinSearch': {'fruta': 'banana'}},
+                '#humites':{
+                    'plugins':{
+                        'randomer.Randomer': dict (
+                            database= 'url_public',
+                        )
+                    },
                     'encoding': 'utf8',
                     },
-                'perrites':{
-                    'plugins':{ 'Log':{'arbol':5} },
-                    'encoding': 'utf8',
-                    }
                 },
-            'plugins':{
-                    'Log': {}
-                    }
-                }
+        }
         }
