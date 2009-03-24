@@ -27,6 +27,9 @@ class Dispatcher(object):
         self.bot = ircclient
         # FIXME: restringir i/o según canal
 
+    def new_plugin (plugin, channel):
+        pass
+
     def register(self, event, func, extra=None):
         '''Register one function to an event.
 

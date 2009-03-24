@@ -37,7 +37,7 @@ class IrcBot (irc.IRCClient):
         self._plugins = {}
         logger.debug ("we're in(ited)!")
 
-    def load_plugin (self, plugin_name, config, params):
+    def load_plugin (self, plugin_name, config, params, channel=None):
         if "plugins_dir" in self.config:
             path = self.config["plugins_dir"]
         else:
@@ -50,18 +50,18 @@ class IrcBot (irc.IRCClient):
 
         klass= getattr (module, klassname)
         try:
-            self._plugins[klassname] = klass (config=config, params=params)
+            instance = klass (config=config, params=params)
+            self.dispatcher.new_plugin (instance, channel)
         except Exception, e:
-            logger.debug('%s not instanced: %s' % (klassname, e))
+            logger.warning('%s not instanced: %s' % (klassname, e))
             print_exc (e)
         else:
             logger.debug('%s instanced' % klassname)
 
-    # instance: (channel|None)
-
     def load_server_plugins(self):
         params = {'register': self.dispatcher.register,
-                  'nickname': self.nickname }
+                  'nickname': self.nickname,
+                  }
 
         plugins= self.config.get ('plugins', {})
         logger.debug (plugins)
@@ -71,13 +71,12 @@ class IrcBot (irc.IRCClient):
     def load_channel_plugins(self, channel):
         params = {'register': self.dispatcher.register,
                   'nickname': self.nickname,
-                  'channel': channel,
                   }
 
         plugins= self.config['channels'][channel].get ('plugins', {})
         logger.debug (plugins)
         for plugin, config in plugins.items ():
-            self.load_plugin (plugin, config, params)
+            self.load_plugin (plugin, config, params, channel)
 
     def connectionMade(self):
         self.config = self.factory.config
@@ -114,8 +113,7 @@ class IrcBot (irc.IRCClient):
     def joined (self, channel):
         """This will get called when the bot joins the channel."""
         logger.info ("joined to %s" % channel)
-        # strip the leading #
-        self.load_channel_plugins (channel[1:])
+        self.load_channel_plugins (channel)
         self.dispatcher.push(events.JOINED, channel)
         # for plugin, args in self.config['channels'][channel]['plugins']:
             # module= __import__ ("plugins.%s" % plugin.lower ())
@@ -161,6 +159,7 @@ class IrcBot (irc.IRCClient):
         """Called when an IRC user changes their nickname."""
         old_nick = prefix.split('!')[0]
         new_nick = params[0]
+        # FIXME: la llamada al push!!
 
 
 class IRCBotFactory(protocol.ClientFactory):

@@ -4,7 +4,7 @@ servers = {
             host='irc.freenode.net', port=6667,
             nickname='lalita',
             channels= {
-                'not-grulic': dict (plugins={}),
+                '#not-grulic': dict (plugins={}),
             },
             plugins= {
                 'register.Register': { 'password': 'zaraza' },
@@ -17,7 +17,7 @@ servers = {
             'nickname' : "morelia",
             'channels':{
                 'humites':{
-                    'plugins':{
+                    '#plugins':{
                         'url.Url': dict (
                             database= 'url_public',
                         )
@@ -26,7 +26,7 @@ servers = {
                     },
                 'perrites':{
                     'encoding': 'utf8',
-                    'plugins':{
+                    '#plugins':{
                         'url.Url': dict (
                             database= 'url_perrites_private',
                         )
@@ -45,7 +45,7 @@ servers = {
             'port' : 6667,
             'nickname' : "itchy",
             'channels':{
-                'humites':{
+                '#humites':{
                     'plugins': {}
                     },
                 },
@@ -60,7 +60,7 @@ servers = {
             'port' : 6667,
             'nickname' : "scratchy",
             'channels':{
-                'humites':{
+                '#humites':{
                     'plugins': {}
                     },
                 },
@@ -75,11 +75,11 @@ servers = {
             'port' : 6668,
             'nickname' : "lolita",
                 'channels':{
-                    'humites':{
+                    '#humites':{
                         'plugins':{ 'Log':{} },
                         'encoding': 'utf8',
                         },
-                    'perrites':{
+                    '#perrites':{
                         'plugins':{ 'Log':{} }
                         }
                     },
@@ -93,11 +93,11 @@ servers = {
             'port' : 6667,
             'nickname' : "manyula",
             'channels':{
-                'humites':{
+                '#humites':{
                     'plugins':{ 'Log':{} , 'moin_search.MoinSearch': {'fruta': 'banana'}},
                     'encoding': 'utf8',
                     },
-                'perrites':{
+                '#perrites':{
                     'plugins':{ 'Log':{'arbol':5} },
                     'encoding': 'utf8',
                     }
