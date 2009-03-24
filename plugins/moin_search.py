@@ -22,7 +22,7 @@ class MoinSearch(object):
     _max_results = 1
 
     def __init__(self,config,params):
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         self._internals = {}
         params['register'](COMMAND,self.search,['wiki'])
 
@@ -70,7 +70,7 @@ class MoinSearch(object):
                 href = soup.find('ul',attrs = {'id':'navibar'}).find('li','current').find('a').get('href')
             except AttributeError, e:
                 results = ['Encontré un problema: %s' % e]
-			else:
+            else:
                 results = ['Hay 1 solo resultado: %s%s' % (self._site,href)]
         else:
             results = []

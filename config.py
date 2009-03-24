@@ -6,7 +6,9 @@ servers = {
             channels= {
                 'not-grulic': dict (plugins={})
             },
-            plugins={}
+            plugins= dict (
+                Register= { 'password': 'zaraza' }
+            ),
         ),
         'perrito':{
             'encoding': 'utf8',
