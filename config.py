@@ -30,16 +30,18 @@ servers = {
             nickname='lalita',
             channels= {
                 '#not-grulic': dict (plugins={
-                    'url.Url': { },
-                    'seen,Seen': { },
+                    #'url.Url': { },
+                    #'seen.Seen': { },
                 }),
                 '#pyar': dict (plugins={
-                    'url.Url': { },
-                    'seen,Seen': { },
+                    #'url.Url': { },
+                    #'seen.Seen': { },
                 }),
             },
             plugins= {
-                'register.Register': { 'password': 'zaraza' },
+                'freenode.Register': { 'password': 'zaraza' },
+                'url.Url': { },
+                'seen.Seen': { },
             },
         ),
         'perrito':{

@@ -23,8 +23,8 @@ formatter = logging.Formatter("%(asctime)s %(levelname)-8s %(message)s",
 handler.setFormatter(formatter)
 logger = logging.getLogger ('ircbot')
 logger.addHandler(handler)
-logger.setLevel (logging.DEBUG)
-# logger.setLevel (logging.INFO)
+# logger.setLevel (logging.DEBUG)
+logger.setLevel (logging.INFO)
 
 # local imports
 from core import events
@@ -50,17 +50,20 @@ class IrcBot (irc.IRCClient):
         sys.path.append(path)
 
         modname, klassname= plugin_name.split ('.')
-        module = __import__(modname)
-
-        klass= getattr (module, klassname)
         try:
+            module = __import__(modname)
+            klass= getattr (module, klassname)
             instance = klass (config=config, params=params)
             self.dispatcher.new_plugin (instance, channel)
+        except ImportError, e:
+            logger.warning('%s not instanced: %s' % (plugin_name, e))
+        except AttributeError, e:
+            logger.warning('%s not instanced: %s' % (plugin_name, e))
         except Exception, e:
-            logger.warning('%s not instanced: %s' % (klassname, e))
+            logger.warning('%s not instanced: %s' % (plugin_name, e))
             print_exc (e)
         else:
-            logger.debug('%s instanced' % klassname)
+            logger.debug('%s instanced' % plugin_name)
 
     def load_server_plugins(self):
         params = {'register': self.dispatcher.register,
@@ -160,18 +163,21 @@ class IrcBot (irc.IRCClient):
         old_nick = nick (prefix)
         new_nick = params[0]
         # FIXME: la llamada al push!!
+        irc.IRCClient.irc_NICK (self, prefix, params)
 
     def irc_JOIN (self, prefix, params):
         logger.debug ("join: %s: %s" % (prefix, params))
         channel= params[0]
         nickname= nick (prefix)
         self.dispatcher.push (events.JOIN, channel, nickname)
+        irc.IRCClient.irc_JOIN (self, prefix, params)
 
     def irc_PART (self, prefix, params):
         logger.debug ("part: %s: %s" % (prefix, params))
         channel= params[0]
         nickname= nick (prefix)
         self.dispatcher.push (events.PART, channel, nickname)
+        irc.IRCClient.irc_PART (self, prefix, params)
 
 class IRCBotFactory(protocol.ClientFactory):
     """
