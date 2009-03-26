@@ -10,7 +10,7 @@ servers = {
             },
             plugins= {
                 'url.Url': { },
-                'seen,Seen': { },
+                'seen.Seen': { },
             },
         ),
         'example': dict (

@@ -1,10 +1,12 @@
 # -*- coding: utf8 -*-
 
+# (c) 2009 Marcos Dione <mdione@grulic.org.ar>
+
 import datetime
 
 import logging
 logger = logging.getLogger ('ircbot.plugins.seen')
-logger.setLevel (logging.DEBUG)
+logger.setLevel (logging.INFO)
 
 from core import dispatcher
 from core import events

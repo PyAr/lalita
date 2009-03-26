@@ -1,18 +1,20 @@
 # -*- coding: utf8 -*-
 
+# (c) 2009 Marcos Dione <mdione@grulic.org.ar>
+
 import re
 from twisted.web import client
 from twisted.internet import defer
-#from BeautifulSoup import BeautifulStoneSoup, HTMLParser
+from BeautifulSoup import BeautifulStoneSoup, HTMLParser
 
 import logging
-logger = logging.getLogger ('ircbot.url')
+logger = logging.getLogger ('ircbot.plugins.url')
 logger.setLevel (logging.DEBUG)
 
 from core import dispatcher
 from core import events
 
-class _HTMLParser (object):
+class _HTMLParser (HTMLParser):
     def __init__ (self, deferred):
         HTMLParser.__init__ (self)
         self.foundTitleTag= False
@@ -60,19 +62,25 @@ class Url (object):
         g= self.re.search (message)
         if g is not None:
             url= g.groups()[0]
-            print 'fetching %s' % url
+            logger.debug ('fetching %s' % url)
             promise= client.getPage (str (url))
-            promise.addCallback (self.parsePage, channel, url)
+            promise.addCallback (self.parsePage, user, channel, url)
+            promise.addErrback (self.failed, user, channel, url)
             return promise
 
-    def parsePage (self, page, channel, url):
+    def parsePage (self, page, user, channel, url):
         promise= defer.Deferred ()
-        parse= _HTMLParser (promise, )
+        parse= _HTMLParser (promise)
         parse.feed (page)
-        promise.addCallback (self.answer, channel, url)
+        promise.addCallback (self.answer, user, channel, url)
         return promise #?
 
     def answer (self, title, channel, url):
-        return (channel, title)
+        # why this is return sarasa and not promise.callback (sarasa)?
+        return (channel, u"%s: %s" % (user, title))
+
+    def failed (self, bongs, user, channel, url):
+        logger.debug (bongs)
+        return (channel, u"%s: error con la página" % (user, ))
 
 # end

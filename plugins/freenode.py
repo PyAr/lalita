@@ -1,5 +1,7 @@
 # -*- coding: utf8 -*-
 
+# (c) 2009 Marcos Dione <mdione@grulic.org.ar>
+
 import logging
 logger = logging.getLogger ('ircbot.plugins.freenode')
 logger.setLevel (logging.DEBUG)
