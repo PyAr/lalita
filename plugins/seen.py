@@ -1,9 +1,9 @@
 # -*- coding: utf8 -*-
 
-import time
+import datetime
 
 import logging
-logger = logging.getLogger ('ircbot.seen')
+logger = logging.getLogger ('ircbot.plugins.seen')
 logger.setLevel (logging.DEBUG)
 
 from core import dispatcher
@@ -23,34 +23,39 @@ class Seen (object):
 
     def joined (self, channel, nick):
         logger.debug ("%s joined %s" % (nick, channel))
-        if nick!=self.nickname:
-            self.log (channel, nick, 'joined')
+        self.log (channel, nick, 'joined')
 
     def parted (self, channel, nick):
         logger.debug ("%s parted %s" % (nick, channel))
-        if nick!=self.nickname:
-            self.log (channel, nick, 'parted')
+        self.log (channel, nick, 'parted')
 
     def message (self, nick, channel, msg):
         logger.debug ("%s said %s" % (nick, msg))
-        if nick!=self.nickname:
-            self.log (channel, nick, msg)
+        self.log (channel, nick, msg)
 
     def log (self, channel, nick, what):
-        self.seenlog[nick]= (what, time.time ())
-        logger.debug ("logged %s %s %s" % (nick, what, time.time ()))
+        # server messages are from ''; ignore those and myself
+        if nick not in (self.nickname, ''):
+            self.seenlog[nick]= (what, datetime.datetime.now ())
+            logger.debug ("logged %s: %s" % (nick, what))
 
     def seen (self, user, channel, command, nick):
-        try:
-            what, when= self.seenlog[nick]
-            now= time.time ()
-            if what=='joined':
-                return (channel, u"%s: le vi entrar hace un rato..." % user)
-            elif what=='parted':
-                return (channel, u"%s: creo que se fua a hacer una paja y no volvio..." % user)
+        if nick not in (self.nickname, user):
+            try:
+                what, when= self.seenlog[nick]
+            except KeyError:
+                return (channel, u"%s: me lo deje en la otra pollera :|" % user)
             else:
-                return (channel, u"%s: hace un rato lo escuche decir «%s» o una gansada por el estilo" % (user, what))
-        except KeyError:
-            return (channel, u"%s: me lo deje en la otra pollera :|" % user)
+                # now= time.time ()
+                if what=='joined':
+                    return (channel, u"%s: le vi entrar hace un rato..." % user)
+                elif what=='parted':
+                    return (channel, u"%s: creo que se fua a hacer una paja y no volvio..." % user)
+                else:
+                    return (channel, u"%s: hace un rato lo escuche decir «%s» o una gansada por el estilo" % (user, what))
+        elif nick==self.nickname:
+            return (channel, u"%s: acástoi, papafrita!" % user)
+        elif nick==user:
+            return (channel, u"%s: andá mirate en el espejo del baño" % user)
 
 # end

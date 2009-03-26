@@ -1,13 +1,13 @@
 # -*- coding: utf8 -*-
 
 import logging
-logger = logging.getLogger ('ircbot.freenode')
+logger = logging.getLogger ('ircbot.plugins.freenode')
 logger.setLevel (logging.DEBUG)
 
 from core import dispatcher
 from core import events
 
-class Freenode (object):
+class Register (object):
     def __init__ (self, config, params):
         register= params['register']
         register (events.PRIVATE_MESSAGE, self.register)
