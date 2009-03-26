@@ -11,6 +11,7 @@ servers = {
             plugins= {
                 'url.Url': { },
                 'seen.Seen': { },
+                'misc.Ping': { },
             },
         ),
         'example': dict (
