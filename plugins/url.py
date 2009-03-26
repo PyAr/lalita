@@ -75,7 +75,7 @@ class Url (object):
         promise.addCallback (self.answer, user, channel, url)
         return promise #?
 
-    def answer (self, title, channel, url):
+    def answer (self, title, user, channel, url):
         # why this is return sarasa and not promise.callback (sarasa)?
         return (channel, u"%s: %s" % (user, title))
 
