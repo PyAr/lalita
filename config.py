@@ -1,12 +1,24 @@
 # -*- coding: utf8 -*-
 
 servers = {
+        'localhost': dict (
+            encoding='utf8',
+            host='127.0.0.1', port=6667,
+            nickname='examplia',
+            channels= {
+                '#humites': dict(plugins={}),
+            },
+            plugins= {
+                'url.Url': { },
+                'seen,Seen': { },
+            },
+        ),
         'example': dict (
             encoding='utf8',
             host='10.100.0.156', port=6667,
             nickname='examplia',
             channels= {
-                'humites': dict(plugins={}),
+                '#humites': dict(plugins={}),
             },
             plugins= {
                 'example.Example': { },
@@ -17,7 +29,14 @@ servers = {
             host='irc.freenode.net', port=6667,
             nickname='lalita',
             channels= {
-                '#not-grulic': dict (plugins={}),
+                '#not-grulic': dict (plugins={
+                    'url.Url': { },
+                    'seen,Seen': { },
+                }),
+                '#pyar': dict (plugins={
+                    'url.Url': { },
+                    'seen,Seen': { },
+                }),
             },
             plugins= {
                 'register.Register': { 'password': 'zaraza' },
