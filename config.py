@@ -43,6 +43,7 @@ servers = {
                 'freenode.Register': { 'password': 'zaraza' },
                 'url.Url': { },
                 'seen.Seen': { },
+                'misc.Ping': { },
             },
         ),
         'perrito':{
