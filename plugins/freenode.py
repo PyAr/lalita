@@ -18,12 +18,12 @@ class Register (object):
 
     def register (self, user, msg):
         logger.debug ("%s: %s" % (user, msg))
-        # print "%s: %s" % (user, msg)
-        # if user=='NickServ!NickServ@services.' and 'identify' in msg:
         if user=='NickServ':
             if '/msg NickServ identify' in msg:
                 return (user, u"identify %s" % self.config['password'])
             elif 'Invalid password' in msg:
                 logger.warn ('invalid password!?!')
+            elif 'You are now identified' in msg:
+                logger.info ('successfuly identified')
 
 # end
