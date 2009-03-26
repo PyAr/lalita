@@ -22,7 +22,7 @@ class Register (object):
         # if user=='NickServ!NickServ@services.' and 'identify' in msg:
         if user=='NickServ':
             if '/msg NickServ identify' in msg:
-                return (user, "identify zaraza")
+                return (user, u"identify %s" % self.config['password'])
             elif 'Invalid password' in msg:
                 logger.warn ('invalid password!?!')
 
