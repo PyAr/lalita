@@ -108,7 +108,10 @@ class Dispatcher(object):
             # nothing registered for this event
             return
 
-        channel = args[CHANNEL_POS[event]]
+        if CHANNEL_POS[event] is not None:
+            channel= args[CHANNEL_POS[event]]
+        else:
+            channel= None
 
         for instance, regist, extra in all_registered:
             # see if the instances can listen in the channels
