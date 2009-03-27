@@ -12,8 +12,9 @@ import logging
 logger = logging.getLogger ('ircbot.plugins.url')
 logger.setLevel (logging.DEBUG)
 
-from core import dispatcher
 from core import events
+
+import pdb
 
 class _HTMLParser (HTMLParser):
     def __init__ (self, deferred):
@@ -52,6 +53,11 @@ class _HTMLParser (HTMLParser):
             # self.close ()
             self.deferred.callback (title.strip ())
 
+    def close (self):
+        logger.debug ('EOP')
+        HTMLParser.close (self)
+        self.deferred.callback ('No encontre titulo')
+
 class Url (object):
     re= re.compile ('((https?|ftp)://[^ ]*)')
 
@@ -59,6 +65,7 @@ class Url (object):
         register= params['register']
         register (events.PUBLIC_MESSAGE, self.message)
         self.config= dict (block_size=4096).update (config)
+        self.titleFound= False
 
     def message (self, user, channel, message):
         g= self.re.search (message)
@@ -72,12 +79,14 @@ class Url (object):
 
     def parsePage (self, page, user, channel, url):
         promise= defer.Deferred ()
+        promise.addCallback (self.answer, user, channel, url)
         parse= _HTMLParser (promise)
         try:
             parse.feed (page)
-        except HTMLParseError:
-            pass
-        promise.addCallback (self.answer, user, channel, url)
+            parse.close ()
+        except HTMLParseError, e:
+            if not self.titleFound:
+                raise e
         return promise #?
 
         # soup= BeautifulSoup(page, fromEncoding='utf-8')
@@ -85,10 +94,11 @@ class Url (object):
 
     def answer (self, title, user, channel, url):
         # why this is return sarasa and not promise.callback (sarasa)?
+        self.titleFound= True
         return (channel, u"%s: %s" % (user, title))
 
     def failed (self, bongs, user, channel, url):
         logger.debug (bongs)
-        return (channel, u"%s: error con la página" % (user, ))
+        return (channel, u"%s: error con la página: %s" % (user, bongs.value))
 
 # end

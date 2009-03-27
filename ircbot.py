@@ -56,14 +56,15 @@ class IrcBot (irc.IRCClient):
             instance = klass (config=config, params=params)
             self.dispatcher.new_plugin (instance, channel)
         except ImportError, e:
-            logger.warning('%s not instanced: %s' % (plugin_name, e))
+            logger.warning ('%s not instanced: %s' % (plugin_name, e))
         except AttributeError, e:
-            logger.warning('%s not instanced: %s' % (plugin_name, e))
+            logger.warning ('%s not instanced: %s' % (plugin_name, e))
         except Exception, e:
-            logger.warning('%s not instanced: %s' % (plugin_name, e))
+            logger.warning ('%s not instanced: %s' % (plugin_name, e))
             print_exc (e)
         else:
-            logger.debug('%s instanced' % plugin_name)
+            logger.info ('%s instanced for %s' % (plugin_name,
+                (channel is not None) and channel or 'server'))
 
     def load_server_plugins(self):
         params = {'register': self.dispatcher.register,
