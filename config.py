@@ -6,11 +6,16 @@ servers = {
             host='127.0.0.1', port=6667,
             nickname='examplia',
             channels= {
-                '#humites': dict(plugins={}),
+                '#humites': dict (plugins={
+                    'url.Url': { },
+                }),
+                '#perrites': dict (plugins={
+                    'seen.Seen': { },
+                }),
             },
             plugins= {
-                'url.Url': { },
-                'seen.Seen': { },
+                # 'url.Url': { },
+                # 'seen.Seen': { },
                 'misc.Ping': { },
             },
         ),

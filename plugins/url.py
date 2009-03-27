@@ -6,7 +6,6 @@ import re
 from twisted.web import client
 from twisted.internet import defer
 from BeautifulSoup import BeautifulSoup, BeautifulStoneSoup
-from HTMLParser import HTMLParser, HTMLParseError
 import mimetypes
 
 import logging
@@ -15,51 +14,9 @@ logger.setLevel (logging.DEBUG)
 
 from core import events
 
-class _HTMLParser (HTMLParser):
-    def __init__ (self, deferred):
-        HTMLParser.__init__ (self)
-        self.inTitleTag= False
-        self.foundTitle= False
-        self.deferred= deferred
-        self.title= u''
-
-    def handle_starttag (self, tag, *args):
-        if tag=='title':
-            self.inTitleTag= True
-        else:
-            self.inTitleTag= False
-
-    def handle_data (self, data, *args):
-        if self.inTitleTag:
-            # TODO: set the correct encoding
-            self.title+= unicode (data, 'iso-8859-1')
-
-    def handle_entityref (self, ref, *args):
-        if self.inTitleTag:
-            # TODO: set the correct encoding
-            self.title+= unicode ("&%s;" % ref, 'iso-8859-1')
-
-    def handle_charref (self, ref, *args):
-        if self.inTitleTag:
-            # TODO: set the correct encoding
-            self.title+= unicode ("&#%s;" % ref, 'iso-8859-1')
-
-    def handle_endtag (self, tag, *args):
-        if tag=='title':
-            self.foundTitle= True
-            title= BeautifulStoneSoup (self.title,
-                convertEntities=BeautifulStoneSoup.XHTML_ENTITIES).contents[0]
-            logger.debug ('found title: %s' % title)
-            self.deferred.callback (title.strip ())
-
-    def close (self):
-        logger.debug ('EOP')
-        HTMLParser.close (self)
-        if not self.foundTitle:
-            self.deferred.callback ('No encontre titulo')
-
 class Url (object):
-    re= re.compile ('((https?|ftp)://[^ ]*)')
+    url_re= re.compile ('((https?|ftp)://[^ ]*)')
+    title_re= re.compile ('< *title *>([^<]+)< */ *title *>')
 
     def __init__ (self, config, params):
         register= params['register']
@@ -68,7 +25,7 @@ class Url (object):
         self.titleFound= False
 
     def message (self, user, channel, message):
-        g= self.re.search (message)
+        g= self.url_re.search (message)
         if g is not None:
             url= g.groups()[0]
             mimetype, encoding= mimetypes.guess_type (url)
@@ -82,19 +39,14 @@ class Url (object):
                 return promise
 
     def parsePage (self, page, user, channel, url):
-        promise= defer.Deferred ()
-        promise.addCallback (self.answer, user, channel, url)
-        parse= _HTMLParser (promise)
-        try:
-            parse.feed (page)
-            parse.close ()
-        except HTMLParseError, e:
-            if not self.titleFound:
-                raise e
-        return promise #?
-
-        # soup= BeautifulSoup(page, fromEncoding='utf-8')
-        # self.answer (soup.findAll ('title')[0].contents, user, channel, url)
+        g= self.title_re.search (page)
+        if g is not None:
+            self.titleFound= True
+            title= BeautifulStoneSoup (g.groups ()[0],
+                convertEntities=BeautifulStoneSoup.XHTML_ENTITIES).contents[0]
+            return (channel, u"%s: %s" % (user, title))
+        else:
+            return (channel, u"%s: no tiene titulo?!?" % (user, ))
 
     def answer (self, title, user, channel, url):
         # why this is return sarasa and not promise.callback (sarasa)?

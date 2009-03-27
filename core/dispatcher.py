@@ -4,6 +4,10 @@ import itertools
 
 from twisted.internet import defer
 
+import logging
+logger = logging.getLogger ('ircbot.core.dispatcher')
+logger.setLevel (logging.DEBUG)
+
 from core import events
 
 # messages longer than this will be splitted in different server commands
@@ -116,6 +120,7 @@ class Dispatcher(object):
         for instance, regist, extra in all_registered:
             # see if the instances can listen in the channels
             allowed_channels = self._plugins[instance]
+            logger.debug (allowed_channels)
             if allowed_channels is not None:
                 if channel not in allowed_channels:
                     continue
