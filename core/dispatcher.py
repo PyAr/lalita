@@ -31,15 +31,29 @@ META_COMMANDS = {
     "list": "meta_list",
 }
 
+# the position of the channel parameter in each event
+CHANNEL_POS = {
+    events.CONNECTION_MADE: None,
+    events.CONNECTION_LOST: None,
+    events.SIGNED_ON: None,
+    events.JOINED: 0,
+    events.PRIVATE_MESSAGE: None,
+    events.TALKED_TO_ME: 1,
+    events.COMMAND: 1,
+    events.PUBLIC_MESSAGE: 1,
+    events.JOIN: 0,
+    events.PART: 0,
+}
+
 
 class Dispatcher(object):
     def __init__(self, ircclient):
         self._callbacks = {}
         self.bot = ircclient
-        # FIXME: restringir i/o según canal
+        self._plugins = {}
 
-    def new_plugin (self, plugin, channel):
-        pass
+    def new_plugin(self, plugin, channel):
+        self._plugins[plugin] = channel
 
     def register(self, event, func, extra=None):
         '''Register one function to an event.
@@ -48,19 +62,26 @@ class Dispatcher(object):
         it should be a regexp telling if the message is useful, for
         command is a list of which commands, etc.
         '''
-        instance= func.im_self
-        self._callbacks.setdefault(event, []).append((func, extra))
+        instance = func.im_self
+        self._callbacks.setdefault(event, []).append((instance, func, extra))
 
-    def msg(self, result):
+    def msg(self, result, from_channel):
         # support the plugin method returning nothing
         if result is None:
             return
 
         try:
-            where, msg = result
+            to_where, msg = result
         except ValueError:
             print "ERROR: The plugin must return (where, msg), got %r" % result
-        self.bot.msg(where, msg.encode("utf8"), LENGTH_MSG)
+
+        if from_channel is not None and to_where.startswith("#"):
+            # came from a channel, and it's going to a channel
+            if from_channel != to_where:
+                print "WARNING: the plugin is trying to answer in a different "\
+                      "channel! (from: %s  to: %s)" % (from_channel, to_where)
+
+        self.bot.msg(to_where, msg.encode("utf8"), LENGTH_MSG)
 
     def _error(self, error):
         print "ERROR:", error
@@ -75,7 +96,7 @@ class Dispatcher(object):
                 meth(*args)
                 return
 
-            cmds = [x[1] for x in self._callbacks[events.COMMAND]]
+            cmds = [x[2] for x in self._callbacks[events.COMMAND]]
             if command not in itertools.chain(*cmds):
                 self.msg((channel, u"%s: No existe esa órden!" % user))
                 return
@@ -87,7 +108,16 @@ class Dispatcher(object):
             # nothing registered for this event
             return
 
-        for regist, extra in all_registered:
+        channel = args[CHANNEL_POS[event]]
+
+        for instance, regist, extra in all_registered:
+            # see if the instances can listen in the channels
+            allowed_channels = self._plugins[instance]
+            if allowed_channels is not None:
+                if channel not in allowed_channels:
+                    continue
+
+            # check "extra" restrictions
             if event in MAP_EVENTS:
                 meth = getattr(self, "handle_" + MAP_EVENTS[event])
                 if extra is not None and not meth(extra, *args):
@@ -99,7 +129,7 @@ class Dispatcher(object):
             if event in SILENTS:
                 d.addErrback(self._callback_error)
             else:
-                d.addCallbacks(self.msg, self._error)
+                d.addCallbacks(self.msg, self._error, callbackArgs=(channel,))
 
     def handle_private_message(self, extra, user, msg):
         '''The extra is a regexp that says if the msg is useful or not.'''
@@ -133,7 +163,7 @@ class Dispatcher(object):
 
         # get the docstrings
         docs = []
-        for (meth, cmds) in registered:
+        for (inst, meth, cmds) in registered:
             print cmds
             if args[0] in cmds:
                 docs.append(meth.__doc__)
@@ -156,9 +186,10 @@ class Dispatcher(object):
     def handle_meta_list(self, user, channel, command, *args):
         '''Handles the LIST meta command.'''
         try:
-            cmds = [x[1] for x in self._callbacks[events.COMMAND]]
+            cmds = [x[2] for x in self._callbacks[events.COMMAND]]
         except KeyError:
             txt = u"Decí alpiste, no hay órdenes todavía..."
         else:
-            txt = u"Las órdenes son: %s" % list(itertools.chain(*cmds))
+            onlys = set(itertools.chain(*cmds))
+            txt = u"Las órdenes son: %s" % list(sorted(onlys))
         self.msg((channel, txt))
