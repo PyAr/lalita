@@ -6,7 +6,7 @@ from twisted.internet import defer
 
 import logging
 logger = logging.getLogger ('ircbot.core.dispatcher')
-logger.setLevel (logging.DEBUG)
+logger.setLevel (logging.INFO)
 
 from core import events
 
