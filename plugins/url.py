@@ -7,6 +7,7 @@ from twisted.web import client
 from twisted.internet import defer
 from BeautifulSoup import BeautifulSoup, BeautifulStoneSoup
 from HTMLParser import HTMLParser, HTMLParseError
+import mimetypes
 
 import logging
 logger = logging.getLogger ('ircbot.plugins.url')
@@ -14,49 +15,48 @@ logger.setLevel (logging.DEBUG)
 
 from core import events
 
-import pdb
-
 class _HTMLParser (HTMLParser):
     def __init__ (self, deferred):
         HTMLParser.__init__ (self)
-        self.foundTitleTag= False
+        self.inTitleTag= False
+        self.foundTitle= False
         self.deferred= deferred
         self.title= u''
 
     def handle_starttag (self, tag, *args):
         if tag=='title':
-            self.foundTitleTag= True
+            self.inTitleTag= True
         else:
-            self.foundTitleTag= False
+            self.inTitleTag= False
 
     def handle_data (self, data, *args):
-        if self.foundTitleTag:
+        if self.inTitleTag:
             # TODO: set the correct encoding
             self.title+= unicode (data, 'iso-8859-1')
 
     def handle_entityref (self, ref, *args):
-        if self.foundTitleTag:
+        if self.inTitleTag:
             # TODO: set the correct encoding
             self.title+= unicode ("&%s;" % ref, 'iso-8859-1')
 
     def handle_charref (self, ref, *args):
-        if self.foundTitleTag:
+        if self.inTitleTag:
             # TODO: set the correct encoding
             self.title+= unicode ("&#%s;" % ref, 'iso-8859-1')
 
     def handle_endtag (self, tag, *args):
         if tag=='title':
+            self.foundTitle= True
             title= BeautifulStoneSoup (self.title,
                 convertEntities=BeautifulStoneSoup.XHTML_ENTITIES).contents[0]
             logger.debug ('found title: %s' % title)
-            # self.reset ()
-            # self.close ()
             self.deferred.callback (title.strip ())
 
     def close (self):
         logger.debug ('EOP')
         HTMLParser.close (self)
-        self.deferred.callback ('No encontre titulo')
+        if not self.foundTitle:
+            self.deferred.callback ('No encontre titulo')
 
 class Url (object):
     re= re.compile ('((https?|ftp)://[^ ]*)')
@@ -71,11 +71,15 @@ class Url (object):
         g= self.re.search (message)
         if g is not None:
             url= g.groups()[0]
-            logger.debug ('fetching %s' % url)
-            promise= client.getPage (str (url))
-            promise.addCallback (self.parsePage, user, channel, url)
-            promise.addErrback (self.failed, user, channel, url)
-            return promise
+            mimetype, encoding= mimetypes.guess_type (url)
+            if mimetype not in (None, 'text/html'):
+                return (channel, "%s: %s" % (user, mimetype))
+            else:
+                logger.debug ('fetching %s' % url)
+                promise= client.getPage (str (url))
+                promise.addCallback (self.parsePage, user, channel, url)
+                promise.addErrback (self.failed, user, channel, url)
+                return promise
 
     def parsePage (self, page, user, channel, url):
         promise= defer.Deferred ()
