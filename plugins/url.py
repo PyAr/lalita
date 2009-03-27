@@ -5,7 +5,8 @@
 import re
 from twisted.web import client
 from twisted.internet import defer
-from BeautifulSoup import BeautifulStoneSoup, HTMLParser
+from BeautifulSoup import BeautifulSoup, BeautifulStoneSoup
+from HTMLParser import HTMLParser, HTMLParseError
 
 import logging
 logger = logging.getLogger ('ircbot.plugins.url')
@@ -42,12 +43,13 @@ class _HTMLParser (HTMLParser):
             # TODO: set the correct encoding
             self.title+= unicode ("&#%s;" % ref, 'iso-8859-1')
 
-
     def handle_endtag (self, tag, *args):
         if tag=='title':
             title= BeautifulStoneSoup (self.title,
                 convertEntities=BeautifulStoneSoup.XHTML_ENTITIES).contents[0]
             logger.debug ('found title: %s' % title)
+            # self.reset ()
+            # self.close ()
             self.deferred.callback (title.strip ())
 
 class Url (object):
@@ -71,9 +73,15 @@ class Url (object):
     def parsePage (self, page, user, channel, url):
         promise= defer.Deferred ()
         parse= _HTMLParser (promise)
-        parse.feed (page)
+        try:
+            parse.feed (page)
+        except HTMLParseError:
+            pass
         promise.addCallback (self.answer, user, channel, url)
         return promise #?
+
+        # soup= BeautifulSoup(page, fromEncoding='utf-8')
+        # self.answer (soup.findAll ('title')[0].contents, user, channel, url)
 
     def answer (self, title, user, channel, url):
         # why this is return sarasa and not promise.callback (sarasa)?
