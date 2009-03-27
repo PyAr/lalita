@@ -69,7 +69,7 @@ class Dispatcher(object):
         instance = func.im_self
         self._callbacks.setdefault(event, []).append((instance, func, extra))
 
-    def msg(self, result, from_channel):
+    def msg(self, result, from_channel=None):
         # support the plugin method returning nothing
         if result is None:
             return
@@ -79,6 +79,9 @@ class Dispatcher(object):
         except ValueError:
             print "ERROR: The plugin must return (where, msg), got %r" % result
 
+        # from_channel can be None if msg() was used from here (not channel
+        # passed), or if was a response from a plugin, but the original
+        # message came from the server, outside a channel.
         if from_channel is not None and to_where.startswith("#"):
             # came from a channel, and it's going to a channel
             if from_channel != to_where:
