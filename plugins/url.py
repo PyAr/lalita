@@ -44,14 +44,12 @@ class Url (object):
             self.titleFound= True
             title= BeautifulStoneSoup (g.groups ()[0],
                 convertEntities=BeautifulStoneSoup.XHTML_ENTITIES).contents[0]
+            # this takes out the \n\r\t's
+            titleParts= title.split ()
+            title= ' '.join (titleParts)
             return (channel, u"%s: %s" % (user, title))
         else:
             return (channel, u"%s: no tiene titulo?!?" % (user, ))
-
-    def answer (self, title, user, channel, url):
-        # why this is return sarasa and not promise.callback (sarasa)?
-        self.titleFound= True
-        return (channel, u"%s: %s" % (user, title))
 
     def failed (self, bongs, user, channel, url):
         logger.debug (bongs)
