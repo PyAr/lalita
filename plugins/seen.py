@@ -8,10 +8,8 @@ import logging
 logger = logging.getLogger ('ircbot.plugins.seen')
 logger.setLevel (logging.INFO)
 
-from core import events
-
 class Seen (object):
-    def __init__ (self, config, params):
+    def __init__ (self, config, events, params):
         register= params['register']
         self.nickname= params['nickname']
         self.seenlog= {}
@@ -49,14 +47,14 @@ class Seen (object):
             else:
                 # now= time.time ()
                 if what=='joined':
-                    return (channel, u"%s: le vi entrar hace un rato..." % user)
+                    return [(channel, u"%s: le vi entrar hace un rato..." % user)]
                 elif what=='parted':
-                    return (channel, u"%s: creo que se fua a hacer una paja y no volvio..." % user)
+                    return [(channel, u"%s: creo que se fua a hacer una paja y no volvio..." % user)]
                 else:
-                    return (channel, u"%s: hace un rato lo escuche decir «%s» o una gansada por el estilo" % (user, what))
+                    return [(channel, u"%s: hace un rato lo escuche decir «%s» o una gansada por el estilo" % (user, what))]
         elif nick==self.nickname:
-            return (channel, u"%s: acástoi, papafrita!" % user)
+            return [(channel, u"%s: acástoi, papafrita!" % user)]
         elif nick==user:
-            return (channel, u"%s: andá mirate en el espejo del baño" % user)
+            return [(channel, u"%s: andá mirate en el espejo del baño" % user)]
 
 # end

@@ -6,10 +6,8 @@ import logging
 logger = logging.getLogger ('ircbot.plugins.freenode')
 logger.setLevel (logging.DEBUG)
 
-from core import events
-
 class Register (object):
-    def __init__ (self, config, params):
+    def __init__ (self, config, events, params):
         register= params['register']
         register (events.PRIVATE_MESSAGE, self.register)
         self.config= config
@@ -19,7 +17,7 @@ class Register (object):
         logger.debug ("%s: %s" % (user, msg))
         if user=='NickServ':
             if '/msg NickServ identify' in msg:
-                return (user, u"identify %s" % self.config['password'])
+                return [(user, u"identify %s" % self.config['password'])]
             elif 'Invalid password' in msg:
                 logger.warn ('invalid password!?!')
             elif 'You are now identified' in msg:
