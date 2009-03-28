@@ -17,6 +17,13 @@ import inspect
 import optparse
 from traceback import print_exc
 
+# if we're in production, this should work and no magic is necessary
+try:
+    import lalita
+except ImportError:
+    import core
+    sys.modules["lalita"] = core
+
 handler = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter("%(asctime)s %(levelname)-8s %(message)s",
                               '%H:%M:%S')
@@ -52,9 +59,10 @@ class IrcBot (irc.IRCClient):
         modname, klassname= plugin_name.split ('.')
         try:
             module = __import__(modname)
-            klass= getattr (module, klassname)
-            instance = klass (config=config, events=events, params=params)
-            self.dispatcher.new_plugin (instance, channel)
+            klass = getattr(module, klassname)
+            instance = klass(params)
+            self.dispatcher.new_plugin(instance, channel)
+            instance.start(config)
         except ImportError, e:
             logger.warning ('%s not instanced: %s' % (plugin_name, e))
         except AttributeError, e:
@@ -67,8 +75,7 @@ class IrcBot (irc.IRCClient):
                 (channel is not None) and channel or 'server'))
 
     def load_server_plugins(self):
-        params = {'register': self.dispatcher.register,
-                  'nickname': self.nickname,
+        params = {'nickname': self.nickname,
                   }
 
         plugins= self.config.get ('plugins', {})
@@ -77,8 +84,7 @@ class IrcBot (irc.IRCClient):
             self.load_plugin (plugin, config, params)
 
     def load_channel_plugins(self, channel):
-        params = {'register': self.dispatcher.register,
-                  'nickname': self.nickname,
+        params = {'nickname': self.nickname,
                   }
 
         plugins= self.config['channels'][channel].get ('plugins', {})

@@ -57,6 +57,7 @@ class Dispatcher(object):
         self._plugins = {}
 
     def new_plugin(self, plugin, channel):
+        plugin.register = self.register
         logger.debug ('plugin %s is in channel %s' % (plugin, channel))
         self._plugins[plugin] = channel
 
