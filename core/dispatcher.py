@@ -57,6 +57,7 @@ class Dispatcher(object):
         self._plugins = {}
 
     def new_plugin(self, plugin, channel):
+        logger.debug ('plugin %s is in channel %s' % (plugin, channel))
         self._plugins[plugin] = channel
 
     def register(self, event, func, extra=None):
@@ -119,10 +120,10 @@ class Dispatcher(object):
 
         for instance, regist, extra in all_registered:
             # see if the instances can listen in the channels
-            allowed_channels = self._plugins[instance]
-            logger.debug (allowed_channels)
-            if allowed_channels is not None:
-                if channel not in allowed_channels:
+            allowed_channel = self._plugins[instance]
+            logger.debug (channel, allowed_channel, args)
+            if allowed_channel is not None:
+                if channel!=allowed_channel:
                     continue
 
             # check "extra" restrictions
