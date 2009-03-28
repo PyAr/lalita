@@ -45,18 +45,18 @@ class Seen (object):
             try:
                 what, when= self.seenlog[nick]
             except KeyError:
-                return (channel, u"%s: me lo deje en la otra pollera :|" % user)
+                return [(channel, u"%s: me lo deje en la otra pollera :|" % user)]
             else:
                 # now= time.time ()
                 if what=='joined':
-                    return (channel, u"%s: le vi entrar hace un rato..." % user)
+                    return [(channel, u"%s: le vi entrar hace un rato..." % user)]
                 elif what=='parted':
-                    return (channel, u"%s: creo que se fua a hacer una paja y no volvio..." % user)
+                    return [(channel, u"%s: creo que se fua a hacer una paja y no volvio..." % user)]
                 else:
-                    return (channel, u"%s: hace un rato lo escuche decir «%s» o una gansada por el estilo" % (user, what))
+                    return [(channel, u"%s: hace un rato lo escuche decir «%s» o una gansada por el estilo" % (user, what))]
         elif nick==self.nickname:
-            return (channel, u"%s: acástoi, papafrita!" % user)
+            return [(channel, u"%s: acástoi, papafrita!" % user)]
         elif nick==user:
-            return (channel, u"%s: andá mirate en el espejo del baño" % user)
+            return [(channel, u"%s: andá mirate en el espejo del baño" % user)]
 
 # end
