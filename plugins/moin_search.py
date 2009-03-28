@@ -3,7 +3,6 @@
 from time import time
 from twisted.web import client
 from BeautifulSoup import BeautifulSoup, Tag
-from core.events import COMMAND
 
 def txtize(soup):
     if not isinstance(soup,Tag):
@@ -21,9 +20,9 @@ class MoinSearch(object):
                     }
     _max_results = 1
 
-    def __init__(self,config,params):
+    def __init__(self, config, events, params):
         self._internals = {}
-        params['register'](COMMAND,self.search,['wiki'])
+        params['register'](events.COMMAND,self.search,['wiki'])
 
     def get_full_query(self,where,query):
         return '%s/%s' % (self._site,self._places[where]['path'] % query)
@@ -91,11 +90,11 @@ class MoinSearch(object):
             if mode == 'title':
                 return []
             else:
-                ret_msg = (channel,u'No econtré resultados')
+                ret_msg = [(channel,u'No econtré resultados')]
         elif len(results) > self._max_results:
-            ret_msg = (channel, 'Hay %i resultados %s' % (len(results),full_query))
+            ret_msg = [(channel, 'Hay %i resultados %s' % (len(results),full_query))]
         else:
-            ret_msg = (channel,' '.join(results))
+            ret_msg = [(channel,' '.join(results))]
         self.drop_internal(id)
         return ret_msg
 

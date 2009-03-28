@@ -70,26 +70,28 @@ class Dispatcher(object):
         instance = func.im_self
         self._callbacks.setdefault(event, []).append((instance, func, extra))
 
-    def msg(self, result, from_channel=None):
+    def msg(self, results, from_channel=None):
         # support the plugin method returning nothing
-        if result is None:
+        if results is None:
             return
 
-        try:
-            to_where, msg = result
-        except ValueError:
-            print "ERROR: The plugin must return (where, msg), got %r" % result
+        for result in results:
+            try:
+                to_where, msg = result
+            except ValueError:
+                print "ERROR: The plugin must return (where, msg), got %r" % result
 
-        # from_channel can be None if msg() was used from here (not channel
-        # passed), or if was a response from a plugin, but the original
-        # message came from the server, outside a channel.
-        if from_channel is not None and to_where.startswith("#"):
-            # came from a channel, and it's going to a channel
-            if from_channel != to_where:
-                print "WARNING: the plugin is trying to answer in a different "\
-                      "channel! (from: %s  to: %s)" % (from_channel, to_where)
+            # from_channel can be None if msg() was used from here (not channel
+            # passed), or if was a response from a plugin, but the original
+            # message came from the server, outside a channel.
+            if from_channel is not None and to_where.startswith("#"):
+                # came from a channel, and it's going to a channel
+                if from_channel != to_where:
+                    print "WARNING: the plugin is trying to answer in a "\
+                          "different channel! (from: %s  to: %s)" %\
+                          (from_channel, to_where)
 
-        self.bot.msg(to_where, msg.encode("utf8"), LENGTH_MSG)
+            self.bot.msg(to_where, msg.encode("utf8"), LENGTH_MSG)
 
     def _error(self, error):
         print "ERROR:", error
@@ -106,7 +108,7 @@ class Dispatcher(object):
 
             cmds = [x[2] for x in self._callbacks[events.COMMAND]]
             if command not in itertools.chain(*cmds):
-                self.msg((channel, u"%s: No existe esa órden!" % user))
+                self.msg([(channel, u"%s: No existe esa órden!" % user)])
                 return
 
         # FIXME: hacer que lo que devuelven los plugins sean un lista de tuplas
@@ -163,14 +165,14 @@ class Dispatcher(object):
         '''Handles the HELP meta command.'''
         if not args:
             txt = u'"list" para ver las órdenes; "help cmd" para cada uno'
-            self.msg((channel, txt))
+            self.msg([(channel, txt)])
             return
 
         # see if there's any command event
         try:
             registered = self._callbacks[events.COMMAND]
         except KeyError:
-            self.msg((channel, u"No hay ninguna órden registrada..."))
+            self.msg([(channel, u"No hay ninguna órden registrada...")])
             return
 
         # get the docstrings
@@ -182,18 +184,18 @@ class Dispatcher(object):
 
         # no docs!
         if not docs:
-            self.msg((channel, u"Esa órden no existe..."))
+            self.msg([(channel, u"Esa órden no existe...")])
             return
 
         # only one method for that command
         if len(docs) == 1:
-            self.msg((channel, docs[0]))
+            self.msg([(channel, docs[0])])
             return
 
         # several methods for the same command
-        self.msg((channel, u"Hay varios métodos para esa órden:"))
+        self.msg([(channel, u"Hay varios métodos para esa órden:")])
         for doc in docs:
-            self.msg((channel, u" - " + doc))
+            self.msg([(channel, u" - " + doc)])
 
     def handle_meta_list(self, user, channel, command, *args):
         '''Handles the LIST meta command.'''
@@ -204,4 +206,4 @@ class Dispatcher(object):
         else:
             onlys = set(itertools.chain(*cmds))
             txt = u"Las órdenes son: %s" % list(sorted(onlys))
-        self.msg((channel, txt))
+        self.msg([(channel, txt)])
