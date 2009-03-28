@@ -12,13 +12,11 @@ import logging
 logger = logging.getLogger ('ircbot.plugins.url')
 logger.setLevel (logging.DEBUG)
 
-from core import events
-
 class Url (object):
     url_re= re.compile ('((https?|ftp)://[^ ]*)')
     title_re= re.compile ('< *title *>([^<]+)< */ *title *>')
 
-    def __init__ (self, config, params):
+    def __init__ (self, config, events, params):
         register= params['register']
         register (events.PUBLIC_MESSAGE, self.message)
         self.config= dict (block_size=4096).update (config)
@@ -30,7 +28,7 @@ class Url (object):
             url= g.groups()[0]
             mimetype, encoding= mimetypes.guess_type (url)
             if mimetype not in (None, 'text/html'):
-                return (channel, "%s: %s" % (user, mimetype))
+                return [(channel, "%s: %s" % (user, mimetype))]
             else:
                 logger.debug ('fetching %s' % url)
                 promise= client.getPage (str (url))
@@ -44,17 +42,15 @@ class Url (object):
             self.titleFound= True
             title= BeautifulStoneSoup (g.groups ()[0],
                 convertEntities=BeautifulStoneSoup.XHTML_ENTITIES).contents[0]
-            return (channel, u"%s: %s" % (user, title))
+            # this takes out the \n\r\t's
+            titleParts= title.split ()
+            title= ' '.join (titleParts)
+            return [(channel, u"%s: %s" % (user, title))]
         else:
-            return (channel, u"%s: no tiene titulo?!?" % (user, ))
-
-    def answer (self, title, user, channel, url):
-        # why this is return sarasa and not promise.callback (sarasa)?
-        self.titleFound= True
-        return (channel, u"%s: %s" % (user, title))
+            return [(channel, u"%s: no tiene titulo?!?" % (user, ))]
 
     def failed (self, bongs, user, channel, url):
         logger.debug (bongs)
-        return (channel, u"%s: error con la página: %s" % (user, bongs.value))
+        return [(channel, u"%s: error con la página: %s" % (user, bongs.value))]
 
 # end

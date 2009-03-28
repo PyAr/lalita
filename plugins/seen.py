@@ -8,10 +8,8 @@ import logging
 logger = logging.getLogger ('ircbot.plugins.seen')
 logger.setLevel (logging.INFO)
 
-from core import events
-
 class Seen (object):
-    def __init__ (self, config, params):
+    def __init__ (self, config, events, params):
         register= params['register']
         self.nickname= params['nickname']
         self.seenlog= {}
