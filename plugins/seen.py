@@ -8,7 +8,6 @@ import logging
 logger = logging.getLogger ('ircbot.plugins.seen')
 logger.setLevel (logging.INFO)
 
-from core import dispatcher
 from core import events
 
 class Seen (object):

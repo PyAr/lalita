@@ -6,7 +6,6 @@ import logging
 logger = logging.getLogger ('ircbot.plugins.freenode')
 logger.setLevel (logging.DEBUG)
 
-from core import dispatcher
 from core import events
 
 class Register (object):

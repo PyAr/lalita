@@ -6,7 +6,6 @@ import logging
 logger = logging.getLogger ('ircbot.plugins.misc')
 logger.setLevel (logging.DEBUG)
 
-from core import dispatcher
 from core import events
 
 class Ping (object):
