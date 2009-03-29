@@ -62,7 +62,7 @@ class IrcBot (irc.IRCClient):
             klass = getattr(module, klassname)
             instance = klass(params)
             self.dispatcher.new_plugin(instance, channel)
-            instance.start(config)
+            instance.init(config)
         except ImportError, e:
             logger.warning ('%s not instanced: %s' % (plugin_name, e))
         except AttributeError, e:

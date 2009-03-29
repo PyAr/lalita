@@ -1,12 +1,13 @@
 # -*- coding: utf8 -*-
 
 import itertools
+import functools
 
 from twisted.internet import defer
 
 import logging
 logger = logging.getLogger ('ircbot.core.dispatcher')
-logger.setLevel (logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 from core import events
 
@@ -55,10 +56,12 @@ class Dispatcher(object):
         self._callbacks = {}
         self.bot = ircclient
         self._plugins = {}
+        self._channel_filter = {}
 
     def new_plugin(self, plugin, channel):
         plugin.register = self.register
-        logger.debug ('plugin %s is in channel %s' % (plugin, channel))
+        plugin.say = functools.partial(self._msg_from_plugin, plugin)
+        logger.debug('plugin %s is in channel %s', plugin, channel)
         self._plugins[plugin] = channel
 
     def register(self, event, func, extra=None):
@@ -70,35 +73,44 @@ class Dispatcher(object):
         '''
         instance = func.im_self
         self._callbacks.setdefault(event, []).append((instance, func, extra))
-
-    def msg(self, results, from_channel=None):
-        # support the plugin method returning nothing
-        if results is None:
+        logger.debug('registering %s for event %s', func, event)
+    def _msg_from_plugin(self, plugin, to_where, message):
+        """Message from the plugin."""
+        print "Plugin!", to_where, message
+        if plugin not in self._channel_filter:
+            # don't allow to say anything out of order
             return
 
-        for result in results:
-            try:
-                to_where, msg = result
-            except ValueError:
-                print "ERROR: The plugin must return (where, msg), got %r" % result
+        from_channel = self._channel_filter[plugin]
 
-            # from_channel can be None if msg() was used from here (not channel
-            # passed), or if was a response from a plugin, but the original
-            # message came from the server, outside a channel.
-            if from_channel is not None and to_where.startswith("#"):
-                # came from a channel, and it's going to a channel
-                if from_channel != to_where:
-                    print "WARNING: the plugin is trying to answer in a "\
-                          "different channel! (from: %s  to: %s)" %\
-                          (from_channel, to_where)
+        # from_channel can be None if msg() was used from here (not channel
+        # passed), or if was a response from a plugin, but the original
+        # message came from the server, outside a channel.
+        if from_channel is not None and to_where.startswith("#"):
+            # came from a channel, and it's going to a channel
+            if from_channel != to_where:
+                logger.debug("WARNING: the plugin is trying to answer in a "
+                             "different channel! (from: %s  to: %s)",
+                             from_channel, to_where)
 
-            self.bot.msg(to_where, msg.encode("utf8"), LENGTH_MSG)
+        self.msg(to_where, message)
 
-    def _error(self, error):
-        print "ERROR:", error
+    def msg(self, to_where, message):
+        self.bot.msg(to_where, message.encode("utf8"), LENGTH_MSG)
+
+    def _error(self, error, instance):
+        logger.debug("ERROR in instance %s: %s", instance, error)
+        if instance in self._channel_filter:
+            del self._channel_filter[instance]
+
+    def _done(self, _, instance):
+        logger.debug("Done! instance: %s", instance)
+        if instance in self._channel_filter:
+            del self._channel_filter[instance]
 
     def push(self, event, *args):
         '''Pushes the received event to the registered method(s).'''
+        logger.debug("Received push event %s (%s)", event, args)
         # meta commands
         if event == events.COMMAND:
             user, channel, command = args[:3]
@@ -109,10 +121,8 @@ class Dispatcher(object):
 
             cmds = [x[2] for x in self._callbacks[events.COMMAND]]
             if command not in itertools.chain(*cmds):
-                self.msg([(channel, u"%s: No existe esa órden!" % user)])
+                self.msg(channel, u"%s: No existe esa órden!" % user)
                 return
-
-        # FIXME: hacer que lo que devuelven los plugins sean un lista de tuplas
 
         all_registered = self._callbacks.get(event)
         if all_registered is None:
@@ -127,9 +137,8 @@ class Dispatcher(object):
         for instance, regist, extra in all_registered:
             # see if the instances can listen in the channels
             allowed_channel = self._plugins[instance]
-            logger.debug (channel, allowed_channel, args)
             if allowed_channel is not None:
-                if channel!=allowed_channel:
+                if channel is not None and channel != allowed_channel:
                     continue
 
             # check "extra" restrictions
@@ -140,11 +149,13 @@ class Dispatcher(object):
                     continue
 
             # dispatch!
+            if event not in SILENTS:
+                self._channel_filter[instance] = channel
+
+            logger.debug("Dispatching event to %s", regist)
             d = defer.maybeDeferred(regist, *args)
-            if event in SILENTS:
-                d.addErrback(self._callback_error)
-            else:
-                d.addCallbacks(self.msg, self._error, callbackArgs=(channel,))
+            d.addCallback(self._done, instance)
+            d.addErrback(self._error, instance)
 
     def handle_private_message(self, extra, user, msg):
         '''The extra is a regexp that says if the msg is useful or not.'''
@@ -166,37 +177,36 @@ class Dispatcher(object):
         '''Handles the HELP meta command.'''
         if not args:
             txt = u'"list" para ver las órdenes; "help cmd" para cada uno'
-            self.msg([(channel, txt)])
+            self.msg(channel, txt)
             return
 
         # see if there's any command event
         try:
             registered = self._callbacks[events.COMMAND]
         except KeyError:
-            self.msg([(channel, u"No hay ninguna órden registrada...")])
+            self.msg(channel, u"No hay ninguna órden registrada...")
             return
 
         # get the docstrings
         docs = []
         for (inst, meth, cmds) in registered:
-            print cmds
             if args[0] in cmds:
                 docs.append(meth.__doc__)
 
         # no docs!
         if not docs:
-            self.msg([(channel, u"Esa órden no existe...")])
+            self.msg(channel, u"Esa órden no existe...")
             return
 
         # only one method for that command
         if len(docs) == 1:
-            self.msg([(channel, docs[0])])
+            self.msg(channel, docs[0])
             return
 
         # several methods for the same command
-        self.msg([(channel, u"Hay varios métodos para esa órden:")])
+        self.msg(channel, u"Hay varios métodos para esa órden:")
         for doc in docs:
-            self.msg([(channel, u" - " + doc)])
+            self.msg(channel, u" - " + doc)
 
     def handle_meta_list(self, user, channel, command, *args):
         '''Handles the LIST meta command.'''
@@ -207,4 +217,4 @@ class Dispatcher(object):
         else:
             onlys = set(itertools.chain(*cmds))
             txt = u"Las órdenes son: %s" % list(sorted(onlys))
-        self.msg([(channel, txt)])
+        self.msg(channel, txt)

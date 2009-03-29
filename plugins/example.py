@@ -1,8 +1,60 @@
 # -*- coding: utf8 -*-
 
+# this is the only stuff from lalita you need to import
 from lalita import Plugin
 
-# This is an example plugin, enjoy.
+# there's an example with twisted, but you can write plugins without
+# using this advanced stuff
+from twisted.internet import defer
+
+
+class Example(Plugin):
+    '''This is an example plugin, enjoy.'''
+
+    def init(self, config):
+        # register to stuff
+        self.register(self.events.TALKED_TO_ME, self.talked_to_me)
+        self.register(self.events.PRIVATE_MESSAGE, self.private)
+        self.register(self.events.COMMAND, self.command_foo, ("foo",))
+        self.register(self.events.COMMAND, self.command_bar, ("bar",))
+        self.register(self.events.COMMAND, self.command_twisted, ("enroscau",))
+
+    def private(self, user, text):
+        print "==================== private message"
+        self.say(user, u'Me dijiste "%s"' % text)
+
+    def talked_to_me(self, user, channel, msg):
+        print "==================== talked_to_me"
+        txt = u"Hola %s, mi nombre es %s, :)" % (user, self.nickname)
+        self.say(channel, txt)
+
+    def command_foo(self, user, channel, command, *args):
+        u"@foo txt: repite lo recibido... no sirve para nada, pero es un "\
+         "buen ejemplo."
+        print "==================== command foo"
+        if args:
+            txt = args[0]
+        else:
+            txt = u"%s: Me tenés que decir algo para que lo repita!" % user
+        self.say(channel, txt)
+
+    def command_bar(self, user, channel, command, *args):
+        u"""@bar: Zen de Python, al azar."""
+        print "==================== command foo"
+        self.say(channel, u"Del Zen de Python:")
+        self.say(channel, u"    " + random.choice(zen))
+
+    def _twisted_example(self, info):
+        user, channel = info
+        self.say(channel, "%s: Hola! Estamos deferredeando como locas!" % user)
+
+    def command_twisted(self, user, channel, command, *args):
+        u"""enroscau: Ejemplo usando un Deferred."""
+        d = defer.succeed((user, channel))
+        d.addCallback(self._twisted_example)
+        self.say(user, "Te prometo a futuro un saludo en el canal")
+        return d
+
 
 # this is only to get the Zen of Python, by Tim Peters
 import sys
@@ -17,32 +69,3 @@ s.seek(0)
 s.readline()
 s.readline()
 zen = [unicode(x.strip()) for x in s.readlines()]
-
-class Example(Plugin):
-
-    def start(self, config):
-        # register to stuff
-        self.register(self.events.TALKED_TO_ME, self.talked_to_me)
-        self.register(self.events.COMMAND, self.command_foo, ("foo",))
-        self.register(self.events.COMMAND, self.command_bar, ("bar",))
-
-    def talked_to_me(self, user, channel, msg):
-        print "==================== talked_to_me"
-        txt = u"Hola %s, mi nombre es %s, :)" % (user, self.nickname)
-        return [(channel, txt)]
-
-    def command_foo(self, user, channel, command, *args):
-        u"@foo txt: repite lo recibido... no sirve para nada, pero es un "\
-         "buen ejemplo."
-        print "==================== command foo"
-        if args:
-            txt = args[0]
-        else:
-            txt = u"%s: Me tenés que decir algo para que lo repita!" % user
-        return [(channel, txt)]
-
-    def command_bar(self, user, channel, command, *args):
-        u"""@bar: Zen de Python, al azar."""
-        print "==================== command foo"
-        txt = random.choice(zen)
-        return [(channel, "Del Zen de Python:"), (channel, txt)]
