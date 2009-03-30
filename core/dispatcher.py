@@ -76,7 +76,6 @@ class Dispatcher(object):
         logger.debug('registering %s for event %s', func, event)
     def _msg_from_plugin(self, plugin, to_where, message):
         """Message from the plugin."""
-        print "Plugin!", to_where, message
         if plugin not in self._channel_filter:
             # don't allow to say anything out of order
             return

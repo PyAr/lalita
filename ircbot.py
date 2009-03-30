@@ -28,10 +28,10 @@ handler = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter("%(asctime)s %(levelname)-8s %(message)s",
                               '%H:%M:%S')
 handler.setFormatter(formatter)
-logger = logging.getLogger ('ircbot')
+logger = logging.getLogger('ircbot')
 logger.addHandler(handler)
-# logger.setLevel (logging.DEBUG)
-logger.setLevel (logging.INFO)
+logger.setLevel(logging.DEBUG)
+# logger.setLevel(logging.INFO)
 
 # local imports
 from core import events

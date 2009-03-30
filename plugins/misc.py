@@ -2,16 +2,14 @@
 
 # (c) 2009 Marcos Dione <mdione@grulic.org.ar>
 
-import logging
-logger = logging.getLogger ('ircbot.plugins.misc')
-logger.setLevel (logging.DEBUG)
+from lalita import Plugin
 
-class Ping (object):
-    def __init__ (self, config, events, params):
-        register= params['register']
-        register (events.COMMAND, self.ping, ['ping'])
+class Ping(Plugin):
 
-    def ping (self, user, channel, command):
-        return [(channel, u"%s: pong" % user)]
+    def init(self, config):
+        self.register(self.events.COMMAND, self.ping, ['ping'])
+
+    def ping(self, user, channel, command):
+        self.say(channel, u"%s: pong" % user)
 
 # end

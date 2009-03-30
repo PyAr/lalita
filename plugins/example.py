@@ -13,6 +13,7 @@ class Example(Plugin):
 
     def init(self, config):
         # register to stuff
+        self.logger.info("Init! config: %s", config)
         self.register(self.events.TALKED_TO_ME, self.talked_to_me)
         self.register(self.events.PRIVATE_MESSAGE, self.private)
         self.register(self.events.COMMAND, self.command_foo, ("foo",))
@@ -20,18 +21,18 @@ class Example(Plugin):
         self.register(self.events.COMMAND, self.command_twisted, ("enroscau",))
 
     def private(self, user, text):
-        print "==================== private message"
+        self.logger.debug("private message from %s: %s", user, text)
         self.say(user, u'Me dijiste "%s"' % text)
 
     def talked_to_me(self, user, channel, msg):
-        print "==================== talked_to_me"
+        self.logger.debug("%s talked to me in: %s", user, channel, msg)
         txt = u"Hola %s, mi nombre es %s, :)" % (user, self.nickname)
         self.say(channel, txt)
 
     def command_foo(self, user, channel, command, *args):
         u"@foo txt: repite lo recibido... no sirve para nada, pero es un "\
          "buen ejemplo."
-        print "==================== command foo"
+        self.logger.debug("command %s from %s (args: %s)", command, user, args)
         if args:
             txt = args[0]
         else:
@@ -40,7 +41,7 @@ class Example(Plugin):
 
     def command_bar(self, user, channel, command, *args):
         u"""@bar: Zen de Python, al azar."""
-        print "==================== command foo"
+        self.logger.debug("command %s from %s (args: %s)", command, user, args)
         self.say(channel, u"Del Zen de Python:")
         self.say(channel, u"    " + random.choice(zen))
 
@@ -50,6 +51,7 @@ class Example(Plugin):
 
     def command_twisted(self, user, channel, command, *args):
         u"""enroscau: Ejemplo usando un Deferred."""
+        self.logger.debug("command %s from %s (args: %s)", command, user, args)
         d = defer.succeed((user, channel))
         d.addCallback(self._twisted_example)
         self.say(user, "Te prometo a futuro un saludo en el canal")
