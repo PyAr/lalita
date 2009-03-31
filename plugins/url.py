@@ -15,9 +15,12 @@ logger = logging.getLogger ('ircbot.plugins.url')
 logger.setLevel (logging.DEBUG)
 
 class Url (object):
-    url_re= re.compile ('((https?|ftp)://[^ ]*)')
-    title_re= re.compile ('< *title *>([^<]+)< */ *title *>')
-    encoding_re= re.compile ('<meta http-equiv="Content-Type" content="([^"]+)">')
+    url_re= re.compile ('((https?|ftp)://[^ ]*)', re.IGNORECASE|re.DOTALL)
+    title_re= re.compile (
+        '< *title *>([^<]+)< */ *title *>', re.IGNORECASE|re.DOTALL)
+    encoding_re= re.compile (
+        '<meta http-equiv="Content-Type" content="([^"]+)">',
+        re.IGNORECASE|re.DOTALL)
 
     def __init__ (self, config, events, params):
         register= params['register']
