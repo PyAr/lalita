@@ -25,7 +25,10 @@ class Url (object):
     def __init__ (self, config, events, params):
         register= params['register']
         register (events.PUBLIC_MESSAGE, self.message)
-        self.config= dict (block_size=4096).update (config)
+        logger.debug (config)
+        self.config= dict (block_size=4096)
+        self.config.update (config)
+        logger.debug (self.config)
         self.titleFound= False
         self.magic= magic.open (magic.MAGIC_MIME)
         self.magic.load ()
@@ -36,17 +39,21 @@ class Url (object):
             url= g.groups()[0]
             logger.debug ('fetching %s' % url)
             promise= client.getPage (str (url))
+            #, headers=dict (
+                #Range="bytes=0-%d" % self.config['block_size'])
+            #)
+            #downloader= client._makeGetterFactory (url.encode ('ascii'),
+                #client.HTTPClientFactory, headers=dict (
+                    #Range="bytes=0-%d" % self.config['block_size']
+                #))
+            #downloader.handleStatus_206= .handleStatus_200
+            #promise= downloader.deferred
             promise.addCallback (self.guessFile, user, channel, url)
-            # downloader= client._makeGetterFactory (url.encode ('ascii'),
-            #     client.HTTPClientFactory)
-            # promise= downloader.deferred
-            # promise.addCallback (self.guessFile, downloader, user, channel, url)
             promise.addErrback (self.failed, user, channel, url)
             return promise
 
     def guessFile (self, page, user, channel, url):
-    # def guessFile (self, page, downloader, user, channel, url):
-        # logger.debug (u"[%s] %s" % (type (page), page[:1024].decode ('utf-8')))
+        # logger.debug (u"[%s] %s" % (type (page), page.decode ('utf-8')))
         mimetype_enc= self.magic.buffer (page)
         try:
             # text/html; charset=utf-8
@@ -57,7 +64,8 @@ class Url (object):
             mimetype= mimetype_enc
             encoding= None
 
-        if mimetype=='text/html':
+        # some
+        if mimetype in ('text/html', 'application/xml'):
             g= self.title_re.search (page)
             if g is not None:
                 self.titleFound= True
