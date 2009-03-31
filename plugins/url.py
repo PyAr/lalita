@@ -69,7 +69,7 @@ class Url (object):
         # xhtml detection
         g= self.xhtml_re.search (page)
         if (mimetype=='text/html' or
-                mimetype=='application/xml' and g is not None):
+                mimetype in ('text/xml', 'application/xml') and g is not None):
             g= self.title_re.search (page)
             if g is not None:
                 self.titleFound= True
