@@ -18,10 +18,11 @@ class Url (object):
     url_re= re.compile ('((https?|ftp)://[^ ]*)', re.IGNORECASE|re.DOTALL)
     title_re= re.compile (
         '< *title *>([^<]+)< */ *title *>', re.IGNORECASE|re.DOTALL)
-    encoding_re= re.compile (
+    content_type_re= re.compile (
         '<meta http-equiv="Content-Type" content="([^"]+)">',
         re.IGNORECASE|re.DOTALL)
     xhtml_re= re.compile ('<!DOCTYPE +html')
+    mimetype_re= re.compile ('([a-z-/]+);?( charset=(.*))?')
 
     def __init__ (self, config, events, params):
         register= params['register']
@@ -56,14 +57,14 @@ class Url (object):
     def guessFile (self, page, user, channel, url):
         # logger.debug (u"[%s] %s" % (type (page), page.decode ('utf-8')))
         mimetype_enc= self.magic.buffer (page)
-        try:
-            # text/html; charset=utf-8
-            mimetype, encoding= mimetype_enc.split (';')
-            encoding= encoding.split ('=')[1]
-        except ValueError:
-            logger.debug ("no encoding %s" % mimetype_enc)
-            mimetype= mimetype_enc
-            encoding= None
+        logger.debug (mimetype_enc)
+        # text/html; charset=utf-8
+        g= self.mimetype_re.search (mimetype_enc)
+        if g is not None:
+            mimetype= g.groups ()[0]
+            encoding= g.groups ()[2]
+        else:
+            logger.warn ("initial mimetype detection failed: %s" % mimetype_enc)
 
         # xhtml detection
         g= self.xhtml_re.search (page)
@@ -74,22 +75,28 @@ class Url (object):
                 self.titleFound= True
                 title= g.groups ()[0]
 
-                if encoding=='' or encoding is None:
+                if encoding is None:
                     # guess the encoding from the page itself
-                    g= self.encoding_re.search (page)
+                    g= self.content_type_re.search (page)
                     if g is not None:
                         mimetype_enc= g.groups ()[0]
-                        try:
-                            mimetype, encoding= mimetype_enc.split (';')
-                            encoding= encoding.split ('=')[1]
-                        except ValueError:
-                            logger.debug ("no encoding, again %s" % mimetype_enc)
-                            mimetype= mimetype_enc
+                        logger.debug (mimetype_enc)
+                        # text/html; charset=utf-8
+                        g= self.mimetype_re.search (mimetype_enc)
+                        if g is not None:
+                            mimetype= g.groups ()[0]
+                            encoding= g.groups ()[2]
+                        else:
+                            logger.warn ("further mimetype detection failed: %s" % mimetype_enc)
+
+                        # still no encoding?!?
+                        if encoding is None:
+                            logger.debug ("still no encoding: %s" % mimetype_enc)
                             # good as any
                             encoding= 'utf-8'
                     else:
                         # user an encoding guesser
-                        logger.debug ('still no encoding!')
+                        logger.debug ('no mimetype in the page')
                         # good as any
                         encoding= 'utf-8'
 

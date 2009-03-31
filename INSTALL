@@ -5,4 +5,5 @@ Just a couple of things:
    python-sqlite.
 
  * url.Url plugin depends on Beautiful Soup v3.1.0.1 or similar (just check that
-   XHTML_ENTITIES exist).
+   XHTML_ENTITIES exist) and python-magic (and twisted web, just in case you
+   installed a partial twisted).
