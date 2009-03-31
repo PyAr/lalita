@@ -58,6 +58,7 @@ class Url (object):
             g= self.title_re.search (page)
             if g is not None:
                 self.titleFound= True
+                title= g.groups ()[0]
 
                 if encoding=='' or encoding is None:
                     # guess the encoding from the page itself
@@ -79,7 +80,7 @@ class Url (object):
                         encoding= 'utf-8'
 
                 # convert entities
-                title= BeautifulStoneSoup (g.groups ()[0].decode (encoding),
+                title= BeautifulStoneSoup (title.decode (encoding),
                     convertEntities=BeautifulStoneSoup.XHTML_ENTITIES).contents[0]
 
                 # this takes out the \n\r\t's
