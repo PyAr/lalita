@@ -21,6 +21,7 @@ class Url (object):
     encoding_re= re.compile (
         '<meta http-equiv="Content-Type" content="([^"]+)">',
         re.IGNORECASE|re.DOTALL)
+    xhtml_re= re.compile ('<!DOCTYPE +html')
 
     def __init__ (self, config, events, params):
         register= params['register']
@@ -64,8 +65,10 @@ class Url (object):
             mimetype= mimetype_enc
             encoding= None
 
-        # some
-        if mimetype in ('text/html', 'application/xml'):
+        # xhtml detection
+        g= self.xhtml_re.search (page)
+        if (mimetype=='text/html' or
+                mimetype=='application/xml' and g is not None):
             g= self.title_re.search (page)
             if g is not None:
                 self.titleFound= True
@@ -90,7 +93,7 @@ class Url (object):
                         # good as any
                         encoding= 'utf-8'
 
-                # convert entities
+                # convert xhtml entities
                 title= BeautifulStoneSoup (title.decode (encoding),
                     convertEntities=BeautifulStoneSoup.XHTML_ENTITIES).contents[0]
 
