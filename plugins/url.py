@@ -68,7 +68,9 @@ class Url (object):
 
         # xhtml detection
         g= self.xhtml_re.search (page)
-        if (mimetype=='text/html' or
+        # text/plain? yes, text/plain too...
+        # see http://blog.nixternal.com/2009.03.30/where-is-ctrlaltbackspace/
+        if (mimetype in ('text/html', 'text/plain') or
                 mimetype in ('text/xml', 'application/xml') and g is not None):
             g= self.title_re.search (page)
             if g is not None:
