@@ -13,6 +13,8 @@ class Seen (object):
         register= params['register']
         self.nickname= params['nickname']
         self.seenlog= {}
+        self.config= dict (clever=True)
+        self.config.update (config)
 
         register (events.JOIN, self.joined)
         register (events.PART, self.parted)
@@ -39,7 +41,7 @@ class Seen (object):
             logger.debug ("logged %s: %s" % (nick, what))
 
     def seen (self, user, channel, command, nick):
-        if nick not in (self.nickname, user):
+        if not self.config['clever'] or nick not in (self.nickname, user):
             try:
                 what, when= self.seenlog[nick]
             except KeyError:
@@ -47,11 +49,11 @@ class Seen (object):
             else:
                 # now= time.time ()
                 if what=='joined':
-                    return [(channel, u"%s: le vi entrar hace un rato..." % user)]
+                    return [(channel, u"%s: [%s] -- joined" % (user, when.strftime ("%x %X")))]
                 elif what=='parted':
-                    return [(channel, u"%s: creo que se fua a hacer una paja y no volvio..." % user)]
+                    return [(channel, u"%s: [%s] -- parted" % (user, when.strftime ("%x %X")))]
                 else:
-                    return [(channel, u"%s: hace un rato lo escuche decir «%s» o una gansada por el estilo" % (user, what))]
+                    return [(channel, u"%s: [%s] %s" % (user, when.strftime ("%x %X"), what))]
         elif nick==self.nickname:
             return [(channel, u"%s: acástoi, papafrita!" % user)]
         elif nick==user:
