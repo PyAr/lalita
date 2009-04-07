@@ -6,11 +6,11 @@ from lalita import Plugin
 
 class Register(Plugin):
     def init(self, config):
-        self.register(self.events.PRIVATE_MESSAGE, self.register)
+        self.register(self.events.PRIVATE_MESSAGE, self.freenode_register)
         self.config = config
         # print config
 
-    def register(self, user, msg):
+    def freenode_register(self, user, msg):
         self.logger.debug("%s: %s", user, msg)
         if user == 'NickServ':
             if '/msg NickServ identify' in msg:

@@ -71,9 +71,10 @@ class Dispatcher(object):
         it should be a regexp telling if the message is useful, for
         command is a list of which commands, etc.
         '''
+        logger.debug('registering %s for event %s', func, event)
         instance = func.im_self
         self._callbacks.setdefault(event, []).append((instance, func, extra))
-        logger.debug('registering %s for event %s', func, event)
+
     def _msg_from_plugin(self, plugin, to_where, message):
         """Message from the plugin."""
         if plugin not in self._channel_filter:

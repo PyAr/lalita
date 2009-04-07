@@ -22,7 +22,7 @@ class Url (Plugin):
     xhtml_re= re.compile ('<!DOCTYPE +html')
     mimetype_re= re.compile ('([a-z-/]+);?( charset=(.*))?')
 
-    def __init__ (self, config):
+    def init(self, config):
         self.register (self.events.PUBLIC_MESSAGE, self.message)
         self.config= dict (block_size=4096)
         self.config.update (config)
@@ -109,7 +109,7 @@ class Url (Plugin):
 
                 self.say(channel, u"%s: %s" % (user, title))
             else:
-                self.say(channel, u"%s: no tiene titulo?!?" % (user, ))]
+                self.say(channel, u"%s: no tiene titulo?!?" % (user, ))
         else:
             self.say(channel, u"%s: %s" % (user, mimetype))
 
