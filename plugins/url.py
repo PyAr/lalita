@@ -10,11 +10,9 @@ from BeautifulSoup import BeautifulSoup, BeautifulStoneSoup
 import magic
 # import pdb
 
-import logging
-logger = logging.getLogger ('ircbot.plugins.url')
-logger.setLevel (logging.DEBUG)
+from lalita import Plugin
 
-class Url (object):
+class Url (Plugin):
     url_re= re.compile ('((https?|ftp)://[^ ]*)', re.IGNORECASE|re.DOTALL)
     title_re= re.compile (
         '< *title *>([^<]+)< */ *title *>', re.IGNORECASE|re.DOTALL)
@@ -24,13 +22,11 @@ class Url (object):
     xhtml_re= re.compile ('<!DOCTYPE +html')
     mimetype_re= re.compile ('([a-z-/]+);?( charset=(.*))?')
 
-    def __init__ (self, config, events, params):
-        register= params['register']
-        register (events.PUBLIC_MESSAGE, self.message)
-        logger.debug (config)
+    def __init__ (self, config):
+        self.register (self.events.PUBLIC_MESSAGE, self.message)
         self.config= dict (block_size=4096)
         self.config.update (config)
-        logger.debug (self.config)
+        self.logger.debug (self.config)
         self.titleFound= False
         self.magic= magic.open (magic.MAGIC_MIME)
         self.magic.load ()
@@ -39,7 +35,7 @@ class Url (object):
         g= self.url_re.search (message)
         if g is not None:
             url= g.groups()[0]
-            logger.debug ('fetching %s' % url)
+            self.logger.debug ('fetching %s' % url)
             promise= client.getPage (str (url))
             #, headers=dict (
                 #Range="bytes=0-%d" % self.config['block_size'])
@@ -55,16 +51,16 @@ class Url (object):
             return promise
 
     def guessFile (self, page, user, channel, url):
-        # logger.debug (u"[%s] %s" % (type (page), page.decode ('utf-8')))
+        # self.logger.debug (u"[%s] %s" % (type (page), page.decode ('utf-8')))
         mimetype_enc= self.magic.buffer (page)
-        logger.debug (mimetype_enc)
+        self.logger.debug (mimetype_enc)
         # text/html; charset=utf-8
         g= self.mimetype_re.search (mimetype_enc)
         if g is not None:
             mimetype= g.groups ()[0]
             encoding= g.groups ()[2]
         else:
-            logger.warn ("initial mimetype detection failed: %s" % mimetype_enc)
+            self.logger.warn ("initial mimetype detection failed: %s" % mimetype_enc)
 
         # xhtml detection
         g= self.xhtml_re.search (page)
@@ -82,23 +78,23 @@ class Url (object):
                     g= self.content_type_re.search (page)
                     if g is not None:
                         mimetype_enc= g.groups ()[0]
-                        logger.debug (mimetype_enc)
+                        self.logger.debug (mimetype_enc)
                         # text/html; charset=utf-8
                         g= self.mimetype_re.search (mimetype_enc)
                         if g is not None:
                             mimetype= g.groups ()[0]
                             encoding= g.groups ()[2]
                         else:
-                            logger.warn ("further mimetype detection failed: %s" % mimetype_enc)
+                            self.logger.warn ("further mimetype detection failed: %s" % mimetype_enc)
 
                         # still no encoding?!?
                         if encoding is None:
-                            logger.debug ("still no encoding: %s" % mimetype_enc)
+                            self.logger.debug ("still no encoding: %s" % mimetype_enc)
                             # good as any
                             encoding= 'utf-8'
                     else:
                         # user an encoding guesser
-                        logger.debug ('no mimetype in the page')
+                        self.logger.debug ('no mimetype in the page')
                         # good as any
                         encoding= 'utf-8'
 
@@ -109,16 +105,16 @@ class Url (object):
                 # this takes out the \n\r\t's
                 titleParts= title.split ()
                 title= ' '.join (titleParts)
-                logger.debug (u"[%s] >%s< %s" % (type (title), title, encoding))
+                self.logger.debug (u"[%s] >%s< %s" % (type (title), title, encoding))
 
-                return [(channel, u"%s: %s" % (user, title))]
+                self.say(channel, u"%s: %s" % (user, title))
             else:
-                return [(channel, u"%s: no tiene titulo?!?" % (user, ))]
+                self.say(channel, u"%s: no tiene titulo?!?" % (user, ))]
         else:
-            return [(channel, u"%s: %s" % (user, mimetype))]
+            self.say(channel, u"%s: %s" % (user, mimetype))
 
     def failed (self, bongs, user, channel, url):
-        logger.debug (bongs)
-        return [(channel, u"%s: error con la página: %s" % (user, bongs.value))]
+        self.logger.debug (bongs)
+        self.say(channel, u"%s: error con la página: %s" % (user, bongs.value))
 
 # end

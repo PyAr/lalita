@@ -4,12 +4,14 @@ from time import time
 from twisted.web import client
 from BeautifulSoup import BeautifulSoup, Tag
 
+from lalita import Plugin
+
 def txtize(soup):
     if not isinstance(soup,Tag):
         return soup
     return ''.join(map(txtize,soup.childGenerator()))
 
-class MoinSearch(object):
+class MoinSearch(Plugin):
     _site = 'http://www.python.com.ar'
     _places = {'body':
                      {'path':'moin?action=fullsearch&context=180&value=%s&fullsearch=Texto',
@@ -20,9 +22,9 @@ class MoinSearch(object):
                     }
     _max_results = 1
 
-    def __init__(self, config, events, params):
+    def init(self, config):
         self._internals = {}
-        params['register'](events.COMMAND,self.search,['wiki'])
+        self.register(self.events.COMMAND, self.search, ['wiki'])
 
     def get_full_query(self,where,query):
         return '%s/%s' % (self._site,self._places[where]['path'] % query)
@@ -77,12 +79,12 @@ class MoinSearch(object):
                 href = self._site + anchor.get('href')
                 name = txtize(anchor)
                 results.append('%s: %s' % (name,href))
-        return self.process_resutls(results,id)
+        return self.process_results(results,id)
 
     def drop_internal(self,id):
         del self._internals[id]
 
-    def process_resutls(self,results,id):
+    def process_results(self,results,id):
         mode = self.get_internal(id,'where')
         channel = self.get_internal(id,'channel')
         full_query = self.get_internal(id,'full_query')
@@ -90,13 +92,12 @@ class MoinSearch(object):
             if mode == 'title':
                 return []
             else:
-                ret_msg = [(channel,u'No econtré resultados')]
+                self.say(channel,u'No econtré resultados')
         elif len(results) > self._max_results:
-            ret_msg = [(channel, 'Hay %i resultados %s' % (len(results),full_query))]
+            self.say(channel, 'Hay %i resultados %s' % (len(results),full_query))
         else:
-            ret_msg = [(channel,' '.join(results))]
+            self.say(channel,' '.join(results))
         self.drop_internal(id)
-        return ret_msg
 
 if __name__ == '__main__':
     main()

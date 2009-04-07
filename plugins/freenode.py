@@ -2,25 +2,22 @@
 
 # (c) 2009 Marcos Dione <mdione@grulic.org.ar>
 
-import logging
-logger = logging.getLogger ('ircbot.plugins.freenode')
-logger.setLevel (logging.DEBUG)
+from lalita import Plugin
 
-class Register (object):
-    def __init__ (self, config, events, params):
-        register= params['register']
-        register (events.PRIVATE_MESSAGE, self.register)
-        self.config= config
+class Register(Plugin):
+    def init(self, config):
+        self.register(self.events.PRIVATE_MESSAGE, self.register)
+        self.config = config
         # print config
 
-    def register (self, user, msg):
-        logger.debug ("%s: %s" % (user, msg))
-        if user=='NickServ':
+    def register(self, user, msg):
+        self.logger.debug("%s: %s", user, msg)
+        if user == 'NickServ':
             if '/msg NickServ identify' in msg:
-                return [(user, u"identify %s" % self.config['password'])]
+                self.say(user, u"identify %s" % self.config['password'])
             elif 'Invalid password' in msg:
-                logger.warn ('invalid password!?!')
+                logger.warn('invalid password!?!')
             elif 'You are now identified' in msg:
-                logger.info ('successfuly identified')
+                logger.info('successfuly identified')
 
 # end
