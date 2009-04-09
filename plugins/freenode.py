@@ -16,8 +16,8 @@ class Register(Plugin):
             if '/msg NickServ identify' in msg:
                 self.say(user, u"identify %s" % self.config['password'])
             elif 'Invalid password' in msg:
-                logger.warn('invalid password!?!')
+                self.logger.warn('invalid password!?!')
             elif 'You are now identified' in msg:
-                logger.info('successfuly identified')
+                self.logger.info('successfuly identified')
 
 # end
