@@ -8,7 +8,8 @@ from lalita import Plugin
 
 class Seen(Plugin):
     def init(self, config):
-        self.seenlog= {}
+        self.iolog= {}
+        self.saidlog= {}
         self.config= dict (clever=True)
         self.config.update (config)
 
@@ -16,7 +17,7 @@ class Seen(Plugin):
         self.register(self.events.PART, self.parted)
         self.register(self.events.PUBLIC_MESSAGE, self.message)
         self.register(self.events.TALKED_TO_ME, self.message)
-        self.register(self.events.COMMAND, self.seen, ['seen'])
+        self.register(self.events.COMMAND, self.seen, ['seen', 'last'])
 
     def joined (self, channel, nick):
         self.logger.debug("%s joined %s", nick, channel)
@@ -33,23 +34,28 @@ class Seen(Plugin):
     def log(self, channel, nick, what):
         # server messages are from ''; ignore those and myself
         if nick not in (self.nickname, ''):
-            self.seenlog[nick] = (what, datetime.datetime.now())
+            if what in ('joined', 'parted'):
+                self.iolog[nick] = (what, datetime.datetime.now())
+            else:
+                self.saidlog[nick] = (what, datetime.datetime.now())
             self.logger.debug("logged %s: %s", nick, what)
 
     def seen (self, user, channel, command, nick):
         if not self.config['clever'] or nick not in (self.nickname, user):
-            try:
-                what, when = self.seenlog[nick]
-            except KeyError:
+            what1, when1 = self.iolog.get (nick, (None, None))
+            what2, when2 = self.saidlog.get (nick, (None, None))
+            self.logger.debug (str ((what1, when1, what2, when2)))
+            if when1 is None and when2 is None:
                 self.say(channel, u"%s: me lo deje en la otra pollera :|" % user)
             else:
                 # now= time.time ()
-                if what=='joined':
-                    self.say(channel, u"%s: [%s] -- joined" % (user, when.strftime ("%x %X")))
-                elif what=='parted':
-                    self.say(channel, u"%s: [%s] -- parted" % (user, when.strftime ("%x %X")))
-                else:
-                    self.say(channel, u"%s: [%s] %s" % (user, when.strftime ("%x %X"), what))
+                if command=='seen' and (when2 is None or (when1 is not None and when1>when2)):
+                    if what1=='joined':
+                        self.say(channel, u"%s: [%s] -- joined" % (user, when1.strftime ("%x %X")))
+                    elif what1=='parted':
+                        self.say(channel, u"%s: [%s] -- parted" % (user, when1.strftime ("%x %X")))
+                else: # command=='last' or when1<when2 or when1 is None
+                    self.say(channel, u"%s: [%s] %s" % (user, when2.strftime ("%x %X"), what2))
         elif nick==self.nickname:
             self.say(channel, u"%s: acástoi, papafrita!" % user)
         elif nick==user:
