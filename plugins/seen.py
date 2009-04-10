@@ -45,20 +45,26 @@ class Seen(Plugin):
             what1, when1 = self.iolog.get (nick, (None, None))
             what2, when2 = self.saidlog.get (nick, (None, None))
             self.logger.debug (str ((what1, when1, what2, when2)))
-            if when1 is None and when2 is None:
-                self.say(channel, u"%s: me lo deje en la otra pollera :|" % user)
-            else:
-                # now= time.time ()
-                if command=='seen' and (when2 is None or (when1 is not None and when1>when2)):
-                    if what1=='joined':
-                        self.say(channel, u"%s: [%s] -- joined" % (user, when1.strftime ("%x %X")))
-                    elif what1=='parted':
-                        self.say(channel, u"%s: [%s] -- parted" % (user, when1.strftime ("%x %X")))
-                else: # command=='last' or when1<when2 or when1 is None
-                    self.say(channel, u"%s: [%s] %s" % (user, when2.strftime ("%x %X"), what2))
+            # didn't se him at all or he has just been silent
+            # NOTE: I know this can be reduced a little,
+            # but this way is more understandable at first sight
+            if (when1 is None and when2 is None) or (command=='last' and when2 is None):
+                what= u"%s: me lo deje en la otra pollera :|" % user
+            # seen him join or part and,
+            # either didn't hearm him say anython,
+            # or just was too long before he joined/left
+            elif command=='seen' and when1 is not None and (when2 is None or when1>when2):
+                if what1=='joined':
+                    what= u"%s: [%s] -- joined" % (user, when1.strftime ("%x %X"))
+                elif what1=='parted':
+                    what= u"%s: [%s] -- parted" % (user, when1.strftime ("%x %X"))
+            else: # command=='last' or when1<when2 or when1 is None
+                what= u"%s: [%s] %s" % (user, when2.strftime ("%x %X"), what2)
         elif nick==self.nickname:
-            self.say(channel, u"%s: acástoi, papafrita!" % user)
+            what= u"%s: acástoi, papafrita!" % user
         elif nick==user:
-            self.say(channel, u"%s: andá mirate en el espejo del baño" % user)
+            what= u"%s: andá mirate en el espejo del baño" % user
+
+        self.say (channel, what)
 
 # end
