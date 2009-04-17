@@ -4,7 +4,7 @@
 
 # twisted imports
 from twisted.words.protocols import irc
-from twisted.internet import reactor, protocol
+from twisted.internet import reactor, protocol, ssl
 from twisted.python import log
 
 # system imports
@@ -99,6 +99,7 @@ class IrcBot (irc.IRCClient):
         self.encoding_channels = dict((k, v["encoding"])
                                     for k,v in self.config["channels"].items()
                                       if "encoding" in v)
+        self.password = self.config.get('password', None)
         irc.IRCClient.connectionMade (self)
         logger.info("connected to %s:%d" %
             (self.config['host'], self.config['port']))
@@ -216,9 +217,13 @@ class IRCBotFactory(protocol.ClientFactory):
 def main(to_use):
     for server in to_use:
         bot = IRCBotFactory(server)
-        reactor.connectTCP(server.get('host', '10.100.0.194'),
-                           server.get('port', 6667),
-                           bot)
+        if server.get('ssl', False):
+            reactor.connectSSL(server.get('host', '10.100.0.194'),
+                               server.get('port', 6667), bot,
+                               ssl.ClientContextFactory())
+        else:
+            reactor.connectTCP(server.get('host', '10.100.0.194'),
+                               server.get('port', 6667), bot)
     reactor.run()
 
 
