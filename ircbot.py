@@ -103,6 +103,8 @@ class IrcBot (irc.IRCClient):
         logger.info("connected to %s:%d" %
             (self.config['host'], self.config['port']))
         self.load_server_plugins()
+        # configure the dispatcher
+        self.dispatcher.init(self.config)
         self.dispatcher.push(events.CONNECTION_MADE)
 
     def connectionLost (self, reason):
