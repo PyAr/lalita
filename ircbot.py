@@ -25,13 +25,13 @@ except ImportError:
     sys.modules["lalita"] = core
 
 handler = logging.StreamHandler(sys.stdout)
-formatter = logging.Formatter("%(asctime)s %(levelname)-8s %(message)s",
-                              '%H:%M:%S')
+formatter = logging.Formatter(
+                            "%(asctime)s %(name)s %(levelname)-8s %(message)s",
+                            '%H:%M:%S')
 handler.setFormatter(formatter)
 logger = logging.getLogger('ircbot')
 logger.addHandler(handler)
 logger.setLevel(logging.DEBUG)
-# logger.setLevel(logging.INFO)
 
 # local imports
 from core import events
@@ -60,15 +60,15 @@ class IrcBot (irc.IRCClient):
         try:
             module = __import__(modname)
             klass = getattr(module, klassname)
-            instance = klass(params)
+            instance = klass(params, "debug")
             self.dispatcher.new_plugin(instance, channel)
             instance.init(config)
         except ImportError, e:
-            logger.warning ('%s not instanced: %s' % (plugin_name, e))
+            logger.error('%s not instanced: %s' % (plugin_name, e))
         except AttributeError, e:
-            logger.warning ('%s not instanced: %s' % (plugin_name, e))
+            logger.error('%s not instanced: %s' % (plugin_name, e))
         except Exception, e:
-            logger.warning ('%s not instanced: %s' % (plugin_name, e))
+            logger.error('%s not instanced: %s' % (plugin_name, e))
             print_exc (e)
         else:
             logger.info ('%s instanced for %s' % (plugin_name,
@@ -149,7 +149,7 @@ class IrcBot (irc.IRCClient):
             if msg[0] in (":", " ", ","):
                 msg = msg[1:].strip()
                 self.dispatcher.push(events.TALKED_TO_ME, user, channel, msg)
-        elif msg[0] == '@':   # FIXME: esta @ hay que sacarla de la config
+        elif msg[0] == '@':
             args = msg.split()
             command = args.pop(0)[1:]
             self.dispatcher.push(events.COMMAND, user, channel, command, *args)
@@ -162,14 +162,13 @@ class IrcBot (irc.IRCClient):
         encoding = self.encoding_channels.get(channel, self.encoding_server)
         msg = msg.decode(encoding)
         user = user.split('!', 1)[0]
-        # FIXME: la llamada al push!!
+        self.dispatcher.push(events.ACTION, user, channel, msg)
 
     # irc callbacks
     def irc_NICK(self, prefix, params):
         """Called when an IRC user changes their nickname."""
         old_nick = nick (prefix)
         new_nick = params[0]
-        # FIXME: la llamada al push!!
         irc.IRCClient.irc_NICK (self, prefix, params)
 
     def irc_JOIN (self, prefix, params):
