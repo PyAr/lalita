@@ -24,6 +24,20 @@ except ImportError:
     import core
     sys.modules["lalita"] = core
 
+# local imports
+from core import events
+from core import dispatcher
+import config
+
+
+LOG_LEVELS = {
+    "debug": logging.DEBUG,
+    "info": logging.INFO,
+    "warning": logging.WARNING,
+    "error": logging.ERROR,
+    "critical": logging.CRITICAL,
+}
+
 handler = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter(
                             "%(asctime)s %(name)s %(levelname)-8s %(message)s",
@@ -31,12 +45,7 @@ formatter = logging.Formatter(
 handler.setFormatter(formatter)
 logger = logging.getLogger('ircbot')
 logger.addHandler(handler)
-logger.setLevel(logging.DEBUG)
 
-# local imports
-from core import events
-from core import dispatcher
-from config import servers
 
 def nick (user):
     return user.split('!')[0]
@@ -57,10 +66,11 @@ class IrcBot (irc.IRCClient):
         sys.path.append(path)
 
         modname, klassname= plugin_name.split ('.')
+        loglvl = self.config["log_config"].get(plugin_name)
         try:
             module = __import__(modname)
             klass = getattr(module, klassname)
-            instance = klass(params, "debug")
+            instance = klass(params, loglvl)
             self.dispatcher.new_plugin(instance, channel)
             instance.init(config)
         except ImportError, e:
@@ -212,8 +222,9 @@ class IRCBotFactory(protocol.ClientFactory):
         logger.debug("Connection failed because of %s" % str(reason))
         # reactor.stop()
 
-def main(to_use):
+def main(to_use, plugin_loglvl):
     for server in to_use:
+        server["log_config"] = plugin_loglvl
         bot = IRCBotFactory(server)
         reactor.connectTCP(server.get('host', '10.100.0.194'),
                            server.get('port', 6667),
@@ -223,9 +234,11 @@ def main(to_use):
 
 if __name__ == '__main__':
     msg = u"""
-  ircbot.py [-t][-a] [server1, [...]]
+  ircbot.py [-t][-a][-o output_loglvl][-p plugin_loglvl] [server1, [...]]
 
   the servers are optional if -a is passed
+  the output_loglevel is the log level default for all the system
+  the pluginloglevel is a list of plugin_name:loglevel separated by commas
 """
 
     parser = optparse.OptionParser()
@@ -234,16 +247,49 @@ if __name__ == '__main__':
                       help="runs two bots that talk to each other, tesing")
     parser.add_option("-a", "--all", action="store_true", dest="all_servers",
                       help="runs the bot to all the configured servers")
+    parser.add_option("-o", "--output-log-level", dest="outloglvl",
+                      help="sets the output log level")
+    parser.add_option("-p", "--plugin-log-level", dest="plugloglvl",
+                      help="sets the plugin log level")
 
     (options, args) = parser.parse_args()
     test = bool(options.test)
     all_servers = bool(options.all_servers)
 
+    # control the servers
     if not args and not all_servers and not test:
         parser.print_help()
         exit()
 
+    # control the log level
+    if options.outloglvl is None:
+        output_loglevel = "debug"
+    else:
+        output_loglevel = options.outloglvl.lower()
+    try:
+        logger.setLevel(LOG_LEVELS[output_loglevel])
+    except KeyError:
+        print "The log level can be only:", LOG_LEVELS.keys()
+        exit()
+
+    plugins_loglvl = {}
+    if options.plugloglvl is not None:
+        try:
+            for pair in options.plugloglvl.split(","):
+                plugin, loglvl = pair.split(":")
+                loglvl = loglvl.lower()
+                if loglvl not in LOG_LEVELS:
+                    print "The log level can be only:", LOG_LEVELS.keys()
+                    exit()
+                plugins_loglvl[plugin] = LOG_LEVELS[loglvl]
+        except:
+            print "Remember that the plugin log level format is"
+            print "   a list of plugin_name:loglevel separated by commas"
+            print "Example:   misc.Ping:debug,example.Example:info"
+            raise
+
     # get all servers or the indicated ones
+    servers = config.servers
     if all_servers:
         to_use = [v for k,v in servers.items() if not k.startswith("testbot")]
     elif test:
@@ -251,4 +297,5 @@ if __name__ == '__main__':
     else:
         to_use = [servers[x] for x in args]
 
-    main(to_use)
+
+    main(to_use, plugins_loglvl)

@@ -3,14 +3,6 @@ import logging
 
 from . import dispatcher
 
-LOG_LEVELS = {
-    "debug": logging.DEBUG,
-    "info": logging.INFO,
-    "warning": logging.WARNING,
-    "error": logging.ERROR,
-    "critical": logging.CRITICAL,
-}
-
 class _PluginLogger(object):
     '''Logging magic for plugins.'''
 
@@ -18,7 +10,8 @@ class _PluginLogger(object):
         klass = instance.__class__
         name = "%s.%s" % (klass.__module__, klass.__name__)
         self.logger = logging.getLogger('ircbot.plugins.%s' % name)
-        self.logger.setLevel(LOG_LEVELS[log_level])
+        if log_level is not None:
+            self.logger.setLevel(log_level)
 
     def debug(self, *a, **k):
         self.logger.debug(*a, **k)
