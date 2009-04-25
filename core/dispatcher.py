@@ -123,7 +123,7 @@ class Dispatcher(object):
 
             cmds = [x[2] for x in self._callbacks[events.COMMAND]]
             if command not in itertools.chain(*cmds):
-                self.msg(channel, u"%s: No existe esa órden!" % user)
+                self.msg(channel, u"%s: %s: command not found!" % (user, command))
                 return
 
         all_registered = self._callbacks.get(event)
@@ -178,7 +178,7 @@ class Dispatcher(object):
     def handle_meta_help(self, user, channel, command, *args):
         '''Handles the HELP meta command.'''
         if not args:
-            txt = u'"list" para ver las órdenes; "help cmd" para cada uno'
+            txt = u'"list" To see the available commands ; "help cmd" for specific command help'
             self.msg(channel, txt)
             return
 
@@ -186,7 +186,7 @@ class Dispatcher(object):
         try:
             registered = self._callbacks[events.COMMAND]
         except KeyError:
-            self.msg(channel, u"No hay ninguna órden registrada...")
+            self.msg(channel, u"PANIC! I have no commands!!!")
             return
 
         # get the docstrings
@@ -197,7 +197,7 @@ class Dispatcher(object):
 
         # no docs!
         if not docs:
-            self.msg(channel, u"Esa órden no existe...")
+            self.msg(channel, u"No such command...")
             return
 
         # only one method for that command
@@ -206,7 +206,7 @@ class Dispatcher(object):
             return
 
         # several methods for the same command
-        self.msg(channel, u"Hay varios métodos para esa órden:")
+        self.msg(channel, u"Several handlers for the same command:")
         for doc in docs:
             self.msg(channel, u" - " + doc)
 
@@ -218,5 +218,5 @@ class Dispatcher(object):
             txt = u"Decí alpiste, no hay órdenes todavía..."
         else:
             onlys = set(itertools.chain(*cmds))
-            txt = u"Las órdenes son: %s" % list(sorted(onlys))
+            txt = u"The available commands are: %s" % list(sorted(onlys))
         self.msg(channel, txt)
