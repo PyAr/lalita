@@ -5,10 +5,13 @@
 import re
 from twisted.web import client
 from twisted.internet import defer
+
 from BeautifulSoup import BeautifulSoup, BeautifulStoneSoup
-# import mimetypes
+
 import magic
-# import pdb
+
+import sqlite3
+import datetime
 
 from lalita import Plugin
 
@@ -24,31 +27,99 @@ class Url (Plugin):
 
     def init(self, config):
         self.register (self.events.PUBLIC_MESSAGE, self.message)
-        self.config= dict (block_size=4096)
+        self.config= dict (
+            block_size=4096,
+            in_format=u'%(poster)s: [#%(id)d] %(title)s',
+            found_format=u'[#%(id)d] %(title)s [by %(poster)s, %(date)s, %(time)s]')
         self.config.update (config)
         self.logger.debug (self.config)
         self.titleFound= False
         self.magic= magic.open (magic.MAGIC_MIME)
         self.magic.load ()
 
+        self.register(self.events.COMMAND, self.dig, ['dig'])
+
+        self.initDb ()
+
+    def initDb (self):
+        # sqlite stuff
+        db= 'db/'+self.config.get ('database', 'url.db')
+        self.logger.debug ('connecting to '+db)
+        self.conn= sqlite3.connect (db)
+        self.cursor= self.conn.cursor ()
+
+        self.cursor.execute ('''create table if not exists url (
+            id integer primary key autoincrement,
+            url text,
+            date text,
+            time text,
+            poster text,
+            title text)''')
+        self.cursor.execute ('''create index if not exists url_idx on url (url)''')
+
+    def addUrl (self, channel, poster, url, title='<no title>', mimetype=None):
+        now= datetime.datetime.now ()
+        date= str (now.date ())
+        # '16:15:50.417804'
+        time= str (now.time ()).split ('.')[0]
+
+        data= [url, date, time, poster, title]
+        self.logger.debug ('inserting data '+str (data))
+        self.cursor.execute ('''insert into url
+            (url, date, time, poster, title)
+            values (?, ?, ?, ?, ?)
+            ''', data)
+        self.conn.commit ()
+
+        # hate to fetch the id this way
+        self.cursor.execute ('''select * from url where url = ? ''', (url, ))
+        result= self.cursor.fetchone ()
+
+        if mimetype is not None:
+            result[5]= mimetype
+        self.logger.debug (result)
+        data= dict (zip (('id', 'url', 'date', 'time', 'poster', 'title'), result))
+        self.say(channel, (self.config['in_format'] % data))
+
+
+    def dig (self, user, channel, command, *what):
+        self.logger.debug (u'looking for %s' % what)
+        self.cursor.execute ('''select * from url
+            where title like '%%%s%%' or url like '%%%s%%' ''' % (what[0], what[0]))
+        # self.cursor.execute (u"""select * from url where url like '%%%s%%'""" % (what[0], ))
+        # self.cursor.execute ('''select * from url''')
+        for result in self.cursor:
+            data= dict (zip (('id', 'url', 'date', 'time', 'poster', 'title'), result))
+            self.logger.debug (u'found %s' % data['url'])
+            self.say (channel, self.config['found_format'] % data)
+
     def message (self, user, channel, message):
         g= self.url_re.search (message)
         if g is not None:
             url= g.groups()[0]
-            self.logger.debug ('fetching %s' % url)
-            promise= client.getPage (str (url))
-            #, headers=dict (
-                #Range="bytes=0-%d" % self.config['block_size'])
-            #)
-            #downloader= client._makeGetterFactory (url.encode ('ascii'),
-                #client.HTTPClientFactory, headers=dict (
-                    #Range="bytes=0-%d" % self.config['block_size']
-                #))
-            #downloader.handleStatus_206= .handleStatus_200
-            #promise= downloader.deferred
-            promise.addCallback (self.guessFile, user, channel, url)
-            promise.addErrback (self.failed, user, channel, url)
-            return promise
+
+            # see if we can find it in the db
+            self.cursor.execute ('''select * from url where url = ? ''', (url, ))
+            result= self.cursor.fetchone ()
+            if result is not None:
+                data= dict (zip (('id', 'url', 'date', 'time', 'poster', 'title'), result))
+                self.say (channel, self.config['found_format'] % data)
+            else:
+                # go fetch it
+                self.logger.debug ('fetching %s' % url)
+                promise= client.getPage (str (url))
+                #, headers=dict (
+                    #Range="bytes=0-%d" % self.config['block_size'])
+                #)
+                #downloader= client._makeGetterFactory (url.encode ('ascii'),
+                    #client.HTTPClientFactory, headers=dict (
+                        #Range="bytes=0-%d" % self.config['block_size']
+                    #))
+                #downloader.handleStatus_206= .handleStatus_200
+                #promise= downloader.deferred
+                promise.addCallback (self.guessFile, user, channel, url)
+                promise.addErrback (self.failed, user, channel, url)
+                return promise
 
     def guessFile (self, page, user, channel, url):
         # self.logger.debug (u"[%s] %s" % (type (page), page.decode ('utf-8')))
@@ -93,7 +164,7 @@ class Url (Plugin):
                             # good as any
                             encoding= 'utf-8'
                     else:
-                        # user an encoding guesser
+                        # use an encoding guesser
                         self.logger.debug ('no mimetype in the page')
                         # good as any
                         encoding= 'utf-8'
@@ -107,11 +178,11 @@ class Url (Plugin):
                 title= ' '.join (titleParts)
                 self.logger.debug (u"[%s] >%s< %s" % (type (title), title, encoding))
 
-                self.say(channel, u"%s: %s" % (user, title))
+                self.addUrl (channel, user, url, title)
             else:
-                self.say(channel, u"%s: no tiene titulo?!?" % (user, ))
+                self.addUrl (channel, user, url)
         else:
-            self.say(channel, u"%s: %s" % (user, mimetype))
+            self.addUrl (channel, user, url, mimetype=mimetype)
 
     def failed (self, bongs, user, channel, url):
         self.logger.debug (bongs)
