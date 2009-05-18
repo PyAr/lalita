@@ -73,7 +73,8 @@ class Url (Plugin):
 
         # hate to fetch the id this way
         self.cursor.execute ('''select * from url where url = ? ''', (url, ))
-        result= self.cursor.fetchone ()
+        # 'tuple' object does not support item assignment
+        result= list (self.cursor.fetchone ())
 
         if mimetype is not None:
             result[5]= mimetype
@@ -81,17 +82,20 @@ class Url (Plugin):
         data= dict (zip (('id', 'url', 'date', 'time', 'poster', 'title'), result))
         self.say(channel, (self.config['in_format'] % data))
 
-
     def dig (self, user, channel, command, *what):
         self.logger.debug (u'looking for %s' % what)
         self.cursor.execute ('''select * from url
             where title like '%%%s%%' or url like '%%%s%%' ''' % (what[0], what[0]))
         # self.cursor.execute (u"""select * from url where url like '%%%s%%'""" % (what[0], ))
         # self.cursor.execute ('''select * from url''')
-        for result in self.cursor:
-            data= dict (zip (('id', 'url', 'date', 'time', 'poster', 'title'), result))
-            self.logger.debug (u'found %s' % data['url'])
-            self.say (channel, self.config['found_format'] % data)
+        results= self.cursor.fetchall ()
+        if results is not None:
+            for result in results:
+                data= dict (zip (('id', 'url', 'date', 'time', 'poster', 'title'), result))
+                self.logger.debug (u'found %s' % data['url'])
+                self.say (channel, self.config['found_format'] % data)
+        else:
+            self.say (channel, '404 None found')
 
     def message (self, user, channel, message):
         g= self.url_re.search (message)
