@@ -125,6 +125,15 @@ class Dispatcher(object):
             if command not in itertools.chain(*cmds):
                 self.msg(channel, u"%s: %s: command not found!" % (user, command))
                 return
+        elif event == events.PRIVATE_MESSAGE:
+            user, msg = args
+            cmd_args = msg.split(' ')
+            command = cmd_args[0].strip()
+            if command in META_COMMANDS:
+                meth = getattr(self, "handle_" + META_COMMANDS[command[0].strip()])
+                args = [user, user, command] + cmd_args[1:]
+                meth(*args)
+                return
 
         all_registered = self._callbacks.get(event)
         if all_registered is None:
