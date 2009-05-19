@@ -16,7 +16,7 @@ import datetime
 from lalita import Plugin
 
 class Url (Plugin):
-    url_re= re.compile ('((https?|ftp)://[^ ]*)', re.IGNORECASE|re.DOTALL)
+    url_re= re.compile ('((https?|ftp)://[^ ]+)', re.IGNORECASE|re.DOTALL)
     title_re= re.compile (
         '< *title *>([^<]+)< */ *title *>', re.IGNORECASE|re.DOTALL)
     content_type_re= re.compile (
@@ -30,7 +30,7 @@ class Url (Plugin):
         self.config= dict (
             block_size=4096,
             in_format=u'%(poster)s: [#%(id)d] %(title)s',
-            found_format=u'[#%(id)d] %(title)s [by %(poster)s, %(date)s, %(time)s]')
+            found_format=u'[#%(id)d] %(url)s: %(title)s [by %(poster)s, %(date)s, %(time)s]')
         self.config.update (config)
         self.logger.debug (self.config)
         self.titleFound= False
@@ -38,6 +38,7 @@ class Url (Plugin):
         self.magic.load ()
 
         self.register(self.events.COMMAND, self.dig, ['dig'])
+        self.register(self.events.COMMAND, self.delete, ['del'])
 
         self.initDb ()
 
@@ -96,6 +97,16 @@ class Url (Plugin):
                 self.say (channel, self.config['found_format'] % data)
         else:
             self.say (channel, '404 None found')
+
+    def delete (self, user, channel, command, *what):
+        self.logger.debug (u'deleting %s' % (what, ))
+        for uid in what:
+            self.cursor.execute ('''delete from url
+                where id = ?''', uid)
+        self.conn.commit ()
+        self.say (channel, "%s: deleted %s" % (user, ", ".join (
+            [ "[#%s]" % uid for uid in what ]
+        )))
 
     def message (self, user, channel, message):
         g= self.url_re.search (message)
