@@ -3,14 +3,23 @@
 # (c) 2009 Marcos Dione <mdione@grulic.org.ar>
 
 import datetime
+import os
+import shelve
 
 from lalita import Plugin
 
 class Seen(Plugin):
     def init(self, config):
-        self.iolog= {}
-        self.saidlog= {}
-        self.config= dict (clever=True)
+        base = config.get('base_dir', None)
+        if base is not None:
+            if not os.path.exists(base):
+                os.makedirs(base)
+            self.iolog = shelve.open(os.path.join(base, 'iolog'))
+            self.saidlog = shelve.open(os.path.join(base, 'saidlog'))
+        else:
+            self.iolog = {}
+            self.saidlog = {}
+        self.config = dict (clever=True)
         self.config.update (config)
 
         self.register(self.events.JOIN, self.joined)

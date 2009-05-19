@@ -8,9 +8,10 @@ servers = {
             channels= {
                 '#humites': dict (plugins={
                     'url.Url': { },
+                    'seen.Seen': { },
                 }),
                 '#perrites': dict (plugins={
-                    'seen.Seen': { },
+                    'seen.Seen': {'base_dir':'<path/to/shelves_dir>'}, # two shelf's are going to be created (iolog and saylog) 
                 }),
             },
             plugins= {
