@@ -105,7 +105,7 @@ class Url (Plugin):
         for uid in what:
             self.logger.debug (u'deleting %s' % uid)
             self.cursor.execute ('''delete from url
-                where id = ?''', uid)
+                where id = ?''', (uid, ))
         self.conn.commit ()
         self.say (channel, "%s: deleted %s" % (user, ", ".join (
             [ "[#%s]" % uid for uid in what ]
@@ -162,7 +162,7 @@ class Url (Plugin):
                 self.titleFound= True
                 title= g.groups ()[0]
 
-                if encoding is None:
+                if encoding is None or encoding.startswith ('unknown'):
                     # guess the encoding from the page itself
                     g= self.content_type_re.search (page)
                     if g is not None:
