@@ -9,6 +9,7 @@ from twisted.internet import defer
 from BeautifulSoup import BeautifulSoup, BeautifulStoneSoup
 
 import magic
+import chardet
 
 import sqlite3
 import datetime
@@ -30,7 +31,9 @@ class Url (Plugin):
         self.config= dict (
             block_size=4096,
             in_format=u'%(poster)s: [#%(id)d] %(title)s',
-            found_format=u'[#%(id)d] %(url)s: %(title)s [by %(poster)s, %(date)s, %(time)s]')
+            found_format=u'[#%(id)d] %(url)s: %(title)s [by %(poster)s, %(date)s, %(time)s]',
+            guess_encoding=0.0,
+            )
         self.config.update (config)
         self.logger.debug (self.config)
         self.titleFound= False
@@ -99,8 +102,8 @@ class Url (Plugin):
             self.say (channel, '404 None found')
 
     def delete (self, user, channel, command, *what):
-        self.logger.debug (u'deleting %s' % (what, ))
         for uid in what:
+            self.logger.debug (u'deleting %s' % uid)
             self.cursor.execute ('''delete from url
                 where id = ?''', uid)
         self.conn.commit ()
@@ -153,7 +156,7 @@ class Url (Plugin):
         # text/plain? yes, text/plain too...
         # see http://blog.nixternal.com/2009.03.30/where-is-ctrlaltbackspace/
         if (mimetype in ('text/html', 'text/plain') or
-                mimetype in ('text/xml', 'application/xml') and g is not None):
+                mimetype in ('text/xml', 'application/xml', 'text/x-c') and g is not None):
             g= self.title_re.search (page)
             if g is not None:
                 self.titleFound= True
@@ -173,11 +176,18 @@ class Url (Plugin):
                         else:
                             self.logger.warn ("further mimetype detection failed: %s" % mimetype_enc)
 
-                        # still no encoding?!?
+                        # try chardet
                         if encoding is None:
-                            self.logger.debug ("still no encoding: %s" % mimetype_enc)
-                            # good as any
-                            encoding= 'utf-8'
+                            detect= chardet.detect (page)
+
+                            if detect['confidence']>self.config['guess_encoding']:
+                                encoding= detect['encoding']
+                                self.logger.debug ("chrdet says it's %s" % encoding)
+                            else:
+                                # still no encoding?!?
+                                self.logger.debug ("still no encoding: %s" % mimetype_enc)
+                                # good as any
+                                encoding= 'utf-8'
                     else:
                         # use an encoding guesser
                         self.logger.debug ('no mimetype in the page')
