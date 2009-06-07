@@ -100,7 +100,7 @@ class Url (Plugin):
                 self.logger.debug (u'found %s' % data['url'])
                 self.say (channel, self.config['found_format'] % data)
         else:
-            self.say (channel, '404 Search term not found: %s' % what[0])
+            self.say (channel, '%s: 404 Search term not found: %s' % (user, what[0]))
 
     def delete (self, user, channel, command, *what):
         for uid in what:
