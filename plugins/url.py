@@ -126,22 +126,16 @@ class Url (Plugin):
             else:
                 # go fetch it
                 self.logger.debug ('fetching %s' % url)
-                promise= client.getPage (str (url))
-                #, headers=dict (
-                    #Range="bytes=0-%d" % self.config['block_size'])
-                #)
-                #downloader= client._makeGetterFactory (url.encode ('ascii'),
-                    #client.HTTPClientFactory, headers=dict (
-                        #Range="bytes=0-%d" % self.config['block_size']
-                    #))
-                #downloader.handleStatus_206= .handleStatus_200
-                #promise= downloader.deferred
+                promise= client.getPage (str (url), headers=dict (
+                    Range='bytes=0-%d' % self.config['block_size'])
+                    )
                 promise.addCallback (self.guessFile, user, channel, url)
                 promise.addErrback (self.failed, user, channel, url)
                 return promise
 
     def guessFile (self, page, user, channel, url):
         # self.logger.debug (u"[%s] %s" % (type (page), page.decode ('utf-8')))
+        self.logger.debug (len (page))
         mimetype_enc= self.magic.buffer (page)
         self.logger.debug (mimetype_enc)
         # text/html; charset=utf-8
@@ -210,8 +204,11 @@ class Url (Plugin):
         else:
             self.addUrl (channel, user, url, mimetype=mimetype)
 
-    def failed (self, bongs, user, channel, url):
-        self.logger.debug (bongs)
-        self.say(channel, u"%s: error con la página: %s" % (user, bongs.value))
+    def failed (self, failure, user, channel, url):
+        self.logger.debug (failure)
+        if str (failure.value).startswith ('206'):
+            self.guessFile (failure.value.response, user, channel, url)
+        else:
+            self.say(channel, u"%s: error con la página: %s" % (user, failure.value))
 
 # end
