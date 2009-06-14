@@ -147,9 +147,9 @@ class Url (Plugin):
                 mimetype= g.groups ()[0]
                 encoding= g.groups ()[2]
             else:
-                self.logger.warn ("further mimetype detection failed: %s" % mimetype_enc)
+                self.logger.warning ("further mimetype detection failed: %s" % mimetype_enc)
         else:
-            self.logger.warn ("no mimetype in the page")
+            self.logger.warning ("no mimetype in the page")
 
         return encoding
 
@@ -161,7 +161,7 @@ class Url (Plugin):
             encoding= detect['encoding']
             self.logger.debug ("chardet says it's %s" % encoding)
         else:
-            self.logger.debug ("chardet says it's %s, but with very low confidence: %f" % (encoding, confidence))
+            self.logger.warning ("chardet says it's %s, but with very low confidence: %f" % (encoding, confidence))
 
         return encoding
 
