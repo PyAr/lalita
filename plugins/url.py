@@ -133,12 +133,44 @@ class Url (Plugin):
                 promise.addErrback (self.failed, user, channel, url)
                 return promise
 
+    # encoding detectors
+    def pageContentType (self, page):
+        encoding= None
+
+        g= self.content_type_re.search (page)
+        if g is not None:
+            mimetype_enc= g.groups ()[0]
+            self.logger.debug (mimetype_enc)
+            # text/html; charset=utf-8
+            g= self.mimetype_re.search (mimetype_enc)
+            if g is not None:
+                mimetype= g.groups ()[0]
+                encoding= g.groups ()[2]
+            else:
+                self.logger.warn ("further mimetype detection failed: %s" % mimetype_enc)
+
+        return encoding
+
+    def guess (self, page):
+        encoding= None
+        detect= chardet.detect (page)
+
+        if detect['confidence']>self.config['guess_encoding']:
+            encoding= detect['encoding']
+            self.logger.debug ("chardet says it's %s" % encoding)
+
+        return encoding
+
+    def hardCoded (self, page):
+        # good as any
+        encoding= 'utf-8'
+
+        return encoding
+
     def guessFile (self, page, user, channel, url):
-        # self.logger.debug (u"[%s] %s" % (type (page), page.decode ('utf-8')))
-        self.logger.debug (len (page))
+        encodings= set ()
+
         mimetype_enc= self.magic.buffer (page)
-        self.logger.debug (mimetype_enc)
-        # text/html; charset=utf-8
         g= self.mimetype_re.search (mimetype_enc)
         if g is not None:
             mimetype= g.groups ()[0]
@@ -148,49 +180,39 @@ class Url (Plugin):
 
         # xhtml detection
         g= self.xhtml_re.search (page)
+
         # text/plain? yes, text/plain too...
         # see http://blog.nixternal.com/2009.03.30/where-is-ctrlaltbackspace/
-        if (mimetype in ('text/html', 'text/plain') or
-                mimetype in ('text/xml', 'application/xml', 'text/x-c') and g is not None):
+        # text/x-c should be some kind of xml,
+        # but of course not everybody says the correct things
+        # see http://www.cadena3.com.ar/contenido/2009/06/13/32131.asp
+        if (mimetype in ('text/html', 'text/plain', 'text/x-c') or
+                mimetype in ('text/xml', 'application/xml') and g is not None):
+
             g= self.title_re.search (page)
             if g is not None:
                 self.titleFound= True
                 title= g.groups ()[0]
 
-                if encoding is None or encoding.startswith ('unknown'):
-                    # guess the encoding from the page itself
-                    g= self.content_type_re.search (page)
-                    if g is not None:
-                        mimetype_enc= g.groups ()[0]
-                        self.logger.debug (mimetype_enc)
-                        # text/html; charset=utf-8
-                        g= self.mimetype_re.search (mimetype_enc)
-                        if g is not None:
-                            mimetype= g.groups ()[0]
-                            encoding= g.groups ()[2]
-                        else:
-                            self.logger.warn ("further mimetype detection failed: %s" % mimetype_enc)
+                for method in (self.pageContentType, self.guess, self.hardCoded):
+                    # returns an encoding and a dict to update the locals
+                    # encoding, local= method (page)
+                    # locals ().update (local)
+                    encoding= method (page)
+                    if encoding is not None:
+                        encodings.add (encoding)
 
-                        # try chardet
-                        if encoding is None:
-                            detect= chardet.detect (page)
-
-                            if detect['confidence']>self.config['guess_encoding']:
-                                encoding= detect['encoding']
-                                self.logger.debug ("chrdet says it's %s" % encoding)
-                            else:
-                                # still no encoding?!?
-                                self.logger.debug ("still no encoding: %s" % mimetype_enc)
-                                # good as any
-                                encoding= 'utf-8'
+                for encoding in encodings:
+                    try:
+                        data= title.decode (encoding)
+                    except UnicodeDecodeError:
+                        self.logger.debug ("tried encoding %s but failed" % encoding)
                     else:
-                        # use an encoding guesser
-                        self.logger.debug ('no mimetype in the page')
-                        # good as any
-                        encoding= 'utf-8'
+                        self.logger.debug ("suceeded with encoding %s" % encoding)
+                        break
 
                 # convert xhtml entities
-                title= BeautifulStoneSoup (title.decode (encoding),
+                title= BeautifulStoneSoup (title,
                     convertEntities=BeautifulStoneSoup.XHTML_ENTITIES).contents[0]
 
                 # this takes out the \n\r\t's
@@ -207,6 +229,7 @@ class Url (Plugin):
     def failed (self, failure, user, channel, url):
         self.logger.debug (failure)
         if str (failure.value).startswith ('206'):
+            # this is not a failure, but a response to a '206 partial content'
             self.guessFile (failure.value.response, user, channel, url)
         else:
             self.say(channel, u"%s: error con la página: %s" % (user, failure.value))
