@@ -11,7 +11,7 @@ logger = logging.getLogger ('ircbot.core.dispatcher')
 from core import events
 
 # messages longer than this will be splitted in different server commands
-LENGTH_MSG = 128
+LENGTH_MSG = 512
 
 # these are special events that should be handled by their methods to
 # validate the message reception
