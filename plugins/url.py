@@ -14,6 +14,8 @@ import chardet
 import sqlite3
 import datetime
 
+import random
+
 from lalita import Plugin
 
 class Url (Plugin):
@@ -45,6 +47,7 @@ class Url (Plugin):
 
         self.initDb ()
 
+    ##### database handling #####
     def initDb (self):
         # sqlite stuff
         db= 'db/'+self.config.get ('database', 'url.db')
@@ -61,11 +64,13 @@ class Url (Plugin):
             title text)''')
         self.cursor.execute ('''create index if not exists url_idx on url (url)''')
 
-    def addUrl (self, channel, poster, url, title='<no title>', mimetype=None):
+    def addUrl (self, channel, poster, url, title='<no title>', mimetype=None, date=None, time=None):
         now= datetime.datetime.now ()
-        date= str (now.date ())
-        # '16:15:50.417804'
-        time= str (now.time ()).split ('.')[0]
+        if date is None:
+            date= str (now.date ())
+        if time is None:
+            # '16:15:50.417804'
+            time= str (now.time ()).split ('.')[0]
 
         data= [url, date, time, poster, title]
         self.logger.debug ('inserting data '+str (data))
@@ -112,7 +117,7 @@ class Url (Plugin):
             [ "[#%s]" % uid for uid in what ]
         )))
 
-    def message (self, user, channel, message):
+    def message (self, user, channel, message, date=None, time=None):
         g= self.url_re.search (message)
         if g is not None:
             url= g.groups()[0]
@@ -123,17 +128,18 @@ class Url (Plugin):
             if result is not None:
                 data= dict (zip (('id', 'url', 'date', 'time', 'poster', 'title'), result))
                 self.say (channel, self.config['found_format'] % data)
+                return defer.fail ((url, False, 'already in db'))
             else:
                 # go fetch it
                 self.logger.debug ('fetching %s' % url)
                 promise= client.getPage (str (url), headers=dict (
                     Range='bytes=0-%d' % self.config['block_size'])
                     )
-                promise.addCallback (self.guessFile, user, channel, url)
-                promise.addErrback (self.failed, user, channel, url)
+                promise.addCallback (self.guessFile, user, channel, url, date, time)
+                promise.addErrback (self.failed, user, channel, url, date, time)
                 return promise
 
-    # encoding detectors
+    ##### encoding detectors #####
     def pageContentType (self, page):
         encoding= None
 
@@ -171,7 +177,7 @@ class Url (Plugin):
 
         return encoding
 
-    def guessFile (self, page, user, channel, url):
+    def guessFile (self, page, user, channel, url, date, time):
         encodings= set ()
 
         mimetype_enc= self.magic.buffer (page)
@@ -224,37 +230,128 @@ class Url (Plugin):
                 title= ' '.join (titleParts)
                 self.logger.debug (u"[%s] >%s< %s" % (type (title), title, encoding))
 
-                self.addUrl (channel, user, url, title)
+                self.addUrl (channel, user, url, title, date=date, time=time)
             else:
-                self.addUrl (channel, user, url)
+                # the mimetype is better title than none
+                self.addUrl (channel, user, url, mimetype=mimetype, date=date, time=time)
+                title= mimetype
         else:
-            self.addUrl (channel, user, url, mimetype=mimetype)
+            self.addUrl (channel, user, url, mimetype=mimetype, date=date, time=time)
+                title= mimetype
+        return url, True, title
 
-    def failed (self, failure, user, channel, url):
+    def failed (self, failure, user, channel, url, date, time):
         self.logger.debug (failure)
         if str (failure.value).startswith ('206'):
             # this is not a failure, but a response to a '206 partial content'
-            self.guessFile (failure.value.response, user, channel, url)
+            return self.guessFile (failure.value.response, user, channel, url, date, time)
         else:
             self.say(channel, u"%s: error con la página: %s" % (user, failure.value))
+            return url, False, failure.value
 
-def parse_logs(logline):
-    hour, rawlog = logline.split(' ', 1)
-    rawnick, log = rawline.split('>', 1)
-    log = log.strip()
-    nick = rawnick[2:]
-    return((nick, '#grulic', log))
-    
+    ##### log parsing #####
+    def date_from_log (self, date):
+        # shamelessly borrowed from the facundario
+        # http://facundario.perrito666.com.ar/
+        # tx perrito
 
-if __name__ == '__main__':
-    from twisted.internet import reactor
-    import sys
-    lalitalone = Url()
-    lalitalone.say = lambda perrito, gatito: print "%s: %s" % (perrito, gatito)
-    for logs in open(sys.argv[1]).xreadlines():
-    	parsed_log = parse_logs(logs)
-	if parsed_log:
-        	lalitalone.message(*parsed_log)
-    reactor.run()
+        MONTHS = {
+            "ene":  1,
+            "jan":  1,
+            "feb":  2,
+            "mar":  3,
+            "abr":  4,
+            "apr":  4,
+            "may":  5,
+            "jun":  6,
+            "jul":  7,
+            "ago":  8,
+            "aug":  8,
+            "sep":  9,
+            "oct": 10,
+            "nov": 11,
+            "dec": 12,
+            "dic": 12,
+        }
+
+        # --- Day changed lun aug 27 2007
+        # --- Log opened dom ago 26 00:33:58 2007
+        if date.startswith("--- Day"):
+            (x, x, x, x, m, d, y) = date.split()
+        elif date.startswith("--- Log"):
+            (x, x, x, x, m, d, x, y) = date.split()
+        else:
+            raise ValueError("Linea invalida, no es fecha: %r" % date)
+        d, y = int(d), int(y)
+        m = MONTHS[m.lower()]
+        realDate = datetime.date(year=y, month=m, day=d)
+        return realDate
+
+    def parse_logs (self, logfile, channel):
+        # irssi logs:
+        # --- Log opened Mon May 04 10:38:38 2009
+        # 10:38 < perrito666> que pasó?
+        # --- Day changed Sat May 02 2009
+        for logline in logfile.xreadlines ():
+            if logline.startswith ('---'):
+                date= self.date_from_log (logline)
+            elif logline[6:9]!='-!-' and logline[7]!='*':
+                print logline,
+                time, logline = logline.split(' ', 1)
+                # time should include seconds
+                # good as any
+                seconds= random.randint (0, 59)
+                time+= ":%02d" % seconds
+                nick, logline = logline.split('>', 1)
+                logline = logline.strip()
+                # take out the '< '
+                nick = nick[2:]
+                g= self.url_re.search (logline)
+                if g is not None:
+                    yield (date, time, channel, nick, logline)
+
+    def import_logs (self, logfile):
+        from twisted.internet import reactor
+        import os
+
+        # monkeypatching say() and register () so they're noop()
+        self.say = lambda perrito, gatito: None
+        self.register= lambda *ignore: None
+
+        # BUG: the config should be better
+        self.init ({})
+
+        channel= os.path.basename (logfile)
+        if channel.endswith ('.log'):
+            channel= channel[:-4]
+
+        logfile= open(logfile)
+        self.urlsFound= 0
+        self.urlsFailed= 0
+        self.urlsOk= 0
+
+        for date, time, channel, nick, log in self.parse_logs (logfile, channel):
+            self.logger.debug ((date, time, channel, nick, log))
+            self.urlsFound+= 1
+            # print self.urls
+            print log
+            promise= self.message (nick, channel, log, date, time)
+            promise.addCallback (self.decay)
+            promise.addErrback (self.decay)
+
+    def decay (self, result):
+        # print result
+        url, ok, reason= result
+        print url,
+        if not ok:
+            self.urlsFailed+= 1
+            print 'failed:', reason
+        else:
+            self.urlsOk+= 1
+            print 'ok', reason
+
+        if self.urlsOk+self.urlsFailed==self.urlsFound:
+            # finished
+            reactor.stop ()
 
 # end
