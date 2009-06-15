@@ -238,4 +238,22 @@ class Url (Plugin):
         else:
             self.say(channel, u"%s: error con la página: %s" % (user, failure.value))
 
+def parse_logs(logline):
+    hour, rawlog = logline.split(' ', 1)
+    rawnick, log = rawline.split('>', 1)
+    log = log.strip()
+    nick = rawnick[2:]
+    return((nick, '#grulic', log))
+    
+
+if __name__ == '__main__':
+    from twisted.internet import reactor
+    lalitalone = Url()
+    lalitalone.say = lambda perrito, gatito: print "%s: %s" % (perrito, gatito)
+    for logs in open('urllogs.log').xreadlines():
+    	parsed_log = parse_logs(logs)
+	if parsed_log:
+        	lalitalone.message(*parsed_log)
+    reactor.run()
+
 # end
