@@ -248,9 +248,10 @@ def parse_logs(logline):
 
 if __name__ == '__main__':
     from twisted.internet import reactor
+    import sys
     lalitalone = Url()
     lalitalone.say = lambda perrito, gatito: print "%s: %s" % (perrito, gatito)
-    for logs in open('urllogs.log').xreadlines():
+    for logs in open(sys.argv[1]).xreadlines():
     	parsed_log = parse_logs(logs)
 	if parsed_log:
         	lalitalone.message(*parsed_log)
