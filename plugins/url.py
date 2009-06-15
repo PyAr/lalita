@@ -240,6 +240,8 @@ class Url (Plugin):
 
 def parse_logs(logline):
     hour, rawlog = logline.split(' ', 1)
+    if not rawlog.startswith('<'):
+    	return None
     rawnick, log = rawline.split('>', 1)
     log = log.strip()
     nick = rawnick[2:]
@@ -250,11 +252,12 @@ if __name__ == '__main__':
     from twisted.internet import reactor
     import sys
     lalitalone = Url()
-    lalitalone.say = lambda perrito, gatito: print "%s: %s" % (perrito, gatito)
+    lalitalone.say = lambda perrito, gatito: "%s: %s" % (perrito, gatito)
     for logs in open(sys.argv[1]).xreadlines():
     	parsed_log = parse_logs(logs)
 	if parsed_log:
         	lalitalone.message(*parsed_log)
+		print "%s => [%s] %s\n" % parsed_log
     reactor.run()
 
 # end
