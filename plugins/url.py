@@ -15,6 +15,7 @@ import sqlite3
 import datetime
 
 import random
+from time import sleep
 
 from lalita import Plugin
 
@@ -237,7 +238,7 @@ class Url (Plugin):
                 title= mimetype
         else:
             self.addUrl (channel, user, url, mimetype=mimetype, date=date, time=time)
-                title= mimetype
+            title= mimetype
         return url, True, title
 
     def failed (self, failure, user, channel, url, date, time):
@@ -296,7 +297,6 @@ class Url (Plugin):
             if logline.startswith ('---'):
                 date= self.date_from_log (logline)
             elif logline[6:9]!='-!-' and logline[7]!='*':
-                print logline,
                 time, logline = logline.split(' ', 1)
                 # time should include seconds
                 # good as any
@@ -310,7 +310,7 @@ class Url (Plugin):
                 if g is not None:
                     yield (date, time, channel, nick, logline)
 
-    def import_logs (self, logfile):
+    def import_logs (self, logfile, no_more_than=500):
         from twisted.internet import reactor
         import os
 
@@ -326,18 +326,35 @@ class Url (Plugin):
             channel= channel[:-4]
 
         logfile= open(logfile)
+        self.logfile_finished= False
+
         self.urlsFound= 0
         self.urlsFailed= 0
         self.urlsOk= 0
 
-        for date, time, channel, nick, log in self.parse_logs (logfile, channel):
-            self.logger.debug ((date, time, channel, nick, log))
+        self.no_more_than= no_more_than
+        self.batch= 0
+
+        self.urls= []
+        for data in self.parse_logs (logfile, channel):
+            self.urls.append (data)
             self.urlsFound+= 1
-            # print self.urls
-            print log
+
+        self.more ()
+
+    def more (self):
+        self.batch+= 1
+        print "batch #%d" % self.batch
+        data= self.urls[:self.no_more_than]
+        self.urls= self.urls[self.no_more_than:]
+
+        for date, time, channel, nick, log in data:
             promise= self.message (nick, channel, log, date, time)
             promise.addCallback (self.decay)
             promise.addErrback (self.decay)
+
+        if self.urls==[]:
+            self.logfile_finished= True
 
     def decay (self, result):
         # print result
@@ -350,8 +367,12 @@ class Url (Plugin):
             self.urlsOk+= 1
             print 'ok', reason
 
-        if self.urlsOk+self.urlsFailed==self.urlsFound:
+        if (self.urlsOk+self.urlsFailed)%self.no_more_than==0:
+            self.more ()
+
+        if self.urlsOk+self.urlsFailed==self.urlsFound and self.logfile_finished:
             # finished
+            print "%d urls ofund, %d ok, %d failed" % (self.urlsFound, self.urlsOk, self.urlsFailed)
             reactor.stop ()
 
 # end

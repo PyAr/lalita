@@ -19,7 +19,11 @@ if __name__ == '__main__':
     lalitalone = Url (dict (nickname=sys.argv[1]), logging.DEBUG)
 
     logfile= sys.argv[2]
-    lalitalone.import_logs (logfile)
+    try:
+        no_more_than= int (sys.argv[3])
+    except (ValueError, IndexError):
+        no_more_than= 500
+    lalitalone.import_logs (logfile, no_more_than)
 
     reactor.run()
 
