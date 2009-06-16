@@ -4,7 +4,8 @@
 
 import re
 from twisted.web import client
-from twisted.internet import defer
+from twisted.internet import defer, reactor
+from twisted.python import failure
 
 from BeautifulSoup import BeautifulSoup, BeautifulStoneSoup
 
@@ -311,7 +312,6 @@ class Url (Plugin):
                     yield (date, time, channel, nick, logline)
 
     def import_logs (self, logfile, no_more_than=500):
-        from twisted.internet import reactor
         import os
 
         # monkeypatching say() and register () so they're noop()
@@ -357,7 +357,10 @@ class Url (Plugin):
             self.logfile_finished= True
 
     def decay (self, result):
-        # print result
+        # handle failures
+        if isinstance (result, failure.Failure):
+            result= result.value
+
         url, ok, reason= result
         print url,
         if not ok:
