@@ -6,6 +6,12 @@ from twisted.internet import reactor
 import sys
 import logging
 
+handler = logging.StreamHandler(sys.stdout)
+formatter = logging.Formatter(
+                            "%(asctime)s %(name)s:%(lineno)-4d %(levelname)-8s %(message)s",
+                            '%H:%M:%S')
+handler.setFormatter(formatter)
+
 # if we're in production, this should work and no magic is necessary
 try:
     import lalita
@@ -16,7 +22,7 @@ except ImportError:
 from plugins.url import Url
 
 if __name__ == '__main__':
-    lalitalone = Url (dict (nickname=sys.argv[1]), logging.DEBUG)
+    lalitalone = Url (dict (nickname=sys.argv[1], guess_encoding=0.75), logging.DEBUG)
 
     logfile= sys.argv[2]
     try:

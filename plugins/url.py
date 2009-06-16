@@ -180,7 +180,7 @@ class Url (Plugin):
         return encoding
 
     def guessFile (self, page, user, channel, url, date, time):
-        encodings= set ()
+        encodings= []
 
         mimetype_enc= self.magic.buffer (page)
         g= self.mimetype_re.search (mimetype_enc)
@@ -212,7 +212,7 @@ class Url (Plugin):
                     # locals ().update (local)
                     encoding= method (page)
                     if encoding is not None:
-                        encodings.add (encoding)
+                        encodings.append (encoding)
 
                 for encoding in encodings:
                     try:
@@ -330,6 +330,7 @@ class Url (Plugin):
 
         self.urlsFound= 0
         self.urlsFailed= 0
+        self.urlsInDb= 0
         self.urlsOk= 0
 
         self.no_more_than= no_more_than
@@ -353,9 +354,6 @@ class Url (Plugin):
             promise.addCallback (self.decay)
             promise.addErrback (self.decay)
 
-        if self.urls==[]:
-            self.logfile_finished= True
-
     def decay (self, result):
         # handle failures
         if isinstance (result, failure.Failure):
@@ -364,18 +362,22 @@ class Url (Plugin):
         url, ok, reason= result
         print url,
         if not ok:
-            self.urlsFailed+= 1
-            print 'failed:', reason
+            if reason=='already in db':
+                self.urlsInDb+= 1
+                print reason
+            else:
+                self.urlsFailed+= 1
+                print 'failed:', reason
         else:
             self.urlsOk+= 1
             print 'ok', reason
 
-        if (self.urlsOk+self.urlsFailed)%self.no_more_than==0:
+        if (self.urlsOk+self.urlsInDb+self.urlsFailed)%self.no_more_than==0:
             self.more ()
 
-        if self.urlsOk+self.urlsFailed==self.urlsFound and self.logfile_finished:
+        if self.urlsOk+self.urlsInDb+self.urlsFailed==self.urlsFound:
             # finished
-            print "%d urls ofund, %d ok, %d failed" % (self.urlsFound, self.urlsOk, self.urlsFailed)
+            print "%d urls found, %d ok, %d in db, %d failed" % (self.urlsFound, self.urlsOk, self.urlsInDb, self.urlsFailed)
             reactor.stop ()
 
 # end
