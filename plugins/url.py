@@ -180,7 +180,10 @@ class Url (Plugin):
         return encoding
 
     def guessFile (self, page, user, channel, url, date, time):
-        encodings= []
+        # try utf-8 first because chardet is used very often
+        # and it gets easily confused (?!?!) by perfect utf-8
+        # and returns any vegetable instead
+        encodings= ['utf-8']
 
         mimetype_enc= self.magic.buffer (page)
         g= self.mimetype_re.search (mimetype_enc)
@@ -221,6 +224,7 @@ class Url (Plugin):
                         self.logger.debug ("tried encoding %s but failed" % encoding)
                     else:
                         self.logger.debug ("suceeded with encoding %s" % encoding)
+                        title= data
                         break
 
                 # convert xhtml entities
