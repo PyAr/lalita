@@ -47,6 +47,7 @@ CHANNEL_POS = {
     events.PUBLIC_MESSAGE: 1,
     events.JOIN: 0,
     events.PART: 0,
+    events.ACTION: 1,
 }
 
 
@@ -118,8 +119,11 @@ class Dispatcher(object):
                 meth(*args)
                 return
 
+            # check if the command is one of those registered for the
+            # plugins (the [None] is a special case when registering for
+            # all of them)
             cmds = [x[2] for x in self._callbacks[events.COMMAND]]
-            if command not in itertools.chain(*cmds):
+            if cmds != [None] and command not in itertools.chain(*cmds):
                 self.msg(channel, u"%s: No existe esa órden!" % user)
                 return
 
