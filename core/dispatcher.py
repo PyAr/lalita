@@ -203,7 +203,11 @@ class Dispatcher(object):
 
         # only one method for that command
         if len(docs) == 1:
-            self.msg(channel, docs[0])
+            if docs[0]:
+                t = docs[0]
+            else:
+                t = u"Esa órden no tiene documentación, y yo no soy adivina..."
+            self.msg(channel, t)
             return
 
         # several methods for the same command
