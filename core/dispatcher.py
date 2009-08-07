@@ -203,17 +203,15 @@ class Dispatcher(object):
 
         # only one method for that command
         if len(docs) == 1:
-            if docs[0]:
-                t = docs[0]
-            else:
-                t = u"Esa órden no tiene documentación, y yo no soy adivina..."
+            t = docs[0] if docs[0] else u"No tiene documentación, y yo no soy adivina..."
             self.msg(channel, t)
             return
 
         # several methods for the same command
         self.msg(channel, u"Hay varios métodos para esa órden:")
         for doc in docs:
-            self.msg(channel, u" - " + doc)
+            t = doc if doc else u"No tiene documentación, y yo no soy adivina..."
+            self.msg(channel, u" - " + t)
 
     def handle_meta_list(self, user, channel, command, *args):
         '''Handles the LIST meta command.'''

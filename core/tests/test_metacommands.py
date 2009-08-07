@@ -8,12 +8,9 @@ from twisted.internet import defer, reactor
 
 from core import events
 from core import dispatcher
-from config import servers
 import ircbot
 
-server = servers["example"]
-ircbot_factory = ircbot.IRCBotFactory(server)
-
+ircbot_factory = ircbot.IRCBotFactory(dict(log_config="error"))
 bot = ircbot.IrcBot()
 bot.factory = ircbot_factory
 bot.msg = lambda *a:None
@@ -21,7 +18,7 @@ bot.msg = lambda *a:None
 # FIXME: all these messages should be internationalized per server (not locale)
 PREFIX_LIST = u"Las órdenes son: ".encode("utf8")
 GENERIC_HELP = u'"list" para ver las órdenes; "help cmd" para cada uno'.encode("utf8")
-NODOCSTRING = u"Esa órden no tiene documentación, y yo no soy adivina...".encode("utf8")
+NODOCSTRING = u"No tiene documentación, y yo no soy adivina...".encode("utf8")
 SEVERALDOCS = u"Hay varios métodos para esa órden:".encode("utf8")
 
 
@@ -76,6 +73,8 @@ class TestHelp(unittest.TestCase):
                 "foo"
             def h(self, *a):
                 "bar"
+            def i(self, *a):
+                pass
         self.helper = Helper()
         self.disp.new_plugin(self.helper, "channel")
 
@@ -91,17 +90,29 @@ class TestHelp(unittest.TestCase):
     def test_simple_doc(self):
         self.disp.register(events.COMMAND, self.helper.g, ("cmd",))
         self.disp.push(events.COMMAND, "user", "channel", "help", "cmd")
-        print "==== dijo:", self.said
         self.assertEqual(self.said[0][1], "foo")
 
     def test_repeated_doc(self):
         self.disp.register(events.COMMAND, self.helper.g, ("cmd",))
         self.disp.register(events.COMMAND, self.helper.h, ("cmd",))
         self.disp.push(events.COMMAND, "user", "channel", "help", "cmd")
-        print "==== dijo:", self.said
         self.assertEqual(self.said[0][1], SEVERALDOCS)
         self.assertEqual(self.said[1][1], " - foo")
         self.assertEqual(self.said[2][1], " - bar")
 
+    def test_repeated_no_doc(self):
+        self.disp.register(events.COMMAND, self.helper.f, ("cmd",))
+        self.disp.register(events.COMMAND, self.helper.i, ("cmd",))
+        self.disp.push(events.COMMAND, "user", "channel", "help", "cmd")
+        self.assertEqual(self.said[0][1], SEVERALDOCS)
+        self.assertEqual(self.said[1][1], " - " + NODOCSTRING)
+        self.assertEqual(self.said[2][1], " - " + NODOCSTRING)
 
+    def test_mixed_no_doc(self):
+        self.disp.register(events.COMMAND, self.helper.g, ("cmd",))
+        self.disp.register(events.COMMAND, self.helper.i, ("cmd",))
+        self.disp.push(events.COMMAND, "user", "channel", "help", "cmd")
+        self.assertEqual(self.said[0][1], SEVERALDOCS)
+        self.assertEqual(self.said[1][1], " - foo")
+        self.assertEqual(self.said[2][1], " - " + NODOCSTRING)
 

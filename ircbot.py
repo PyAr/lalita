@@ -27,8 +27,6 @@ except ImportError:
 # local imports
 from core import events
 from core import dispatcher
-import config
-
 
 LOG_LEVELS = {
     "debug": logging.DEBUG,
@@ -291,6 +289,13 @@ if __name__ == '__main__':
             print "   a list of plugin_name:loglevel separated by commas"
             print "Example:   misc.Ping:debug,example.Example:info"
             raise
+
+    try:
+        import config
+    except ImportError:
+        print "A config file is needed to run this program."
+        print "See as an example the included here config.py.example"
+        sys.exit()
 
     # get all servers or the indicated ones
     servers = config.servers

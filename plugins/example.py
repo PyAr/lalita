@@ -52,9 +52,16 @@ class Example(Plugin):
     def command_twisted(self, user, channel, command, *args):
         u"""enroscau: Ejemplo usando un Deferred."""
         self.logger.debug("command %s from %s (args: %s)", command, user, args)
-        d = defer.succeed((user, channel))
+        d = defer.Deferred()
         d.addCallback(self._twisted_example)
         self.say(user, "Te prometo a futuro un saludo en el canal")
+
+        # trigger the deferred: normally this will be done by other
+        # components: web access, database access, etc.
+        d.callback((user, channel))
+
+        # return the deferred: this is mandatory for this "deferred
+        # executions" to work ok
         return d
 
 
