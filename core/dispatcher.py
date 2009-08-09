@@ -190,11 +190,16 @@ class Dispatcher(object):
             self.msg(channel, u"No hay ninguna órden registrada...")
             return
 
-        # get the docstrings
+        # get the docstrings... to get uniques we don't use a dictionary just
+        # to keep the secuence ordered
         docs = []
+        revised = set()
         for (inst, meth, cmds) in registered:
             if args[0] in cmds:
-                docs.append(meth.__doc__)
+                modclsmeth = "%s.%s.%s" % ( meth.__module__, meth.__class__.__name__, meth.im_func.func_name)
+                if modclsmeth not in revised:
+                    revised.add(modclsmeth)
+                    docs.append(meth.__doc__)
 
         # no docs!
         if not docs:

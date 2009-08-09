@@ -11,6 +11,7 @@ from core import dispatcher
 import ircbot
 
 ircbot_factory = ircbot.IRCBotFactory(dict(log_config="error"))
+ircbot.logger.setLevel("error")
 bot = ircbot.IrcBot()
 bot.factory = ircbot_factory
 bot.msg = lambda *a:None
@@ -116,3 +117,71 @@ class TestHelp(unittest.TestCase):
         self.assertEqual(self.said[1][1], " - foo")
         self.assertEqual(self.said[2][1], " - " + NODOCSTRING)
 
+
+class TestMoreHelp(unittest.TestCase):
+    '''With the plugin in more channels.'''
+    def setUp(self):
+        self.disp = dispatcher.Dispatcher(bot)
+
+        self.said = []
+        bot.msg = lambda *a: self.said.append(a)
+
+        class Helper(object):
+            def f(self, *a):
+                pass
+            def g(self, *a):
+                "foo"
+            def h(self, *a):
+                "bar"
+            def i(self, *a):
+                pass
+        self.help1 = Helper()
+        self.help2 = Helper()
+        self.disp.new_plugin(self.help1, "channel")
+        self.disp.new_plugin(self.help2, "chann2")
+
+    def test_generic_help(self):
+        self.disp.push(events.COMMAND, "user", "channel", "help")
+        self.assertEqual(self.said[0][1], GENERIC_HELP)
+
+    def test_no_doc(self):
+        self.disp.register(events.COMMAND, self.help1.f, ("cmd",))
+        self.disp.register(events.COMMAND, self.help2.f, ("cmd",))
+        self.disp.push(events.COMMAND, "user", "channel", "help", "cmd")
+        self.assertEqual(self.said[0][1], NODOCSTRING)
+
+    def test_simple_doc(self):
+        self.disp.register(events.COMMAND, self.help1.g, ("cmd",))
+        self.disp.register(events.COMMAND, self.help2.g, ("cmd",))
+        self.disp.push(events.COMMAND, "user", "channel", "help", "cmd")
+        self.assertEqual(self.said[0][1], "foo")
+
+    def test_repeated_doc(self):
+        self.disp.register(events.COMMAND, self.help1.g, ("cmd",))
+        self.disp.register(events.COMMAND, self.help1.h, ("cmd",))
+        self.disp.register(events.COMMAND, self.help2.g, ("cmd",))
+        self.disp.register(events.COMMAND, self.help2.h, ("cmd",))
+        self.disp.push(events.COMMAND, "user", "channel", "help", "cmd")
+        self.assertEqual(self.said[0][1], SEVERALDOCS)
+        self.assertEqual(self.said[1][1], " - foo")
+        self.assertEqual(self.said[2][1], " - bar")
+
+    def test_repeated_no_doc(self):
+        self.disp.register(events.COMMAND, self.help1.f, ("cmd",))
+        self.disp.register(events.COMMAND, self.help1.i, ("cmd",))
+        self.disp.register(events.COMMAND, self.help2.f, ("cmd",))
+        self.disp.register(events.COMMAND, self.help2.i, ("cmd",))
+        self.disp.push(events.COMMAND, "user", "channel", "help", "cmd")
+        self.assertEqual(self.said[0][1], SEVERALDOCS)
+        self.assertEqual(self.said[1][1], " - " + NODOCSTRING)
+        self.assertEqual(self.said[2][1], " - " + NODOCSTRING)
+
+    def test_mixed_no_doc(self):
+        self.disp.register(events.COMMAND, self.help1.g, ("cmd",))
+        self.disp.register(events.COMMAND, self.help1.i, ("cmd",))
+        self.disp.register(events.COMMAND, self.help2.g, ("cmd",))
+        self.disp.register(events.COMMAND, self.help2.i, ("cmd",))
+        self.disp.push(events.COMMAND, "user", "channel", "help", "cmd")
+        self.assertEqual(self.said[0][1], SEVERALDOCS)
+        self.assertEqual(self.said[1][1], " - foo")
+        self.assertEqual(self.said[2][1], " - " + NODOCSTRING)
