@@ -7,12 +7,19 @@ from twisted.internet import defer, reactor
 
 from core import events
 from core import dispatcher
-from config import servers
 import ircbot
 
-server = servers["perrito"]
-ircbot_factory = ircbot.IRCBotFactory(server)
+server = dict(
+    encoding='utf8',
+    host="0.0.0.0",
+    port=6667,
+    nickname="test",
+    channels={},
+    plugins={},
+)
 
+ircbot_factory = ircbot.IRCBotFactory(server)
+ircbot.logger.setLevel("error")
 bot = ircbot.IrcBot()
 bot.factory = ircbot_factory
 bot.msg = lambda *a:None
