@@ -44,15 +44,16 @@ class Seen(Plugin):
         # server messages are from ''; ignore those and myself
         if nick not in (self.nickname, ''):
             if what in ('joined', 'parted'):
-                self.iolog[nick] = (what, datetime.datetime.now())
+                self.iolog[nick.encode('utf-8')] = (what, datetime.datetime.now())
             else:
-                self.saidlog[nick] = (what, datetime.datetime.now())
+                self.saidlog[nick.encode('utf-8')] = (what, datetime.datetime.now())
             self.logger.debug("logged %s: %s", nick, what)
 
     def seen (self, user, channel, command, nick):
+        """ the last thing a <user> said in the channel (or when he joined/parted)"""
         if not self.config['clever'] or nick not in (self.nickname, user):
-            what1, when1 = self.iolog.get (nick, (None, None))
-            what2, when2 = self.saidlog.get (nick, (None, None))
+            what1, when1 = self.iolog.get(nick.encode('utf-8'), (None, None))
+            what2, when2 = self.saidlog.get(nick.encode('utf-8'), (None, None))
             self.logger.debug (str ((what1, when1, what2, when2)))
             # didn't se him at all or he has just been silent
             # NOTE: I know this can be reduced a little,
