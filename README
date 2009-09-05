@@ -1,1 +1,6 @@
-bla
+Rename config.py.examples to config.py and run ircbot.py
+
+There're a lot of test cases! You can try them running "nosetests" (you 
+need to have Nose installed).
+
+To create a plugin, check the plugins/example.py one, and use it as a start.

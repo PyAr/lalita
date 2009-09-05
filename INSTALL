@@ -1,9 +1,8 @@
 There's no install. You just run the bot from the directory where you get it.
 Just a couple of things:
 
- * Depends on twisted (more specificaly, twisted words) and soon on
-   python-sqlite.
+ * Depends on twisted (more specificaly, twisted words) and python-pysqlite2.
 
  * url.Url plugin depends on Beautiful Soup v3.1.0.1 or similar (just check that
-   XHTML_ENTITIES exist) and python-magic (and twisted web, just in case you
-   installed a partial twisted).
+   XHTML_ENTITIES exist), python-magic and python-chardet (and twisted web, just
+   in case you installed a partial twisted).

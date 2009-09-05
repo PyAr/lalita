@@ -7,7 +7,7 @@ from lalita import Plugin
 class Ping(Plugin):
 
     def init(self, config):
-        self.logger.info("Init! config: %s", config)
+        self.logger.debug("Init! config: %s", config)
         self.register(self.events.COMMAND, self.ping, ['ping'])
 
     def ping(self, user, channel, command):

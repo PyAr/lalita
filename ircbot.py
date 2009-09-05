@@ -27,8 +27,6 @@ except ImportError:
 # local imports
 from core import events
 from core import dispatcher
-import config
-
 
 LOG_LEVELS = {
     "debug": logging.DEBUG,
@@ -40,7 +38,7 @@ LOG_LEVELS = {
 
 handler = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter(
-                            "%(asctime)s %(name)s %(levelname)-8s %(message)s",
+                            "%(asctime)s %(name)s:%(lineno)-4d %(levelname)-8s %(message)s",
                             '%H:%M:%S')
 handler.setFormatter(formatter)
 logger = logging.getLogger('ircbot')
@@ -52,12 +50,14 @@ def nick (user):
 
 class IrcBot (irc.IRCClient):
     """A IRC bot."""
-    def __init__ (self):
+    def __init__ (self, *more):
         self.dispatcher = dispatcher.Dispatcher(self)
         self._plugins = {}
         logger.debug ("we're in(ited)!")
+        # logger.debug (more)
 
     def load_plugin (self, plugin_name, config, params, channel=None):
+        # logger.debug (config)
         if "plugins_dir" in self.config:
             path = self.config["plugins_dir"]
         else:
@@ -226,6 +226,7 @@ class IRCBotFactory(protocol.ClientFactory):
 
 def main(to_use, plugin_loglvl):
     for server in to_use:
+        # logger.debug (plugin_loglvl)
         server["log_config"] = plugin_loglvl
         bot = IRCBotFactory(server)
         reactor.connectTCP(server.get('host', '10.100.0.194'),
@@ -246,13 +247,13 @@ if __name__ == '__main__':
     parser = optparse.OptionParser()
     parser.set_usage(msg)
     parser.add_option("-t", "--test", action="store_true", dest="test",
-                      help="runs two bots that talk to each other, tesing")
+                      help="runs two bots that talk to each other, tesing.")
     parser.add_option("-a", "--all", action="store_true", dest="all_servers",
-                      help="runs the bot to all the configured servers")
+                      help="runs the bot to all the configured servers.")
     parser.add_option("-o", "--output-log-level", dest="outloglvl",
-                      help="sets the output log level")
+                      help="sets the output log level.")
     parser.add_option("-p", "--plugin-log-level", dest="plugloglvl",
-                      help="sets the plugin log level")
+                      help="sets the plugin log level. format is plugin:level,...")
 
     (options, args) = parser.parse_args()
     test = bool(options.test)
@@ -272,7 +273,7 @@ if __name__ == '__main__':
         logger.setLevel(LOG_LEVELS[output_loglevel])
     except KeyError:
         print "The log level can be only:", LOG_LEVELS.keys()
-        exit()
+        exit(1)
 
     plugins_loglvl = {}
     if options.plugloglvl is not None:
@@ -280,6 +281,7 @@ if __name__ == '__main__':
             for pair in options.plugloglvl.split(","):
                 plugin, loglvl = pair.split(":")
                 loglvl = loglvl.lower()
+                logger.debug ("plugin %s, loglevel %s" % (plugin, loglvl))
                 if loglvl not in LOG_LEVELS:
                     print "The log level can be only:", LOG_LEVELS.keys()
                     exit()
@@ -289,6 +291,13 @@ if __name__ == '__main__':
             print "   a list of plugin_name:loglevel separated by commas"
             print "Example:   misc.Ping:debug,example.Example:info"
             raise
+
+    try:
+        import config
+    except ImportError:
+        print "A config file is needed to run this program."
+        print "See as an example the included here config.py.example"
+        sys.exit()
 
     # get all servers or the indicated ones
     servers = config.servers
