@@ -11,7 +11,7 @@ logger = logging.getLogger ('ircbot.core.dispatcher')
 from core import events
 
 # messages longer than this will be splitted in different server commands
-LENGTH_MSG = 128
+LENGTH_MSG = 512
 
 # these are special events that should be handled by their methods to
 # validate the message reception
@@ -47,6 +47,7 @@ CHANNEL_POS = {
     events.PUBLIC_MESSAGE: 1,
     events.JOIN: 0,
     events.PART: 0,
+    events.ACTION: 1,
 }
 
 
@@ -118,8 +119,11 @@ class Dispatcher(object):
                 meth(*args)
                 return
 
+            # check if the command is one of those registered for the
+            # plugins (the [None] is a special case when registering for
+            # all of them)
             cmds = [x[2] for x in self._callbacks[events.COMMAND]]
-            if command not in itertools.chain(*cmds):
+            if cmds != [None] and command not in itertools.chain(*cmds):
                 self.msg(channel, u"%s: No existe esa órden!" % user)
                 return
 
@@ -186,11 +190,16 @@ class Dispatcher(object):
             self.msg(channel, u"No hay ninguna órden registrada...")
             return
 
-        # get the docstrings
+        # get the docstrings... to get uniques we don't use a dictionary just
+        # to keep the secuence ordered
         docs = []
+        revised = set()
         for (inst, meth, cmds) in registered:
             if args[0] in cmds:
-                docs.append(meth.__doc__)
+                modclsmeth = "%s.%s.%s" % ( meth.__module__, meth.__class__.__name__, meth.im_func.func_name)
+                if modclsmeth not in revised:
+                    revised.add(modclsmeth)
+                    docs.append(meth.__doc__)
 
         # no docs!
         if not docs:
@@ -199,13 +208,15 @@ class Dispatcher(object):
 
         # only one method for that command
         if len(docs) == 1:
-            self.msg(channel, docs[0])
+            t = docs[0] if docs[0] else u"No tiene documentación, y yo no soy adivina..."
+            self.msg(channel, t)
             return
 
         # several methods for the same command
         self.msg(channel, u"Hay varios métodos para esa órden:")
         for doc in docs:
-            self.msg(channel, u" - " + doc)
+            t = doc if doc else u"No tiene documentación, y yo no soy adivina..."
+            self.msg(channel, u" - " + t)
 
     def handle_meta_list(self, user, channel, command, *args):
         '''Handles the LIST meta command.'''
