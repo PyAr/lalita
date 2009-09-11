@@ -86,6 +86,7 @@ class IrcBot (irc.IRCClient):
 
     def load_server_plugins(self):
         params = {'nickname': self.nickname,
+                  'encoding': self.encoding_server
                   }
 
         plugins= self.config.get ('plugins', {})
@@ -95,6 +96,8 @@ class IrcBot (irc.IRCClient):
 
     def load_channel_plugins(self, channel):
         params = {'nickname': self.nickname,
+                  'encoding': self.encoding_channels.get('channel',
+                                                         self.encoding_server)
                   }
 
         plugins= self.config['channels'][channel].get ('plugins', {})

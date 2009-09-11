@@ -227,7 +227,7 @@ class Dispatcher(object):
         # several methods for the same command
         self.msg(channel, u"Several handlers for the same command:")
         for doc in docs:
-			t = doc if doc else u"No tiene documentación, y yo no soy adivina..."
+            t = doc if doc else u"No tiene documentación, y yo no soy adivina..."
             self.msg(channel, u" - " + doc)
 
     def handle_meta_list(self, user, channel, command, *args):

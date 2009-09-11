@@ -42,18 +42,20 @@ class Seen(Plugin):
 
     def log(self, channel, nick, what):
         # server messages are from ''; ignore those and myself
-        if nick not in (self.nickname, ''):
+        if nick.strip() not in (self.nickname, ''):
             if what in ('joined', 'parted'):
-                self.iolog[nick.encode('utf-8')] = (what, datetime.datetime.now())
+                self.iolog[nick.encode(self.encoding)] = (what, datetime.datetime.now())
             else:
-                self.saidlog[nick.encode('utf-8')] = (what, datetime.datetime.now())
+                self.saidlog[nick.encode(self.encoding)] = (what, datetime.datetime.now())
             self.logger.debug("logged %s: %s", nick, what)
 
-    def seen (self, user, channel, command, nick):
+    def seen (self, user, channel, command, nick=None):
         """ the last thing a <user> said in the channel (or when he joined/parted)"""
-        if not self.config['clever'] or nick not in (self.nickname, user):
-            what1, when1 = self.iolog.get(nick.encode('utf-8'), (None, None))
-            what2, when2 = self.saidlog.get(nick.encode('utf-8'), (None, None))
+        if nick is None:
+            what = 'no <user> specified'
+        elif nick and nick.strip() not in (self.nickname, user):
+            what1, when1 = self.iolog.get(nick.encode(self.encoding), (None, None))
+            what2, when2 = self.saidlog.get(nick.encode(self.encoding), (None, None))
             self.logger.debug (str ((what1, when1, what2, when2)))
             # didn't se him at all or he has just been silent
             # NOTE: I know this can be reduced a little,
@@ -70,11 +72,12 @@ class Seen(Plugin):
                     what= u"%s: [%s] -- parted" % (user, when1.strftime ("%x %X"))
             else: # command=='last' or when1<when2 or when1 is None
                 what= u"%s: [%s] %s" % (user, when2.strftime ("%x %X"), what2)
-        elif nick==self.nickname:
+        elif nick==self.nickname and self.config.get('clever', True):
             what= u"%s: acástoi, papafrita!" % user
-        elif nick==user:
+        elif nick==user and self.config.get('clever', True):
             what= u"%s: andá mirate en el espejo del baño" % user
-
+        else:
+            return
         self.say (channel, what)
 
 # end
