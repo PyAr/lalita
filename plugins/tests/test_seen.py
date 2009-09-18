@@ -4,6 +4,8 @@ from core import events
 
 from .helper import PluginTest
 
+import re
+
 class TestLog(PluginTest):
     def setUp(self):
         self.init("seen.Seen")
@@ -61,25 +63,166 @@ class TestLog(PluginTest):
         self.assertEqual(self.plugin.saidlog["pepe"][0], "more")
         self.assertEqual(self.plugin.saidlog["juan"][0], "cuick")
 
-#    def test_cmd_foo_empty(self):
-#        '''Check 'foo' functionality, no msg.'''
-#        self.disp.push(events.COMMAND, "Usr", "chnl", "foo")
-#        self.assertEqual(self.answer[0][1],
-#                         u"Usr: Me tenés que decir algo para que lo repita!")
-#
-#    def test_cmd_foo_sth(self):
-#        '''Check 'foo' functionality, with something.'''
-#        self.disp.push(events.COMMAND, "Usr", "chnl", "foo", "repite")
-#        self.assertEqual(self.answer[0][1], u"repite")
-#
-#    def test_cmd_bar(self):
-#        '''Check 'bar' functionality.'''
-#        self.disp.push(events.COMMAND, "Usr", "chnl", "bar")
-#        self.assertEqual(self.answer[0][1], u"Del Zen de Python:")
-#        self.assertTrue(len(self.answer[1][1]))
-#
-#    def test_cmd_twisted(self):
-#        '''Check 'twisted' functionality.'''
-#        self.disp.push(events.COMMAND, "Usr", "chnl", "enroscau")
-#        self.assertEqual(self.answer[0][1],
-#                         "Te prometo a futuro un saludo en el canal")
+
+class TestSeen(PluginTest):
+    def setUp(self):
+        self.init("seen.Seen")
+
+    def test_plugin(self):
+        '''User asks about the bot.'''
+        self.disp.push(events.COMMAND, "pepe", "channel",
+                       "seen", self.plugin.nickname)
+        self.assertEqual(self.answer[0][1], u"pepe: acástoi, papafrita!")
+
+    def test_self(self):
+        '''User asks about self.'''
+        self.disp.push(events.COMMAND, "pepe", "channel", "seen", "pepe")
+        self.assertEqual(self.answer[0][1],
+                         u"pepe: andá mirate en el espejo del baño")
+
+    def test_nothing(self):
+        '''User asks about a silent one.'''
+        self.disp.push(events.COMMAND, "pepe", "channel", "seen", "juan")
+        self.assertEqual(self.answer[0][1],
+                         u"pepe: se me quedó en la otra pollera :|")
+
+    def test_joined(self):
+        '''User asks about one that joined.'''
+        self.disp.push(events.JOIN, "channel", "juan")
+        self.disp.push(events.COMMAND, "pepe", "channel", "seen", "juan")
+        m = re.match(u"pepe: \[.*\] -- joined", self.answer[0][1])
+        self.assertTrue(m)
+
+    def test_parted(self):
+        '''User asks about one that parted.'''
+        self.disp.push(events.PART, "channel", "juan")
+        self.disp.push(events.COMMAND, "pepe", "channel", "seen", "juan")
+        m = re.match(u"pepe: \[.*\] -- parted", self.answer[0][1])
+        self.assertTrue(m)
+
+    def test_said(self):
+        '''User asks about one that said something.'''
+        self.disp.push(events.PUBLIC_MESSAGE, "juan", "channel", "blah")
+        self.disp.push(events.COMMAND, "pepe", "channel", "seen", "juan")
+        m = re.match(u"pepe: \[.*\] blah", self.answer[0][1])
+        self.assertTrue(m)
+
+    def test_said_twice(self):
+        '''User asks about one that said more than one thing.'''
+        self.disp.push(events.PUBLIC_MESSAGE, "juan", "channel", "blah")
+        self.disp.push(events.PUBLIC_MESSAGE, "juan", "channel", "juaz")
+        self.disp.push(events.COMMAND, "pepe", "channel", "seen", "juan")
+        m = re.match(u"pepe: \[.*\] juaz", self.answer[0][1])
+        self.assertTrue(m)
+
+    def test_joined_and_parted(self):
+        '''User asks about one that joined and parted.'''
+        self.disp.push(events.JOIN, "channel", "juan")
+        self.disp.push(events.PART, "channel", "juan")
+        self.disp.push(events.COMMAND, "pepe", "channel", "seen", "juan")
+        m = re.match(u"pepe: \[.*\] -- parted", self.answer[0][1])
+        self.assertTrue(m)
+
+    def test_parted_and_joined(self):
+        '''User asks about one that parted and joined.'''
+        self.disp.push(events.PART, "channel", "juan")
+        self.disp.push(events.JOIN, "channel", "juan")
+        self.disp.push(events.COMMAND, "pepe", "channel", "seen", "juan")
+        m = re.match(u"pepe: \[.*\] -- joined", self.answer[0][1])
+        self.assertTrue(m)
+
+    def test_joined_and_said(self):
+        '''User asks about one that joined and said something.'''
+        self.disp.push(events.JOIN, "channel", "juan")
+        self.disp.push(events.PUBLIC_MESSAGE, "juan", "channel", "blah")
+        self.disp.push(events.COMMAND, "pepe", "channel", "seen", "juan")
+        m = re.match(u"pepe: \[.*\] blah", self.answer[0][1])
+        self.assertTrue(m)
+
+    def test_said_and_parted(self):
+        '''User asks about one that said something and parted.'''
+        self.disp.push(events.PUBLIC_MESSAGE, "juan", "channel", "blah")
+        self.disp.push(events.PART, "channel", "juan")
+        self.disp.push(events.COMMAND, "pepe", "channel", "seen", "juan")
+        m = re.match(u"pepe: \[.*\] -- parted", self.answer[0][1])
+        self.assertTrue(m)
+
+
+class TestLast(PluginTest):
+    def setUp(self):
+        self.init("seen.Seen")
+
+    def test_plugin(self):
+        '''User asks about the bot.'''
+        self.disp.push(events.COMMAND, "pepe", "channel",
+                       "last", self.plugin.nickname)
+        self.assertEqual(self.answer[0][1],
+                         u'pepe: lo último fue "lo último fue ..."')
+
+    def test_self(self):
+        '''User asks about self.'''
+        self.disp.push(events.COMMAND, "pepe", "channel", "last", "pepe")
+        self.assertEqual(self.answer[0][1], u"pepe: me tiraste la órden")
+
+    def test_nothing(self):
+        '''User asks about a silent one.'''
+        self.disp.push(events.COMMAND, "pepe", "channel", "last", "juan")
+        self.assertEqual(self.answer[0][1], u"pepe: yo no oí nada...")
+
+    def test_joined(self):
+        '''User asks about one that joined.'''
+        self.disp.push(events.JOIN, "channel", "juan")
+        self.disp.push(events.COMMAND, "pepe", "channel", "last", "juan")
+        self.assertEqual(self.answer[0][1], u"pepe: yo no oí nada...")
+
+    def test_parted(self):
+        '''User asks about one that parted.'''
+        self.disp.push(events.PART, "channel", "juan")
+        self.disp.push(events.COMMAND, "pepe", "channel", "last", "juan")
+        self.assertEqual(self.answer[0][1], u"pepe: yo no oí nada...")
+
+    def test_said(self):
+        '''User asks about one that said something.'''
+        self.disp.push(events.PUBLIC_MESSAGE, "juan", "channel", "blah")
+        self.disp.push(events.COMMAND, "pepe", "channel", "last", "juan")
+        m = re.match(u"pepe: \[.*\] blah", self.answer[0][1])
+        self.assertTrue(m)
+
+    def test_said_twice(self):
+        '''User asks about one that said more than one thing.'''
+        self.disp.push(events.PUBLIC_MESSAGE, "juan", "channel", "blah")
+        self.disp.push(events.PUBLIC_MESSAGE, "juan", "channel", "juaz")
+        self.disp.push(events.COMMAND, "pepe", "channel", "last", "juan")
+        m = re.match(u"pepe: \[.*\] juaz", self.answer[0][1])
+        self.assertTrue(m)
+
+    def test_joined_and_parted(self):
+        '''User asks about one that joined and parted.'''
+        self.disp.push(events.JOIN, "channel", "juan")
+        self.disp.push(events.PART, "channel", "juan")
+        self.disp.push(events.COMMAND, "pepe", "channel", "last", "juan")
+        self.assertEqual(self.answer[0][1], u"pepe: yo no oí nada...")
+
+    def test_parted_and_joined(self):
+        '''User asks about one that parted and joined.'''
+        self.disp.push(events.PART, "channel", "juan")
+        self.disp.push(events.JOIN, "channel", "juan")
+        self.disp.push(events.COMMAND, "pepe", "channel", "last", "juan")
+        self.assertEqual(self.answer[0][1], u"pepe: yo no oí nada...")
+
+    def test_joined_and_said(self):
+        '''User asks about one that joined and said something.'''
+        self.disp.push(events.JOIN, "channel", "juan")
+        self.disp.push(events.PUBLIC_MESSAGE, "juan", "channel", "blah")
+        self.disp.push(events.COMMAND, "pepe", "channel", "last", "juan")
+        m = re.match(u"pepe: \[.*\] blah", self.answer[0][1])
+        self.assertTrue(m)
+
+    def test_said_and_parted(self):
+        '''User asks about one that said something and parted.'''
+        self.disp.push(events.PUBLIC_MESSAGE, "juan", "channel", "blah")
+        self.disp.push(events.PART, "channel", "juan")
+        self.disp.push(events.COMMAND, "pepe", "channel", "last", "juan")
+        m = re.match(u"pepe: \[.*\] blah", self.answer[0][1])
+        self.assertTrue(m)
+
