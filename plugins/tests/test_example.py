@@ -5,8 +5,16 @@ from core import events
 from .helper import PluginTest
 
 class TestMethods(PluginTest):
+    '''Example of unit test for plugins.
+
+    You have the following info:
+
+    - self.answer: what the plugin answered.
+    - self.plugin: the instantiated and working plugin
+    '''
 
     def setUp(self):
+        '''Just init your module.Class.'''
         self.init("example.Example")
 
     def test_private(self):
