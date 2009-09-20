@@ -410,3 +410,53 @@ class TestEvents(EasyDeferredTests):
         self.disp.push(events.ACTION, "user", "channel", "msg")
         return self.deferred
 
+    def test_user_joined(self):
+        '''Test JOIN.'''
+        def test(a, b):
+            self.deferredAssertEqual(a, "user")
+            self.deferredAssertEqual(b, "channel")
+            self.deferred.callback(True)
+        self.helper.test = test
+
+        self.disp.register(events.JOIN, self.helper.f)
+        self.disp.push(events.JOIN, "user", "channel")
+        return self.deferred
+
+    def test_user_left(self):
+        '''Test LEFT.'''
+        def test(a, b):
+            self.deferredAssertEqual(a, "user")
+            self.deferredAssertEqual(b, "channel")
+            self.deferred.callback(True)
+        self.helper.test = test
+
+        self.disp.register(events.LEFT, self.helper.f)
+        self.disp.push(events.LEFT, "user", "channel")
+        return self.deferred
+
+    def test_user_quit(self):
+        '''Test QUIT.'''
+        def test(a, b):
+            self.deferredAssertEqual(a, "user")
+            self.deferredAssertEqual(b, "message")
+            self.deferred.callback(True)
+        self.helper.test = test
+
+        self.disp.register(events.QUIT, self.helper.f)
+        self.disp.push(events.QUIT, "user", "message")
+        return self.deferred
+
+    def test_user_kicked(self):
+        '''Test KICK.'''
+        def test(a, b, c, d):
+            self.deferredAssertEqual(a, "kickee")
+            self.deferredAssertEqual(b, "channel")
+            self.deferredAssertEqual(c, "kicker")
+            self.deferredAssertEqual(d, "msg")
+            self.deferred.callback(True)
+        self.helper.test = test
+
+        self.disp.register(events.KICK, self.helper.f)
+        self.disp.push(events.KICK, "kickee", "channel", "kicker", "msg")
+        return self.deferred
+
