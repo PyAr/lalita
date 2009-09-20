@@ -15,36 +15,32 @@ class Seen(Plugin):
         self.config.update(config)
 
         self.register(self.events.JOIN, self.joined)
-        self.register(self.events.PART, self.parted)
+        self.register(self.events.LEFT, self.left)
+        self.register(self.events.QUIT, self.quit)
         self.register(self.events.PUBLIC_MESSAGE, self.message)
         self.register(self.events.TALKED_TO_ME, self.message)
         self.register(self.events.COMMAND, self.seen, ['seen'])
         self.register(self.events.COMMAND, self.last, ['last'])
 
-    def joined (self, channel, nick):
+    def joined(self, nick, channel):
         '''Logs that the user has joined.'''
         self.logger.debug("%s joined %s", nick, channel)
-        self.log(channel, nick, 'joined')
+        self.iolog[nick] = ("joined", datetime.datetime.now())
 
-    def parted(self, channel, nick):
-        '''Logs that the user has parted.'''
-        self.logger.debug("%s parted %s", nick, channel)
-        self.log(channel, nick, 'parted')
+    def left(self, nick, channel):
+        '''Logs that the user has left.'''
+        self.logger.debug("%s left %s", nick, channel)
+        self.iolog[nick] = ("left", datetime.datetime.now())
+
+    def quit(self, nick, message):
+        '''Logs that the user has quit.'''
+        self.logger.debug("%s quit IRC (%s)", nick, message)
+        self.iolog[nick] = ("quit IRC (%s)" % message, datetime.datetime.now())
 
     def message(self, nick, channel, msg):
         '''Logs something said by the user.'''
         self.logger.debug("%s said %s", nick, msg)
-        self.log(channel, nick, msg)
-
-    def log(self, channel, nick, what):
-        '''Actually stores info in iolog or saidlog.'''
-        # server messages are from ''; ignore those and myself
-        if nick not in (self.nickname, ''):
-            if what in ('joined', 'parted'):
-                self.iolog[nick] = (what, datetime.datetime.now())
-            else:
-                self.saidlog[nick] = (what, datetime.datetime.now())
-            self.logger.debug("logged %s: %s", nick, what)
+        self.saidlog[nick] = (msg, datetime.datetime.now())
 
     def seen(self, user, channel, command, nick):
         u'''Indica cuando fue visto por última vez un usuario y qué hizo.'''
