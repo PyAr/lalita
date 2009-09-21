@@ -45,9 +45,6 @@ logger = logging.getLogger('ircbot')
 logger.addHandler(handler)
 
 
-def nick (user):
-    return user.split('!')[0]
-
 class IrcBot (irc.IRCClient):
     """A IRC bot."""
     def __init__ (self, *more):
@@ -97,8 +94,7 @@ class IrcBot (irc.IRCClient):
     def load_channel_plugins(self, channel):
         params = {'nickname': self.nickname,
                   'encoding': self.encoding_channels.get('channel',
-                                                         self.encoding_server)
-                  }
+                                       self.encoding_server)}
 
         plugins= self.config['channels'][channel].get ('plugins', {})
         logger.debug ("channel plugins: %s" % plugins)
@@ -116,17 +112,15 @@ class IrcBot (irc.IRCClient):
         logger.info("connected to %s:%d" %
             (self.config['host'], self.config['port']))
         self.load_server_plugins()
-        # configure the dispatcher
-        self.dispatcher.init(self.config)
         self.dispatcher.push(events.CONNECTION_MADE)
 
-    def connectionLost (self, reason):
+    def connectionLost(self, reason):
         irc.IRCClient.connectionLost(self, reason)
         logger.info ("disconnected from %s:%d" %
             (self.config.get('host'), self.config.get('port')))
         self.dispatcher.push(events.CONNECTION_LOST)
 
-    def signedOn (self):
+    def signedOn(self):
         logger.debug ("signed on %s:%d" %
             (self.config['host'], self.config['port']))
         self.dispatcher.push(events.SIGNED_ON)
@@ -135,17 +129,17 @@ class IrcBot (irc.IRCClient):
                 (channel, self.config['host'], self.config['port']))
             self.join (channel)
 
-    def receivedMOTD (self, motd):
+    def receivedMOTD(self, motd):
         logger.debug ("motd from %s:%d" %
             (self.config['host'], self.config['port']))
 
-    def joined (self, channel):
+    def joined(self, channel):
         """This will get called when the bot joins the channel."""
         logger.info ("joined to %s" % channel)
         self.load_channel_plugins (channel)
         self.dispatcher.push(events.JOINED, channel)
 
-    def privmsg (self, user, channel, msg):
+    def privmsg(self, user, channel, msg):
         """This will get called when the bot receives a message."""
         # decode according to channel (that can be an user), or server/default
         encoding = self.encoding_channels.get(channel, self.encoding_server)
@@ -186,19 +180,27 @@ class IrcBot (irc.IRCClient):
         new_nick = params[0]
         irc.IRCClient.irc_NICK (self, prefix, params)
 
-    def irc_JOIN (self, prefix, params):
-        logger.debug ("join: %s: %s" % (prefix, params))
-        channel= params[0]
-        nickname= nick (prefix)
-        self.dispatcher.push (events.JOIN, channel, nickname)
-        irc.IRCClient.irc_JOIN (self, prefix, params)
+    def userJoined(self, user, channel):
+        """Called when I see another user joining a channel."""
+        logger.debug("%s joined to %s", user, channel)
+        self.dispatcher.push(events.JOIN, user, channel)
 
-    def irc_PART (self, prefix, params):
-        logger.debug ("part: %s: %s" % (prefix, params))
-        channel= params[0]
-        nickname= nick (prefix)
-        self.dispatcher.push (events.PART, channel, nickname)
-        irc.IRCClient.irc_PART (self, prefix, params)
+    def userLeft(self, user, channel):
+        """Called when I see another user leaving a channel."""
+        logger.debug("%s left %s", user, channel)
+        self.dispatcher.push(events.LEFT, user, channel)
+
+    def userQuit(self, user, quit_message):
+        """Called when I see another user disconnect from the network."""
+        logger.debug("%s quited IRC: %s", user, quit_message)
+        self.dispatcher.push(events.QUIT, user, quit_message)
+
+    def userKicked(self, kickee, channel, kicker, message):
+        """Called when I observe someone else being kicked from a channel."""
+        logger.debug("%s was kicked by %s from %s because of:",
+                     kickee, channel, kicker, message)
+        self.dispatcher.push(events.KICK, kickee, channel, kicker, message)
+
 
 class IRCBotFactory(protocol.ClientFactory):
     """

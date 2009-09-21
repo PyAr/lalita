@@ -45,8 +45,10 @@ CHANNEL_POS = {
     events.TALKED_TO_ME: 1,
     events.COMMAND: 1,
     events.PUBLIC_MESSAGE: 1,
-    events.JOIN: 0,
-    events.PART: 0,
+    events.JOIN: 1,
+    events.LEFT: 1,
+    events.QUIT: None,
+    events.KICK: 1,
     events.ACTION: 1,
 }
 
