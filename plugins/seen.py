@@ -20,8 +20,8 @@ class Seen(Plugin):
         else:
             self.iolog = {}
             self.saidlog = {}
-        self.config = dict (clever=True)
-        self.config.update (config)
+        self.config = dict(clever=True)
+        self.config.update(config)
 
         self.register(self.events.JOIN, self.joined)
         self.register(self.events.LEFT, self.left)
@@ -60,9 +60,9 @@ class Seen(Plugin):
         if self.config['clever'] and nick == user:
             self.say(channel, u"%s: andá mirate en el espejo del baño" % user)
             return
-
-        what1, when1 = self.iolog.get(nick.encode(self.encoding), (None, None))
-        what2, when2 = self.saidlog.get(nick.encode(self.encoding), (None, None))
+        encoded_nick = nick.encode(self.encoding)
+        what1, when1 = self.iolog.get(encoded_nick, (None, None))
+        what2, when2 = self.saidlog.get(encoded_nick, (None, None))
         self.logger.debug(str((what1, when1, what2, when2)))
 
         # didn't se him at all or he has just been silent
@@ -89,8 +89,9 @@ class Seen(Plugin):
             self.say(channel, u"%s: me tiraste la órden" % user)
             return
 
-        what1, when1 = self.iolog.get(nick.encode(self.encoding), (None, None))
-        what2, when2 = self.saidlog.get(nick.encode(self.encoding), (None, None))
+        encoded_nick = nick.encode(self.encoding)
+        what1, when1 = self.iolog.get(encoded_nick, (None, None))
+        what2, when2 = self.saidlog.get(encoded_nick, (None, None))
         self.logger.debug(str((what1, when1, what2, when2)))
 
         # he has just been silent
@@ -100,4 +101,3 @@ class Seen(Plugin):
 
         self.say(channel,
                  u"%s: [%s] %s" % (user, when2.strftime ("%x %X"), what2))
-

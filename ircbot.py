@@ -83,13 +83,12 @@ class IrcBot (irc.IRCClient):
 
     def load_server_plugins(self):
         params = {'nickname': self.nickname,
-                  'encoding': self.encoding_server
-                  }
+                  'encoding': self.encoding_server}
 
-        plugins= self.config.get ('plugins', {})
+        plugins= self.config.get('plugins', {})
         logger.debug ("server plugins: %s" % plugins)
-        for plugin, config in plugins.items ():
-            self.load_plugin (plugin, config, params)
+        for plugin, config in plugins.items():
+            self.load_plugin(plugin, config, params)
 
     def load_channel_plugins(self, channel):
         params = {'nickname': self.nickname,
@@ -112,6 +111,8 @@ class IrcBot (irc.IRCClient):
         logger.info("connected to %s:%d" %
             (self.config['host'], self.config['port']))
         self.load_server_plugins()
+        # configure the dispatcher
+        self.dispatcher.init(self.config)
         self.dispatcher.push(events.CONNECTION_MADE)
 
     def connectionLost(self, reason):
