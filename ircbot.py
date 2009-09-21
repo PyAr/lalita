@@ -37,9 +37,9 @@ LOG_LEVELS = {
 }
 
 handler = logging.StreamHandler(sys.stdout)
-formatter = logging.Formatter(
-                            "%(asctime)s %(name)s:%(lineno)-4d %(levelname)-8s %(message)s",
-                            '%H:%M:%S')
+formatter = logging.Formatter("%(asctime)s %(name)s:%(lineno)-4d "
+                              "%(levelname)-8s %(message)s",
+                              '%Y-%m-%d %H:%M:%S')
 handler.setFormatter(formatter)
 logger = logging.getLogger('ircbot')
 logger.addHandler(handler)
@@ -252,6 +252,10 @@ if __name__ == '__main__':
                       help="sets the output log level.")
     parser.add_option("-p", "--plugin-log-level", dest="plugloglvl",
                       help="sets the plugin log level. format is plugin:level,...")
+    parser.add_option("-f", "--file-log-level", dest="fileloglvl",
+                      help="sets the output log level.")
+    parser.add_option("-n", "--log-filename", dest="logfname",
+                      help="specifies the name of the log file.")
 
     (options, args) = parser.parse_args()
     test = bool(options.test)
@@ -262,9 +266,9 @@ if __name__ == '__main__':
         parser.print_help()
         exit()
 
-    # control the log level
+    # control the output log level
     if options.outloglvl is None:
-        output_loglevel = "debug"
+        output_loglevel = "info"
     else:
         output_loglevel = options.outloglvl.lower()
     try:
@@ -273,16 +277,17 @@ if __name__ == '__main__':
         print "The log level can be only:", LOG_LEVELS.keys()
         exit(1)
 
+    # control the plugins log level
     plugins_loglvl = {}
     if options.plugloglvl is not None:
         try:
             for pair in options.plugloglvl.split(","):
                 plugin, loglvl = pair.split(":")
                 loglvl = loglvl.lower()
-                logger.debug ("plugin %s, loglevel %s" % (plugin, loglvl))
+                logger.debug("plugin %s, loglevel %s" % (plugin, loglvl))
                 if loglvl not in LOG_LEVELS:
                     print "The log level can be only:", LOG_LEVELS.keys()
-                    exit()
+                    exit(1)
                 plugins_loglvl[plugin] = LOG_LEVELS[loglvl]
         except:
             print "Remember that the plugin log level format is"
@@ -296,6 +301,26 @@ if __name__ == '__main__':
         print "A config file is needed to run this program."
         print "See as an example the included here config.py.example"
         sys.exit()
+
+    # handles the log file and its level
+    if options.logfname is None:
+        log_filename = "lalita.log"
+    else:
+        log_filename = options.logfname
+
+    if options.fileloglvl is None:
+        file_loglevel = logging.DEBUG
+    else:
+        try:
+            file_loglevel = LOG_LEVELS[options.fileloglvl.lower()]
+        except KeyError:
+            print "The log level can be only:", LOG_LEVELS.keys()
+            exit(1)
+
+    fh = logging.FileHandler(log_filename)
+    fh.setLevel(file_loglevel)
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
 
     # get all servers or the indicated ones
     servers = config.servers
