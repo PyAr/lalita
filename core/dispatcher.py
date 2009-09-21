@@ -129,7 +129,7 @@ class Dispatcher(object):
             # all of them)
             cmds = [x[2] for x in self._callbacks[events.COMMAND]]
             if cmds != [None] and command not in itertools.chain(*cmds):
-                self.msg(channel, u"%s: %s: command not found!" % (user, command))
+                self.msg(channel, u"%s: No existe esa órden!" % user)
                 return
         elif event == events.PRIVATE_MESSAGE:
             user, msg = args
@@ -193,7 +193,7 @@ class Dispatcher(object):
     def handle_meta_help(self, user, channel, command, *args):
         '''Handles the HELP meta command.'''
         if not args:
-            txt = u'"list" To see the available commands ; "help cmd" for specific command help'
+            txt = u'"list" para ver las órdenes; "help cmd" para cada uno'
             self.msg(channel, txt)
             return
 
@@ -201,7 +201,7 @@ class Dispatcher(object):
         try:
             registered = self._callbacks[events.COMMAND]
         except KeyError:
-            self.msg(channel, u"PANIC! I have no commands!!!")
+            self.msg(channel, u"No hay ninguna órden registrada...")
             return
 
         # get the docstrings... to get uniques we don't use a dictionary just
@@ -217,7 +217,7 @@ class Dispatcher(object):
 
         # no docs!
         if not docs:
-            self.msg(channel, u"No such command...")
+            self.msg(channel, u"Esa órden no existe...")
             return
 
         # only one method for that command
@@ -227,10 +227,10 @@ class Dispatcher(object):
             return
 
         # several methods for the same command
-        self.msg(channel, u"Several handlers for the same command:")
+        self.msg(channel, u"Hay varios métodos para esa órden:")
         for doc in docs:
             t = doc if doc else u"No tiene documentación, y yo no soy adivina..."
-            self.msg(channel, u" - " + doc)
+            self.msg(channel, u" - " + t)
 
     def handle_meta_list(self, user, channel, command, *args):
         '''Handles the LIST meta command.'''
@@ -240,5 +240,5 @@ class Dispatcher(object):
             txt = u"Decí alpiste, no hay órdenes todavía..."
         else:
             onlys = set(itertools.chain(*cmds))
-            txt = u"The available commands are: %s" % list(sorted(onlys))
+            txt = u"Las órdenes son: %s" % list(sorted(onlys))
         self.msg(channel, txt)

@@ -21,8 +21,8 @@ class PluginTest(unittest.TestCase):
         self.bot.factory = ircbot_factory
         self.bot.config = self.test_server
         self.bot.nickname = "TestBot"
-        self.bot.load_server_plugins()
         self.bot.encoding_server = "utf-8"
+        self.bot.load_server_plugins()
         self.bot.encoding_channels = {}
 
         self.answer = []

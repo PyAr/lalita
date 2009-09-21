@@ -51,7 +51,7 @@ class Seen(Plugin):
         self.logger.debug("%s said %s", nick, msg)
         self.saidlog[nick.encode(self.encoding)] = (msg, datetime.datetime.now())
 
-   def seen(self, user, channel, command, nick):
+    def seen(self, user, channel, command, nick):
         u'''Indica cuando fue visto por última vez un usuario y qué hizo.'''
         if self.config['clever'] and nick == self.nickname:
             self.say(channel, u"%s: acástoi, papafrita!" % user)
