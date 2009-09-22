@@ -30,6 +30,19 @@ servers = {
                 'example.Example': { },
             },
         ),
+        'private-server': dict (
+            encoding='utf8',
+            host='10.100.0.156', port=6667,
+            nickname='examplia',
+            ssl=True,
+            password='aprivateserver',
+            channels= {
+                '#humites': dict(plugins={}),
+            },
+            plugins= {
+                'example.Example': { },
+            },
+        ),
         'freenode': dict (
             encoding='utf8',
             host='irc.freenode.net', port=6667,
