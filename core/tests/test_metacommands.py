@@ -3,6 +3,7 @@
 import unittest
 import re
 
+from collections import defaultdict
 from twisted.trial.unittest import TestCase as TwistedTestCase
 from twisted.internet import defer, reactor
 
@@ -10,10 +11,11 @@ from core import events
 from core import dispatcher
 import ircbot
 
-ircbot_factory = ircbot.IRCBotFactory(dict(log_config="error"))
+ircbot_factory = ircbot.IRCBotFactory(dict(log_config="error", channels=defaultdict(lambda: {})))
 ircbot.logger.setLevel("error")
 bot = ircbot.IrcBot()
 bot.factory = ircbot_factory
+bot.config = ircbot_factory.config
 bot.msg = lambda *a:None
 
 # FIXME: all these messages should be internationalized per server (not locale)

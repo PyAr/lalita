@@ -2,6 +2,7 @@
 import unittest
 import re
 
+from collections import defaultdict
 from twisted.trial.unittest import TestCase as TwistedTestCase
 from twisted.internet import defer, reactor
 
@@ -14,7 +15,7 @@ server = dict(
     host="0.0.0.0",
     port=6667,
     nickname="test",
-    channels={},
+    channels=defaultdict(lambda: {}),
     plugins={},
 )
 
@@ -22,6 +23,7 @@ ircbot_factory = ircbot.IRCBotFactory(server)
 ircbot.logger.setLevel("error")
 bot = ircbot.IrcBot()
 bot.factory = ircbot_factory
+bot.config = ircbot_factory.config
 bot.msg = lambda *a:None
 
 MY_NICKNAME = server['nickname']

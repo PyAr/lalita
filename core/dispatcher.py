@@ -9,6 +9,7 @@ import logging
 logger = logging.getLogger ('ircbot.core.dispatcher')
 
 from core import events
+import texts
 
 # messages longer than this will be splitted in different server commands
 LENGTH_MSG = 512
@@ -77,6 +78,11 @@ class Dispatcher(object):
         instance = func.im_self
         self._callbacks.setdefault(event, []).append((instance, func, extra))
 
+    def texts(self, channel):
+        """Returns the texts dict for the channel"""
+        lang = self.bot.get_lang(channel)
+        return texts.langs[lang]['dispatcher']
+
     def _msg_from_plugin(self, plugin, to_where, message):
         """Message from the plugin."""
         if plugin not in self._channel_filter:
@@ -126,7 +132,7 @@ class Dispatcher(object):
             # all of them)
             cmds = [x[2] for x in self._callbacks[events.COMMAND]]
             if cmds != [None] and command not in itertools.chain(*cmds):
-                self.msg(channel, u"%s: No existe esa órden!" % user)
+                self.msg(channel, self.texts(channel)["no_such_command"] % user)
                 return
 
         all_registered = self._callbacks.get(event)
@@ -181,7 +187,7 @@ class Dispatcher(object):
     def handle_meta_help(self, user, channel, command, *args):
         '''Handles the HELP meta command.'''
         if not args:
-            txt = u'"list" para ver las órdenes; "help cmd" para cada uno'
+            txt = self.texts(channel)['help']
             self.msg(channel, txt)
             return
 
@@ -189,7 +195,7 @@ class Dispatcher(object):
         try:
             registered = self._callbacks[events.COMMAND]
         except KeyError:
-            self.msg(channel, u"No hay ninguna órden registrada...")
+            self.msg(channel, self.texts(channel)['empty_commands'])
             return
 
         # get the docstrings... to get uniques we don't use a dictionary just
@@ -205,19 +211,19 @@ class Dispatcher(object):
 
         # no docs!
         if not docs:
-            self.msg(channel, u"Esa órden no existe...")
+            self.msg(channel, self.texts(channel)['command_not_exist'])
             return
 
         # only one method for that command
         if len(docs) == 1:
-            t = docs[0] if docs[0] else u"No tiene documentación, y yo no soy adivina..."
+            t = docs[0] if docs[0] else self.texts(channel)['no_docs']
             self.msg(channel, t)
             return
 
         # several methods for the same command
-        self.msg(channel, u"Hay varios métodos para esa órden:")
+        self.msg(channel, self.texts(channel)['several_methods'])
         for doc in docs:
-            t = doc if doc else u"No tiene documentación, y yo no soy adivina..."
+            t = doc if doc else self.texts(channel)['no_docs']
             self.msg(channel, u" - " + t)
 
     def handle_meta_list(self, user, channel, command, *args):
@@ -225,8 +231,8 @@ class Dispatcher(object):
         try:
             cmds = [x[2] for x in self._callbacks[events.COMMAND]]
         except KeyError:
-            txt = u"Decí alpiste, no hay órdenes todavía..."
+            txt = self.texts(channel)['no_commands_registered']
         else:
             onlys = set(itertools.chain(*cmds))
-            txt = u"Las órdenes son: %s" % list(sorted(onlys))
+            txt = self.texts(channel)['commands_are'] % list(sorted(onlys))
         self.msg(channel, txt)
