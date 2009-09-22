@@ -5,12 +5,14 @@ servers = {
             encoding='utf8',
             host='127.0.0.1', port=6667,
             nickname='examplia',
+            lang='es',
             channels= {
                 '#humites': dict (plugins={
                     'url.Url': { },
                 }),
-                '#perrites': dict (plugins={
-                    'seen.Seen': { },
+                '#perrites': dict (
+                    lang='en',
+                    plugins={'seen.Seen': { },
                 }),
             },
             plugins= {
