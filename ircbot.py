@@ -210,12 +210,13 @@ class IRCBotFactory(protocol.ClientFactory):
 
     def __init__(self, server_config):
         self.config = server_config
+        self.bot = None
 
     def clientConnectionLost(self, connector, reason):
         """
         If we get disconnected, reconnect to server.
         """
-        logger.debug("We got disconnected because of %s" % str(reason))
+        logger.debug("%s got disconnected because of %s", connector, str(reason))
         connector.connect()
 
     def clientConnectionFailed(self, connector, reason):
@@ -226,11 +227,71 @@ class IRCBotFactory(protocol.ClientFactory):
         logger.debug("Connection failed because of %s" % str(reason))
         # reactor.stop()
 
-def main(to_use, plugin_loglvl):
+    def buildProtocol(self, addr):
+        """Setup the protocol."""
+        p = protocol.ClientFactory.buildProtocol(self, addr)
+        self.bot = p
+        return p
+
+def start_manhole(servers, port, user, password):
+    """Starts manhole with the specified options, if it's available."""
+    try:
+        from twisted.conch import manhole, manhole_ssh
+        from twisted.cred import portal, checkers
+    except ImportError, e:
+        logger.warning('Manhole not available: %s', str(e))
+        return
+
+    def getManholeFactory(namespace, **passwords):
+        realm = manhole_ssh.TerminalRealm()
+        def getManhole(_):
+            return manhole.Manhole(namespace)
+        realm.chainedProtocolFactory.protocolFactory = getManhole
+        p = portal.Portal(realm)
+        p.registerChecker(
+        checkers.InMemoryUsernamePasswordDatabaseDontUse(**passwords))
+        f = manhole_ssh.ConchFactory(p)
+        return f
+    manhole_factory = getManholeFactory({'servers':servers}, **{user:password})
+    reactor.listenTCP(port, manhole_factory, interface='127.0.0.1')
+
+
+class FactoriesWrapper(object):
+    """
+    dict like object that simplifies the access to IRCBot instances.
+    Only keys() and __getitem__ are supported.
+    """
+    __slots__ = ('factories',)
+
+    def __init__(self, factories):
+        """Create the instance"""
+        self.factories = factories
+
+    def keys(self):
+        """return the list of servers"""
+        return self.factories.keys()
+
+    def __getitem__(self, server):
+        """Return the IRCBot instance of 'server'"""
+        return self.factories[server].bot
+
+    def __str__(self):
+        return str(repr(self))
+
+    def __repr__(self):
+        d = {}
+        for k, f in self.factories.items():
+            d[k] = f.bot
+        return d.__repr__()
+
+
+def main(to_use, plugin_loglvl, manhole_opts=None):
+    factories = {}
     for server in to_use:
         # logger.debug (plugin_loglvl)
         server["log_config"] = plugin_loglvl
         bot = IRCBotFactory(server)
+        factories[server.get('host')] = bot
         if server.get('ssl', False):
             reactor.connectSSL(server.get('host', '10.100.0.194'),
                                server.get('port', 6667), bot,
@@ -238,6 +299,9 @@ def main(to_use, plugin_loglvl):
         else:
             reactor.connectTCP(server.get('host', '10.100.0.194'),
                                server.get('port', 6667), bot)
+    if manhole_opts:
+        manhole_opts['servers'] = FactoriesWrapper(factories)
+        start_manhole(**manhole_opts)
     reactor.run()
 
 
@@ -260,6 +324,19 @@ if __name__ == '__main__':
                       help="sets the output log level.")
     parser.add_option("-p", "--plugin-log-level", dest="plugloglvl",
                       help="sets the plugin log level. format is plugin:level,...")
+    # manhole option group
+    manhole = parser.add_option_group('manhole')
+    manhole.add_option("--manhole", dest="manhole", action="store_true",
+                       help="Enable manhole ssh server (listening on 127.0.0.1)")
+    manhole.add_option("--manhole-port", dest="manhole_port", type='int',
+                       metavar='PORT', default=2222,
+                       help="Use the specified port, default: 2222")
+    manhole.add_option("--manhole-user", dest="manhole_user", default='admin',
+                       metavar='USER',
+                       help="Use the specified user for manhole ssh, default: admin")
+    manhole.add_option("--manhole-password", dest="manhole_password",
+                       metavar='PASSWORD', default='admin',
+                       help="Use the specified password for manhole ssh, default: admin")
 
     (options, args) = parser.parse_args()
     test = bool(options.test)
@@ -314,5 +391,12 @@ if __name__ == '__main__':
     else:
         to_use = [servers[x] for x in args]
 
+    if options.manhole:
+        manhole_opts = dict(user=options.manhole_user,
+                            port=options.manhole_port,
+                            password=options.manhole_password)
 
-    main(to_use, plugins_loglvl)
+    else:
+        manhole_opts = None
+
+    main(to_use, plugins_loglvl, manhole_opts=manhole_opts)
