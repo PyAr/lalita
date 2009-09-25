@@ -175,7 +175,7 @@ class TestLast(PluginTest):
     def test_self(self):
         '''User asks about self.'''
         self.disp.push(events.COMMAND, "pepe", "channel", "last", "pepe")
-        self.assertEqual(self.answer[0][1], u"pepe: me tiraste la órden")
+        self.assertEqual(self.answer[0][1], u"pepe: me tiraste la orden")
 
     def test_nothing(self):
         '''User asks about a silent one.'''

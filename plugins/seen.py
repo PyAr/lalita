@@ -77,7 +77,7 @@ class Seen(Plugin):
             return
 
         if self.config['clever'] and nick == user:
-            self.say(channel, u"%s: me tiraste la órden" % user)
+            self.say(channel, u"%s: me tiraste la orden" % user)
             return
 
         what1, when1 = self.iolog.get(nick, (None, None))

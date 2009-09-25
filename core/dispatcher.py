@@ -126,7 +126,7 @@ class Dispatcher(object):
             # all of them)
             cmds = [x[2] for x in self._callbacks[events.COMMAND]]
             if cmds != [None] and command not in itertools.chain(*cmds):
-                self.msg(channel, u"%s: No existe esa órden!" % user)
+                self.msg(channel, u"%s: No existe esa orden!" % user)
                 return
 
         all_registered = self._callbacks.get(event)
@@ -189,7 +189,7 @@ class Dispatcher(object):
         try:
             registered = self._callbacks[events.COMMAND]
         except KeyError:
-            self.msg(channel, u"No hay ninguna órden registrada...")
+            self.msg(channel, u"No hay ninguna orden registrada...")
             return
 
         # get the docstrings... to get uniques we don't use a dictionary just
@@ -205,7 +205,7 @@ class Dispatcher(object):
 
         # no docs!
         if not docs:
-            self.msg(channel, u"Esa órden no existe...")
+            self.msg(channel, u"Esa orden no existe...")
             return
 
         # only one method for that command
@@ -215,7 +215,7 @@ class Dispatcher(object):
             return
 
         # several methods for the same command
-        self.msg(channel, u"Hay varios métodos para esa órden:")
+        self.msg(channel, u"Hay varios métodos para esa orden:")
         for doc in docs:
             t = doc if doc else u"No tiene documentación, y yo no soy adivina..."
             self.msg(channel, u" - " + t)
