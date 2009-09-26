@@ -3,14 +3,23 @@
 # (c) 2009 Marcos Dione <mdione@grulic.org.ar>
 
 import datetime
+import os
+import shelve
 
 from lalita import Plugin
 
 class Seen(Plugin):
     '''Plugin that implements the "seen" and "last" commands.'''
     def init(self, config):
-        self.iolog = {}
-        self.saidlog = {}
+        base = config.get('base_dir', None)
+        if base is not None:
+            if not os.path.exists(base):
+                os.makedirs(base)
+            self.iolog = shelve.open(os.path.join(base, 'iolog'))
+            self.saidlog = shelve.open(os.path.join(base, 'saidlog'))
+        else:
+            self.iolog = {}
+            self.saidlog = {}
         self.config = dict(clever=True)
         self.config.update(config)
 
@@ -25,22 +34,22 @@ class Seen(Plugin):
     def joined(self, nick, channel):
         '''Logs that the user has joined.'''
         self.logger.debug("%s joined %s", nick, channel)
-        self.iolog[nick] = ("joined", datetime.datetime.now())
+        self.iolog[nick.encode(self.encoding)] = ("joined", datetime.datetime.now())
 
     def left(self, nick, channel):
         '''Logs that the user has left.'''
         self.logger.debug("%s left %s", nick, channel)
-        self.iolog[nick] = ("left", datetime.datetime.now())
+        self.iolog[nick.encode(self.encoding)] = ("left", datetime.datetime.now())
 
     def quit(self, nick, message):
         '''Logs that the user has quit.'''
         self.logger.debug("%s quit IRC (%s)", nick, message)
-        self.iolog[nick] = ("quit IRC (%s)" % message, datetime.datetime.now())
+        self.iolog[nick.encode(self.encoding)] = ("quit IRC (%s)" % message, datetime.datetime.now())
 
     def message(self, nick, channel, msg):
         '''Logs something said by the user.'''
         self.logger.debug("%s said %s", nick, msg)
-        self.saidlog[nick] = (msg, datetime.datetime.now())
+        self.saidlog[nick.encode(self.encoding)] = (msg, datetime.datetime.now())
 
     def seen(self, user, channel, command, nick):
         u'''Indica cuando fue visto por última vez un usuario y qué hizo.'''
@@ -51,9 +60,9 @@ class Seen(Plugin):
         if self.config['clever'] and nick == user:
             self.say(channel, u"%s: andá mirate en el espejo del baño" % user)
             return
-
-        what1, when1 = self.iolog.get(nick, (None, None))
-        what2, when2 = self.saidlog.get(nick, (None, None))
+        encoded_nick = nick.encode(self.encoding)
+        what1, when1 = self.iolog.get(encoded_nick, (None, None))
+        what2, when2 = self.saidlog.get(encoded_nick, (None, None))
         self.logger.debug(str((what1, when1, what2, when2)))
 
         # didn't se him at all or he has just been silent
@@ -80,8 +89,9 @@ class Seen(Plugin):
             self.say(channel, u"%s: me tiraste la órden" % user)
             return
 
-        what1, when1 = self.iolog.get(nick, (None, None))
-        what2, when2 = self.saidlog.get(nick, (None, None))
+        encoded_nick = nick.encode(self.encoding)
+        what1, when1 = self.iolog.get(encoded_nick, (None, None))
+        what2, when2 = self.saidlog.get(encoded_nick, (None, None))
         self.logger.debug(str((what1, when1, what2, when2)))
 
         # he has just been silent

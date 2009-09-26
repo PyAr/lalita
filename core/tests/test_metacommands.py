@@ -26,6 +26,7 @@ SEVERALDOCS = u"Hay varios métodos para esa órden:".encode("utf8")
 class TestList(unittest.TestCase):
     def setUp(self):
         self.disp = dispatcher.Dispatcher(bot)
+        self.disp.init({})
 
         self.said = []
         bot.msg = lambda *a: self.said.append(a)
@@ -63,6 +64,7 @@ class TestList(unittest.TestCase):
 class TestHelp(unittest.TestCase):
     def setUp(self):
         self.disp = dispatcher.Dispatcher(bot)
+        self.disp.init({})
 
         self.said = []
         bot.msg = lambda *a: self.said.append(a)
@@ -122,6 +124,7 @@ class TestMoreHelp(unittest.TestCase):
     '''With the plugin in more channels.'''
     def setUp(self):
         self.disp = dispatcher.Dispatcher(bot)
+        self.disp.init({})
 
         self.said = []
         bot.msg = lambda *a: self.said.append(a)

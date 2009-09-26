@@ -4,7 +4,11 @@ from core import events
 
 from .helper import PluginTest
 
+import os
 import re
+import shutil
+import tempfile
+
 
 class TestLog(PluginTest):
     def setUp(self):
@@ -268,3 +272,35 @@ class TestLast(PluginTest):
         self.assertTrue(m)
 
 
+
+class TestLogPersistent(TestLog):
+
+    def setUp(self):
+        self.base_dir = tempfile.mktemp()
+        os.makedirs(self.base_dir)
+        self.init("seen.Seen", {'base_dir':self.base_dir})
+
+    def tearDown(self):
+        shutil.rmtree(self.base_dir)
+
+
+class TestSeenPersistent(TestSeen):
+
+    def setUp(self):
+        self.base_dir = tempfile.mktemp()
+        os.makedirs(self.base_dir)
+        self.init("seen.Seen", {'base_dir':self.base_dir})
+
+    def tearDown(self):
+        shutil.rmtree(self.base_dir)
+
+
+class TestLastPersistent(TestLast):
+
+    def setUp(self):
+        self.base_dir = tempfile.mktemp()
+        os.makedirs(self.base_dir)
+        self.init("seen.Seen", {'base_dir':self.base_dir})
+
+    def tearDown(self):
+        shutil.rmtree(self.base_dir)
