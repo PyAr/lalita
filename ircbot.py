@@ -244,11 +244,14 @@ def main(to_use, plugins_loglvl):
 
 if __name__ == '__main__':
     msg = u"""
-  ircbot.py [-t][-a][-o output_loglvl][-p plugins_loglvl] [server1, [...]]
+  ircbot.py [-t][-a][-o output_loglvl][-p plugins_loglvl]
+            [-f fileloglvl][-n logfname] [server1, [...]]
 
   the servers are optional if -a is passed
-  the output_loglevel is the log level default for all the system
+  the output_loglevel is the log level for the standard output
+  the file_loglevel is the log level for the output that goes to file
   the pluginloglevel is a list of plugin_name:loglevel separated by commas
+  the logfname is the filename to write the logs to
 """
 
     parser = optparse.OptionParser()
