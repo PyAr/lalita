@@ -36,4 +36,5 @@ class Plugin(object):
 
     def __init__(self, params, log_level):
         self.nickname = params["nickname"]
+        self.encoding = params['encoding']
         self.logger = _PluginLogger(self, log_level)

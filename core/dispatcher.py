@@ -61,6 +61,9 @@ class Dispatcher(object):
         self._plugins = {}
         self._channel_filter = {}
 
+    def init(self, config):
+        self.length_msg = int(config.get('length_msg', LENGTH_MSG))
+
     def new_plugin(self, plugin, channel):
         plugin.register = self.register
         plugin.say = functools.partial(self._msg_from_plugin, plugin)
@@ -104,7 +107,7 @@ class Dispatcher(object):
         self.msg(to_where, message)
 
     def msg(self, to_where, message):
-        self.bot.msg(to_where, message.encode("utf8"), LENGTH_MSG)
+        self.bot.msg(to_where, message.encode("utf8"), self.length_msg)
 
     def _error(self, error, instance):
         logger.debug("ERROR in instance %s: %s", instance, error)

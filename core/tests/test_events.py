@@ -48,6 +48,9 @@ class FakeDispatcher(object):
     def __init__(self):
         self.pushed = None
 
+    def init(self, config):
+        pass
+
     def push(self, *args):
         '''Stores what was pushed.'''
         self.pushed = args

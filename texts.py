@@ -16,14 +16,14 @@ es = {
 
 es = {
     'dispatcher': {
-        "no_such_command":u"%s: No existe esa órden!",
-        "help":u'"list" para ver las órdenes; "help cmd" para cada uno',
-        "empty_commands":u"No hay ninguna órden registrada...",
-        "command_not_exist":u"Esa órden no existe...",
+        "no_such_command":u"%s: No existe esa orden!",
+        "help":u'"list" para ver las ordenes; "help cmd" para cada uno',
+        "empty_commands":u"No hay ninguna orden registrada...",
+        "command_not_exist":u"Esa orden no existe...",
         "no_docs":u"No tiene documentación, y yo no soy adivina...",
-        "several_methods":u"Hay varios métodos para esa órden:",
-        "no_commands_registered":u"Decí alpiste, no hay órdenes todavía...",
-        "commands_are":u"Las órdenes son: %s"}
+        "several_methods":u"Hay varios métodos para esa orden:",
+        "no_commands_registered":u"Decí alpiste, no hay ordenes todavía...",
+        "commands_are":u"Las ordenes son: %s"}
     }
 
 en = {

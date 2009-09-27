@@ -53,6 +53,7 @@ class Helper(object):
 class TestRegister(unittest.TestCase):
     def setUp(self):
         self.disp = dispatcher.Dispatcher(bot)
+        self.disp.init({})
 
     def test_method_exists(self):
         self.assertTrue(hasattr(self.disp, "register"))
@@ -105,6 +106,7 @@ class TestPush(EasyDeferredTests):
     def setUp(self):
         super(TestPush, self).setUp()
         self.disp = dispatcher.Dispatcher(bot)
+        self.disp.init({})
 
         class Helper(object):
             def f(self, *args):
@@ -152,6 +154,7 @@ class TestEvents(EasyDeferredTests):
     def setUp(self):
         super(TestEvents, self).setUp()
         self.disp = dispatcher.Dispatcher(bot)
+        self.disp.init({})
 
         class Helper(object):
             def f(self, *args):

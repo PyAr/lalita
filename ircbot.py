@@ -4,7 +4,7 @@
 
 # twisted imports
 from twisted.words.protocols import irc
-from twisted.internet import reactor, protocol
+from twisted.internet import reactor, protocol, ssl
 from twisted.python import log
 
 # system imports
@@ -83,15 +83,18 @@ class IrcBot (irc.IRCClient):
 
     def load_server_plugins(self):
         params = {'nickname': self.nickname,
-                  }
+                  'encoding': self.encoding_server}
 
-        plugins= self.config.get ('plugins', {})
+        plugins= self.config.get('plugins', {})
         logger.debug ("server plugins: %s" % plugins)
-        for plugin, config in plugins.items ():
-            self.load_plugin (plugin, config, params)
+        for plugin, config in plugins.items():
+            self.load_plugin(plugin, config, params)
 
     def load_channel_plugins(self, channel):
-        params = {'nickname': self.nickname}
+        params = {'nickname': self.nickname,
+                  'encoding': self.encoding_channels.get('channel',
+                                       self.encoding_server)}
+
         plugins= self.config['channels'][channel].get ('plugins', {})
         logger.debug ("channel plugins: %s" % plugins)
         for plugin, config in plugins.items ():
@@ -113,10 +116,13 @@ class IrcBot (irc.IRCClient):
         self.encoding_channels = dict((k, v["encoding"])
                                     for k,v in self.config["channels"].items()
                                       if "encoding" in v)
+        self.password = self.config.get('password', None)
         irc.IRCClient.connectionMade (self)
         logger.info("connected to %s:%d" %
             (self.config['host'], self.config['port']))
         self.load_server_plugins()
+        # configure the dispatcher
+        self.dispatcher.init(self.config)
         self.dispatcher.push(events.CONNECTION_MADE)
 
     def connectionLost(self, reason):
@@ -239,9 +245,13 @@ def main(to_use, plugin_loglvl):
         # logger.debug (plugin_loglvl)
         server["log_config"] = plugin_loglvl
         bot = IRCBotFactory(server)
-        reactor.connectTCP(server.get('host', '10.100.0.194'),
-                           server.get('port', 6667),
-                           bot)
+        if server.get('ssl', False):
+            reactor.connectSSL(server.get('host', '10.100.0.194'),
+                               server.get('port', 6667), bot,
+                               ssl.ClientContextFactory())
+        else:
+            reactor.connectTCP(server.get('host', '10.100.0.194'),
+                               server.get('port', 6667), bot)
     reactor.run()
 
 

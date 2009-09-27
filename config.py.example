@@ -12,7 +12,8 @@ servers = {
                 }),
                 '#perrites': dict (
                     lang='en',
-                    plugins={'seen.Seen': { },
+                    plugins={
+                        'seen.Seen': {'base_dir':'<path/to/shelves_dir>'}, # two shelf's are going to be created (iolog and saylog) 
                 }),
             },
             plugins= {
@@ -25,6 +26,19 @@ servers = {
             encoding='utf8',
             host='10.100.0.156', port=6667,
             nickname='examplia',
+            channels= {
+                '#humites': dict(plugins={}),
+            },
+            plugins= {
+                'example.Example': { },
+            },
+        ),
+        'private-server': dict (
+            encoding='utf8',
+            host='10.100.0.156', port=6667,
+            nickname='examplia',
+            ssl=True,
+            password='aprivateserver',
             channels= {
                 '#humites': dict(plugins={}),
             },
