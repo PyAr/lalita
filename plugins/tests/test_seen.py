@@ -4,7 +4,11 @@ from core import events
 
 from .helper import PluginTest
 
+import os
 import re
+import shutil
+import tempfile
+
 
 class TestLog(PluginTest):
     def setUp(self):
@@ -175,7 +179,7 @@ class TestLast(PluginTest):
     def test_self(self):
         '''User asks about self.'''
         self.disp.push(events.COMMAND, "pepe", "channel", "last", "pepe")
-        self.assertEqual(self.answer[0][1], u"pepe: me tiraste la órden")
+        self.assertEqual(self.answer[0][1], u"pepe: me tiraste la orden")
 
     def test_nothing(self):
         '''User asks about a silent one.'''
@@ -268,3 +272,35 @@ class TestLast(PluginTest):
         self.assertTrue(m)
 
 
+
+class TestLogPersistent(TestLog):
+
+    def setUp(self):
+        self.base_dir = tempfile.mktemp()
+        os.makedirs(self.base_dir)
+        self.init("seen.Seen", {'base_dir':self.base_dir})
+
+    def tearDown(self):
+        shutil.rmtree(self.base_dir)
+
+
+class TestSeenPersistent(TestSeen):
+
+    def setUp(self):
+        self.base_dir = tempfile.mktemp()
+        os.makedirs(self.base_dir)
+        self.init("seen.Seen", {'base_dir':self.base_dir})
+
+    def tearDown(self):
+        shutil.rmtree(self.base_dir)
+
+
+class TestLastPersistent(TestLast):
+
+    def setUp(self):
+        self.base_dir = tempfile.mktemp()
+        os.makedirs(self.base_dir)
+        self.init("seen.Seen", {'base_dir':self.base_dir})
+
+    def tearDown(self):
+        shutil.rmtree(self.base_dir)

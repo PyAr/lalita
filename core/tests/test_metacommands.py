@@ -20,12 +20,13 @@ bot.msg = lambda *a:None
 PREFIX_LIST = u"Las órdenes son: ".encode("utf8")
 GENERIC_HELP = u'"list" para ver las órdenes; "help cmd" para cada uno'.encode("utf8")
 NODOCSTRING = u"No tiene documentación, y yo no soy adivina...".encode("utf8")
-SEVERALDOCS = u"Hay varios métodos para esa órden:".encode("utf8")
+SEVERALDOCS = u"Hay varios métodos para esa orden:".encode("utf8")
 
 
 class TestList(unittest.TestCase):
     def setUp(self):
         self.disp = dispatcher.Dispatcher(bot)
+        self.disp.init({})
 
         self.said = []
         bot.msg = lambda *a: self.said.append(a)
@@ -63,6 +64,7 @@ class TestList(unittest.TestCase):
 class TestHelp(unittest.TestCase):
     def setUp(self):
         self.disp = dispatcher.Dispatcher(bot)
+        self.disp.init({})
 
         self.said = []
         bot.msg = lambda *a: self.said.append(a)
@@ -122,6 +124,7 @@ class TestMoreHelp(unittest.TestCase):
     '''With the plugin in more channels.'''
     def setUp(self):
         self.disp = dispatcher.Dispatcher(bot)
+        self.disp.init({})
 
         self.said = []
         bot.msg = lambda *a: self.said.append(a)
