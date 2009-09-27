@@ -50,11 +50,9 @@ class IrcBot (irc.IRCClient):
     def __init__ (self, *more):
         self.dispatcher = dispatcher.Dispatcher(self)
         self._plugins = {}
-        logger.info("we're in(ited)!")
-        # logger.debug (more)
+        logger.info("We're in(ited)!")
 
     def load_plugin (self, plugin_name, config, params, channel=None):
-        # logger.debug (config)
         if "plugins_dir" in self.config:
             path = self.config["plugins_dir"]
         else:
@@ -71,22 +69,22 @@ class IrcBot (irc.IRCClient):
             self.dispatcher.new_plugin(instance, channel)
             instance.init(config)
         except ImportError, e:
-            logger.error('%s not instanced: %s' % (plugin_name, e))
+            logger.error('%s not instanced: %s', plugin_name, e)
         except AttributeError, e:
-            logger.error('%s not instanced: %s' % (plugin_name, e))
+            logger.error('%s not instanced: %s', plugin_name, e)
         except Exception, e:
-            logger.error('%s not instanced: %s' % (plugin_name, e))
+            logger.error('%s not instanced: %s', plugin_name, e)
             print_exc (e)
         else:
-            logger.info ('%s instanced for %s' % (plugin_name,
-                (channel is not None) and channel or 'server'))
+            logger.info('%s instanced for %s', plugin_name,
+                        (channel is not None) and channel or 'server')
 
     def load_server_plugins(self):
         params = {'nickname': self.nickname,
                   'encoding': self.encoding_server}
 
         plugins= self.config.get('plugins', {})
-        logger.debug ("server plugins: %s" % plugins)
+        logger.debug("server plugins: %s", plugins)
         for plugin, config in plugins.items():
             self.load_plugin(plugin, config, params)
 
@@ -96,7 +94,7 @@ class IrcBot (irc.IRCClient):
                                        self.encoding_server)}
 
         plugins= self.config['channels'][channel].get ('plugins', {})
-        logger.debug ("channel plugins: %s" % plugins)
+        logger.debug("channel plugins: %s", plugins)
         for plugin, config in plugins.items ():
             self.load_plugin (plugin, config, params, channel)
 
@@ -109,8 +107,8 @@ class IrcBot (irc.IRCClient):
                                       if "encoding" in v)
         self.password = self.config.get('password', None)
         irc.IRCClient.connectionMade (self)
-        logger.info("connected to %s:%d" %
-            (self.config['host'], self.config['port']))
+        logger.info("connected to %s:%d",
+                    self.config['host'], self.config['port'])
         self.load_server_plugins()
         # configure the dispatcher
         self.dispatcher.init(self.config)
@@ -118,17 +116,17 @@ class IrcBot (irc.IRCClient):
 
     def connectionLost(self, reason):
         irc.IRCClient.connectionLost(self, reason)
-        logger.info("disconnected from %s:%d" %
-            (self.config.get('host'), self.config.get('port')))
+        logger.info("disconnected from %s:%d",
+                    self.config.get('host'), self.config.get('port'))
         self.dispatcher.push(events.CONNECTION_LOST)
 
     def signedOn(self):
-        logger.debug ("signed on %s:%d" %
-            (self.config['host'], self.config['port']))
+        logger.debug("signed on %s:%d",
+                     self.config['host'], self.config['port'])
         self.dispatcher.push(events.SIGNED_ON)
         for channel in self.config.get ('channels', []):
-            logger.debug ("joining %s on %s:%d" %
-                (channel, self.config['host'], self.config['port']))
+            logger.debug("joining %s on %s:%d",
+                         channel, self.config['host'], self.config['port'])
             self.join (channel)
 
     def receivedMOTD(self, motd):
@@ -137,7 +135,7 @@ class IrcBot (irc.IRCClient):
 
     def joined(self, channel):
         """This will get called when the bot joins the channel."""
-        logger.info("joined to %s" % channel)
+        logger.info("joined to %s", channel)
         self.load_channel_plugins (channel)
         self.dispatcher.push(events.JOINED, channel)
 
@@ -147,9 +145,8 @@ class IrcBot (irc.IRCClient):
         encoding = self.encoding_channels.get(channel, self.encoding_server)
         msg = msg.decode(encoding)
 
-        logger.debug ("[%s] %s: %s" % (channel, user, msg))
+        logger.debug("[%s] %s: %s", channel, user, msg)
         user = user.split('!', 1)[0]
-        # self.logger.log("<%s> %s" % (user, msg))
 
         # Check to see if they're sending me a private message
         if channel == self.nickname:
@@ -220,7 +217,7 @@ class IRCBotFactory(protocol.ClientFactory):
         """
         If we get disconnected, reconnect to server.
         """
-        logger.debug("We got disconnected because of %s" % str(reason))
+        logger.debug("We got disconnected because of %s", reason)
         connector.connect()
 
     def clientConnectionFailed(self, connector, reason):
@@ -228,12 +225,11 @@ class IRCBotFactory(protocol.ClientFactory):
         Stop main loop if connection failed, this should be changed to stop
         only when no client remains connected
         """
-        logger.debug("Connection failed because of %s" % str(reason))
+        logger.debug("Connection failed because of %s", reason)
         # reactor.stop()
 
 def main(to_use, plugins_loglvl):
     for server in to_use:
-        # logger.debug (plugins_loglvl)
         server["log_config"] = plugins_loglvl
         bot = IRCBotFactory(server)
         if server.get('ssl', False):
