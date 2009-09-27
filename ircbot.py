@@ -36,14 +36,14 @@ LOG_LEVELS = {
     "critical": logging.CRITICAL,
 }
 
-handler = logging.StreamHandler(sys.stdout)
+log_stdout_handler = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter("%(asctime)s %(name)s:%(lineno)-4d "
                               "%(levelname)-8s %(message)s",
                               '%Y-%m-%d %H:%M:%S')
-handler.setFormatter(formatter)
+log_stdout_handler.setFormatter(formatter)
 logger = logging.getLogger('ircbot')
-logger.addHandler(handler)
-
+logger.addHandler(log_stdout_handler)
+logger.setLevel(logging.DEBUG)
 
 def nick (user):
     return user.split('!')[0]
@@ -53,7 +53,7 @@ class IrcBot (irc.IRCClient):
     def __init__ (self, *more):
         self.dispatcher = dispatcher.Dispatcher(self)
         self._plugins = {}
-        logger.debug ("we're in(ited)!")
+        logger.info("we're in(ited)!")
         # logger.debug (more)
 
     def load_plugin (self, plugin_name, config, params, channel=None):
@@ -85,8 +85,7 @@ class IrcBot (irc.IRCClient):
                 (channel is not None) and channel or 'server'))
 
     def load_server_plugins(self):
-        params = {'nickname': self.nickname,
-                  }
+        params = {'nickname': self.nickname}
 
         plugins= self.config.get ('plugins', {})
         logger.debug ("server plugins: %s" % plugins)
@@ -94,8 +93,7 @@ class IrcBot (irc.IRCClient):
             self.load_plugin (plugin, config, params)
 
     def load_channel_plugins(self, channel):
-        params = {'nickname': self.nickname,
-                  }
+        params = {'nickname': self.nickname}
 
         plugins= self.config['channels'][channel].get ('plugins', {})
         logger.debug ("channel plugins: %s" % plugins)
@@ -115,9 +113,9 @@ class IrcBot (irc.IRCClient):
         self.load_server_plugins()
         self.dispatcher.push(events.CONNECTION_MADE)
 
-    def connectionLost (self, reason):
+    def connectionLost(self, reason):
         irc.IRCClient.connectionLost(self, reason)
-        logger.info ("disconnected from %s:%d" %
+        logger.info("disconnected from %s:%d" %
             (self.config.get('host'), self.config.get('port')))
         self.dispatcher.push(events.CONNECTION_LOST)
 
@@ -130,17 +128,17 @@ class IrcBot (irc.IRCClient):
                 (channel, self.config['host'], self.config['port']))
             self.join (channel)
 
-    def receivedMOTD (self, motd):
-        logger.debug ("motd from %s:%d" %
+    def receivedMOTD(self, motd):
+        logger.debug("motd from %s:%d" %
             (self.config['host'], self.config['port']))
 
-    def joined (self, channel):
+    def joined(self, channel):
         """This will get called when the bot joins the channel."""
-        logger.info ("joined to %s" % channel)
+        logger.info("joined to %s" % channel)
         self.load_channel_plugins (channel)
         self.dispatcher.push(events.JOINED, channel)
 
-    def privmsg (self, user, channel, msg):
+    def privmsg(self, user, channel, msg):
         """This will get called when the bot receives a message."""
         # decode according to channel (that can be an user), or server/default
         encoding = self.encoding_channels.get(channel, self.encoding_server)
@@ -222,10 +220,10 @@ class IRCBotFactory(protocol.ClientFactory):
         logger.debug("Connection failed because of %s" % str(reason))
         # reactor.stop()
 
-def main(to_use, plugin_loglvl):
+def main(to_use, plugins_loglvl):
     for server in to_use:
-        # logger.debug (plugin_loglvl)
-        server["log_config"] = plugin_loglvl
+        # logger.debug (plugins_loglvl)
+        server["log_config"] = plugins_loglvl
         bot = IRCBotFactory(server)
         reactor.connectTCP(server.get('host', '10.100.0.194'),
                            server.get('port', 6667),
@@ -235,7 +233,7 @@ def main(to_use, plugin_loglvl):
 
 if __name__ == '__main__':
     msg = u"""
-  ircbot.py [-t][-a][-o output_loglvl][-p plugin_loglvl] [server1, [...]]
+  ircbot.py [-t][-a][-o output_loglvl][-p plugins_loglvl] [server1, [...]]
 
   the servers are optional if -a is passed
   the output_loglevel is the log level default for all the system
@@ -272,7 +270,7 @@ if __name__ == '__main__':
     else:
         output_loglevel = options.outloglvl.lower()
     try:
-        logger.setLevel(LOG_LEVELS[output_loglevel])
+        log_stdout_handler.setLevel(LOG_LEVELS[output_loglevel])
     except KeyError:
         print "The log level can be only:", LOG_LEVELS.keys()
         exit(1)
@@ -309,7 +307,7 @@ if __name__ == '__main__':
         log_filename = options.logfname
 
     if options.fileloglvl is None:
-        file_loglevel = logging.DEBUG
+        file_loglevel = logging.INFO
     else:
         try:
             file_loglevel = LOG_LEVELS[options.fileloglvl.lower()]
