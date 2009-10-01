@@ -100,15 +100,6 @@ class IrcBot (irc.IRCClient):
         for plugin, config in plugins.items ():
             self.load_plugin (plugin, config, params, channel)
 
-    def get_lang(self, channel):
-        """
-        Returns the language config for the channel, fallbacks to the
-        server config, and if it's not configured to spanish in order
-        to be backward compatible.
-        """
-        channel_config = self.config['channels'][channel]
-        return channel_config.get('lang', self.config.get('lang', 'es'))
-
     def connectionMade(self):
         self.config = self.factory.config
         self.nickname = self.config.get('nickname', 'lalita')

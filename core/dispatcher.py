@@ -2,6 +2,7 @@
 
 import itertools
 import functools
+import types
 
 from twisted.internet import defer
 
@@ -9,7 +10,6 @@ import logging
 logger = logging.getLogger ('ircbot.core.dispatcher')
 
 from core import events
-import texts
 
 # messages longer than this will be splitted in different server commands
 LENGTH_MSG = 512
@@ -54,18 +54,35 @@ CHANNEL_POS = {
 }
 
 
+TRANSLATION_TABLE = {u"%s: No existe esa orden!":{'en': u"%s: command not found!"},
+                     u'"list" para ver las órdenes; "help cmd" para cada uno':
+                        {'en': u'"list" To see the available commands ; "help cmd" for specific command help'},
+                     u"No hay ninguna orden registrada...":{'en': u"PANIC! I have no commands!!!"},
+                     u"Esa orden no existe...":{'en': u"No such command..."},
+                     u"%sNo tiene documentación, y yo no soy adivina...":{'en': u"%sMissing documentation"},
+                     u"No tiene documentación, y yo no soy adivina...":{'en': u"Missing documentation"},
+                     u"Hay varios métodos para esa orden:": {'en': u"Several handlers for the same command:"},
+                     u"Decí alpiste, no hay órdenes todavía...": {'en': u"No commands available (yet)"},
+                     u"Las órdenes son: %s": {'en': u"The available commands are: %s"}
+                    }
+
+
 class Dispatcher(object):
     def __init__(self, ircclient):
         self._callbacks = {}
         self.bot = ircclient
         self._plugins = {}
         self._channel_filter = {}
+        self._translations = {}
+        self.register_translation(self, TRANSLATION_TABLE)
 
     def init(self, config):
+        self.config = config
         self.length_msg = int(config.get('length_msg', LENGTH_MSG))
 
     def new_plugin(self, plugin, channel):
         plugin.register = self.register
+        plugin.register_translation = self.register_translation
         plugin.say = functools.partial(self._msg_from_plugin, plugin)
         logger.debug('plugin %s is in channel %s', plugin, channel)
         self._plugins[plugin] = channel
@@ -81,12 +98,12 @@ class Dispatcher(object):
         instance = func.im_self
         self._callbacks.setdefault(event, []).append((instance, func, extra))
 
-    def texts(self, channel):
-        """Returns the texts dict for the channel"""
-        lang = self.bot.get_lang(channel)
-        return texts.langs[lang]['dispatcher']
+    def register_translation(self, instance, table):
+        '''Register translation table for a plugin.'''
+        logger.debug('registering translation table for %s', instance)
+        self._translations[instance] = table
 
-    def _msg_from_plugin(self, plugin, to_where, message):
+    def _msg_from_plugin(self, plugin, to_where, message, *args):
         """Message from the plugin."""
         if plugin not in self._channel_filter:
             # don't allow to say anything out of order
@@ -104,10 +121,32 @@ class Dispatcher(object):
                              "different channel! (from: %s  to: %s)",
                              from_channel, to_where)
 
-        self.msg(to_where, message)
+        # get the translation if it's available
+        message = self.get_translation(plugin, to_where, message)
+        self._msg(to_where, message, *args)
 
-    def msg(self, to_where, message):
+    def _msg(self, to_where, message, *args):
+        if args and len(args) == 1 and \
+           (type(args[0]) == types.DictType) and args[0]:
+            args = args[0]
+        message = message % args
         self.bot.msg(to_where, message.encode("utf8"), self.length_msg)
+
+    def msg(self, to_where, message, *args):
+        message = self.get_translation(self, to_where, message)
+        self._msg(to_where, message, *args)
+
+    def get_translation(self, instance, channel, message):
+        """get the translated message for (instance, channel), if there is no
+        language specified in the channel config, server config is used.
+        If there is no translation of message for the language, message is returned.
+        """
+        # channel might be an user if this is called from a privmsg
+        # handler
+        channel_config = self.config.get('channels', {}).get(channel, {})
+        lang = channel_config.get('language', self.config.get('language', None))
+        logger.debug(self._translations)
+        return self._translations.get(instance, {}).get(message, {}).get(lang, message)
 
     def _error(self, error, instance):
         logger.debug("ERROR in instance %s: %s", instance, error)
@@ -135,7 +174,7 @@ class Dispatcher(object):
             # all of them)
             cmds = [x[2] for x in self._callbacks[events.COMMAND]]
             if cmds != [None] and command not in itertools.chain(*cmds):
-                self.msg(channel, self.texts(channel)["no_such_command"] % user)
+                self.msg(channel, u"%s: No existe esa orden!" % user)
                 return
 
         all_registered = self._callbacks.get(event)
@@ -190,7 +229,7 @@ class Dispatcher(object):
     def handle_meta_help(self, user, channel, command, *args):
         '''Handles the HELP meta command.'''
         if not args:
-            txt = self.texts(channel)['help']
+            txt = u'"list" para ver las órdenes; "help cmd" para cada uno'
             self.msg(channel, txt)
             return
 
@@ -198,7 +237,7 @@ class Dispatcher(object):
         try:
             registered = self._callbacks[events.COMMAND]
         except KeyError:
-            self.msg(channel, self.texts(channel)['empty_commands'])
+            self.msg(channel, u"No hay ninguna orden registrada...")
             return
 
         # get the docstrings... to get uniques we don't use a dictionary just
@@ -214,28 +253,28 @@ class Dispatcher(object):
 
         # no docs!
         if not docs:
-            self.msg(channel, self.texts(channel)['command_not_exist'])
+            self.msg(channel, u"Esa orden no existe...")
             return
 
         # only one method for that command
         if len(docs) == 1:
-            t = docs[0] if docs[0] else self.texts(channel)['no_docs']
+            t = docs[0] if docs[0] else u"No tiene documentación, y yo no soy adivina..."
             self.msg(channel, t)
             return
 
         # several methods for the same command
-        self.msg(channel, self.texts(channel)['several_methods'])
+        self.msg(channel, u"Hay varios métodos para esa orden:")
         for doc in docs:
-            t = doc if doc else self.texts(channel)['no_docs']
-            self.msg(channel, u" - " + t)
+            t = "%s"+doc if doc else u"%sNo tiene documentación, y yo no soy adivina..."
+            self.msg(channel, t, u" - ")
 
     def handle_meta_list(self, user, channel, command, *args):
         '''Handles the LIST meta command.'''
         try:
             cmds = [x[2] for x in self._callbacks[events.COMMAND]]
         except KeyError:
-            txt = self.texts(channel)['no_commands_registered']
+            txt = u"Decí alpiste, no hay órdenes todavía..."
         else:
             onlys = set(itertools.chain(*cmds))
-            txt = self.texts(channel)['commands_are'] % list(sorted(onlys))
+            txt = u"Las órdenes son: %s" % list(sorted(onlys))
         self.msg(channel, txt)
