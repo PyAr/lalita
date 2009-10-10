@@ -332,7 +332,12 @@ if __name__ == '__main__':
     # manhole option group
     manhole = parser.add_option_group('manhole')
     manhole.add_option("--manhole", dest="manhole", action="store_true",
-                       help="Enable manhole ssh server (listening on 127.0.0.1)")
+                       help="Enable manhole ssh server (listening on 127.0.0.1)" + \
+                       "\n*WARNING*: Note that this will open up a serious " + \
+                       "security hole on your computer as now anybody knowing " + \
+                       "this password may login to the Python console and get " + \
+                       "full access to the system with the permissions of the user" + \
+                       "running the manhole script.")
     manhole.add_option("--manhole-port", dest="manhole_port", type='int',
                        metavar='PORT', default=2222,
                        help="Use the specified port, default: 2222")
