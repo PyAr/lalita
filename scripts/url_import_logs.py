@@ -1,6 +1,8 @@
 # -*- coding: utf8 -*-
 
-# (c) 2009 Marcos Dione <mdione@grulic.org.ar>
+# Copyright 2009 laliputienses
+# License: GPL v3
+# For further info, see LICENSE file
 
 from twisted.internet import reactor
 import sys
