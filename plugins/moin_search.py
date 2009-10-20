@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+# Copyright 2009 laliputienses
+# License: GPL v3
+# For further info, see LICENSE file
+
 from time import time
 from twisted.web import client
 from BeautifulSoup import BeautifulSoup, Tag

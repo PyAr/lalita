@@ -1,5 +1,9 @@
 # -*- coding: utf8 -*-
 
+# Copyright 2009 laliputienses
+# License: GPL v3
+# For further info, see LICENSE file
+
 # this is the only stuff from lalita you need to import
 from lalita import Plugin
 

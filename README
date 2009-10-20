@@ -1,6 +1,31 @@
-Rename config.py.examples to config.py and run ircbot.py
+Welcome to the lalita project!
+
+lalita is yet another IRC bot, one where new functionality is simple to 
+create just adding easy-to-write plugins.
+
+lalita is written with some goals in mind:
+
+- Twisted! (we don't like threads)
+
+- Pluggable: easy to implement new functionalities
+
+- Have fun: yes, it's Python
+
+All the code in lalita is licensed under GNU GPL v3. See LICENSE.txt for 
+further info.
+
+The project page is
+
+  https://edge.launchpad.net/lalita
+
+To run the bot, rename config.py.examples to config.py and run ircbot.py
 
 There're a lot of test cases! You can try them running "nosetests" (you 
 need to have Nose installed).
 
 To create a plugin, check the plugins/example.py one, and use it as a start.
+
+We don't have a mail list for the project, but you can check in #pyar on 
+Freenode, most of developers are around there.
+
+Enjoy it!
