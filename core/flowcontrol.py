@@ -14,7 +14,7 @@ class FlowController(object):
     The queue also times out (per user).
     '''
 
-    def __init__(self, func, maxq, timeout):
+    def __init__(self, func, maxq, timeout=None):
         pass
 
     def send(self, what, to):
