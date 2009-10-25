@@ -11,6 +11,22 @@ from twisted.internet import defer, reactor
 from core import flowcontrol
 
 
+class TestBaseFC(unittest.TestCase):
+    '''Base class.'''
+    def setUp(self, timeout=None):
+        self.rec = []
+        def f(a, b):
+            self.rec.append((a, b))
+        self.fc = flowcontrol.FlowController(f, 3, timeout)
+
+    def get_queue(self, who):
+        '''Returns the queue for who.'''
+        if who in self.fc._queue:
+            return list(self.fc._queue[who][1])
+        else:
+            return list()
+
+
 class TestInit(unittest.TestCase):
     '''Instancing the class.'''
 
@@ -32,7 +48,6 @@ class TestInit(unittest.TestCase):
     def test_maxq(self):
         '''"maxq" parameter must be a number >0.'''
         f = lambda: None
-        self.assertRaises(ValueError, flowcontrol.FlowController, f, None)
         self.assertRaises(ValueError, flowcontrol.FlowController, f, "a")
         self.assertRaises(ValueError, flowcontrol.FlowController, f, 0)
         self.assertRaises(ValueError, flowcontrol.FlowController, f, -5)
@@ -48,11 +63,8 @@ class TestInit(unittest.TestCase):
         flowcontrol.FlowController(f, 1, 1)
 
 
-class TestSend(unittest.TestCase):
+class TestSend(TestBaseFC):
     '''Using the .send() method.'''
-    def setUp(self):
-        self.rec = []
-        self.fc = flowcontrol.FlowController(self.rec.append, 3)
 
     def test_base(self):
         '''Called with right params quantity.'''
@@ -85,7 +97,7 @@ class TestSend(unittest.TestCase):
         self.fc.send("baz", 5)
         self.fc.send("nop", 5)
         self.assertEqual(self.rec, [("foo", 5), ("bar", 5), ("baz", 5)])
-        self.assertEqual(self.fc._queue, {5: deque("nop")})
+        self.assertEqual(self.get_queue(5), ["nop"])
 
     def test_called_order(self):
         '''Different 'to's, check order.'''
@@ -103,26 +115,32 @@ class TestSend(unittest.TestCase):
             self.fc.send(what, who)
 
         # A and C are called all the times, no queue
-        self.assertTrue(("A", "1") in self.rec)
-        self.assertTrue(("A", "3") in self.rec)
-        self.assertTrue(("C", "6") in self.rec)
-        self.assertFalse("A" in self.fc._queue)
-        self.assertFalse("C" in self.fc._queue)
+        self.assertTrue(("1", "A") in self.rec)
+        self.assertTrue(("3", "A") in self.rec)
+        self.assertTrue(("6", "C") in self.rec)
+        self.assertEqual(self.get_queue("A"), [])
+        self.assertEqual(self.get_queue("C"), [])
 
         # B is called maxq, and the rest is queued
-        self.assertTrue(("B", "2") in self.rec)
-        self.assertTrue(("B", "4") in self.rec)
-        self.assertTrue(("B", "5") in self.rec)
-        self.assertTrue(("B", "7") not in self.rec)
-        self.assertTrue(("B", "8") not in self.rec)
-        self.assertEqual(self.fc._queue["B"], deque([7, 8]))
+        self.assertTrue(("2", "B") in self.rec)
+        self.assertTrue(("4", "B") in self.rec)
+        self.assertTrue(("5", "B") in self.rec)
+        self.assertTrue(("7", "B") not in self.rec)
+        self.assertTrue(("8", "B") not in self.rec)
+        self.assertEqual(self.get_queue("B"), ["7", "8"])
+
+    def test_reset_middle(self):
+        '''With a reset in the middle it starts again.'''
+        self.fc.send("foo", 5)
+        self.fc.send("bar", 5)
+        self.fc.reset(5)
+        self.fc.send("xxx", 5)
+        self.fc.send("yyy", 5)
+        self.assertEqual(self.get_queue(5), [])
 
 
-class TestMore(unittest.TestCase):
+class TestMore(TestBaseFC):
     '''Using the .more() method.'''
-    def setUp(self):
-        self.rec = []
-        self.fc = flowcontrol.FlowController(self.rec.append, 3)
 
     def test_base(self):
         '''Called with right params quantity.'''
@@ -137,27 +155,27 @@ class TestMore(unittest.TestCase):
 
     def test_something_queued(self):
         '''Something queued, produce it.'''
-        for what in zip("12345"):
+        for what in "12345":
             self.fc.send(what, "pepe")
         self.rec[:] = []
 
         self.fc.more("pepe")
-        self.assertEqual(self.rec, [(4, "pepe"), (5, "pepe")])
+        self.assertEqual(self.rec, [("4", "pepe"), ("5", "pepe")])
 
     def test_a_lot_queued(self):
         '''Lot of messages queued, produce until maxq.'''
-        for what in zip("12345678"):
-            self.fc.send(what, "pepe")
+        for what in "12345678":
+            self.fc.send(what, "foo")
         self.rec[:] = []
 
         # first call, go until maxq
-        self.fc.more("pepe")
-        self.assertEqual(self.rec, [(4, "pepe"), (5, "pepe"), (6, "pepe")])
+        self.fc.more("foo")
+        self.assertEqual(self.rec, [("4", "foo"), ("5", "foo"), ("6", "foo")])
 
         # second call, produce the rest
-        self.fc.more("pepe")
-        self.assertEqual(self.rec, [(4, "pepe"), (5, "pepe"), (6, "pepe"),
-                                    (7, "pepe"), (8, "pepe"),
+        self.fc.more("foo")
+        self.assertEqual(self.rec, [("4", "foo"), ("5", "foo"), ("6", "foo"),
+                                    ("7", "foo"), ("8", "foo"),
                                    ])
 
     def test_different_to(self):
@@ -168,14 +186,12 @@ class TestMore(unittest.TestCase):
 
         # this should produce B and leave A intact
         self.fc.more("B")
-        self.assertEqual(self.rec, [(7, "B"), (8, "B")])
-        self.assertEqual(self.fc._queue["A"], deque([4]))
+        self.assertEqual(self.rec, [("7", "B"), ("8", "B")])
+        self.assertEqual(self.get_queue("A"), ["9"])
 
 
-class TestReset(unittest.TestCase):
+class TestReset(TestBaseFC):
     '''Using the .reset() method.'''
-    def setUp(self):
-        self.fc = flowcontrol.FlowController(lambda: None, 3)
 
     def test_base(self):
         '''Called with right params quantity.'''
@@ -186,44 +202,49 @@ class TestReset(unittest.TestCase):
     def test_nothing_queued(self):
         '''Nothing was queued.'''
         self.fc.reset(1)
-        self.assertEqual(self.fc._queue, {})
+        self.assertEqual(self.get_queue(1), [])
 
     def test_reset_queue(self):
         '''Something was queued, reset it.'''
-        for what in zip("12345"):
+        for what in "12345":
             self.fc.send(what, "pepe")
-        self.assertEqual(self.fc._queue, {"pepe": deque([4, 5])})
+        self.assertEqual(self.get_queue("pepe"), ["4", "5"])
 
-        self.reset("pepe")
-        self.assertEqual(self.fc._queue, {})
+        self.fc.reset("pepe")
+        self.assertEqual(self.get_queue("pepe"), [])
 
     def test_different_queues(self):
         '''Queue existed for different users, reset the right one.'''
         for what, who in zip("123456789", "AABBABBBA"):
             self.fc.send(what, who)
-        self.assertEqual(self.fc._queue, {"A": deque([4]), "B": deque([4, 5])})
+        self.assertEqual(self.get_queue("A"), ["9"])
+        self.assertEqual(self.get_queue("B"), ["7", "8"])
 
-        self.reset("A")
-        self.assertEqual(self.fc._queue, {"B": deque([4, 5])})
+        self.fc.reset("A")
+        self.assertEqual(self.get_queue("B"), ["7", "8"])
 
 
-class TestTimeout(TwistedTestCase):
+class TestTimeout(TwistedTestCase, TestBaseFC):
     '''Check the timeout functionality.'''
     timeout = 2
 
     def setUp(self):
-        self.rec = []
-        self.fc = flowcontrol.FlowController(self.rec.append, 3, 1)
+        TestBaseFC.setUp(self, timeout=1)
+        TwistedTestCase.setUp(self)
+
+    def tearDown(self):
+        for dcall in reactor.getDelayedCalls():
+            dcall.cancel()
 
     def test_called_within_time(self):
         '''The queue is there before the timeout.'''
         d = defer.Deferred()
 
-        for what in zip("12345"):
+        for what in "12345":
             self.fc.send(what, "pepe")
 
         def check():
-            self.assertEqual(self.fc._queue, {"pepe": deque([4, 5])})
+            self.assertEqual(self.get_queue("pepe"), ["4", "5"])
             d.callback(True)
 
         reactor.callLater(.1, check)
@@ -233,11 +254,11 @@ class TestTimeout(TwistedTestCase):
         '''After timeout, no more queue.'''
         d = defer.Deferred()
 
-        for what in zip("12345"):
+        for what in "12345":
             self.fc.send(what, "pepe")
 
         def check():
-            self.assertEqual(self.fc._queue, {})
+            self.assertEqual(self.get_queue("pepe"), [])
             d.callback(True)
 
         reactor.callLater(1.5, check)
@@ -247,15 +268,15 @@ class TestTimeout(TwistedTestCase):
         '''Timeout clears the queue per user.'''
         d = defer.Deferred()
 
-        for what in zip("12345"):
+        for what in "12345":
             self.fc.send(what, "pepe")
 
         def add_more():
-            for what in zip("54321"):
+            for what in "54321":
                 self.fc.send(what, "juan")
 
         def check():
-            self.assertEqual(self.fc._queue, {"juan": deque([2, 1])})
+            self.assertEqual(self.get_queue("juan"), ["2", "1"])
             d.callback(True)
 
         reactor.callLater(1, add_more)
