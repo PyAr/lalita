@@ -31,6 +31,8 @@ MY_NICKNAME = server['nickname']
 
 
 class EasyDeferredTests(TwistedTestCase):
+    '''Base class for deferred tests.'''
+
     def setUp(self):
         self.deferred = defer.Deferred()
         self.timeout = 1
@@ -103,6 +105,7 @@ class TestRegister(unittest.TestCase):
 
 
 class TestPush(EasyDeferredTests):
+    '''Test that push works.'''
 
     def setUp(self):
         super(TestPush, self).setUp()
@@ -151,6 +154,7 @@ class TestPush(EasyDeferredTests):
 
 
 class TestEvents(EasyDeferredTests):
+    '''Test all the events.'''
 
     def setUp(self):
         super(TestEvents, self).setUp()
@@ -466,3 +470,84 @@ class TestEvents(EasyDeferredTests):
         self.disp.push(events.KICK, "kickee", "channel", "kicker", "msg")
         return self.deferred
 
+
+class TestSay(EasyDeferredTests):
+    '''Plugins say stuff, the dispatcher transmit that.'''
+
+    def setUp(self):
+        super(TestSay, self).setUp()
+        disp = dispatcher.Dispatcher(bot)
+        disp.init({})
+
+        # let's register what the dispatcher says that plugin said
+        self.recorder = []
+        disp.msg = lambda *a: self.recorder.append(a)
+
+        class Helper(object):
+            '''Plugin that says what we tell to say.'''
+            def f(self, *args):
+                for to, msg in self.what:
+                    self.say(to, msg)
+
+        self.helper = Helper()
+        disp.new_plugin(self.helper, "#channel")
+        disp.register(events.PUBLIC_MESSAGE, self.helper.f)
+        self.deferred.addCallback(lambda _: disp.push(events.PUBLIC_MESSAGE,
+                                                      "usr", "#channel", "bu"))
+
+    def test_nothing(self):
+        '''Plugin don't say anything.'''
+        self.helper.what = []
+
+        def check(_):
+            self.deferredAssertEqual(self.recorder, [])
+
+        self.deferred.addCallback(check)
+        self.deferred.callback(True)
+        return self.deferred
+
+    def test_one_thing(self):
+        '''Plugin say one thing.'''
+        self.helper.what = [("touser", "text")]
+
+        def check(_):
+            self.deferredAssertEqual(self.recorder, [("touser", "text")])
+
+        self.deferred.addCallback(check)
+        self.deferred.callback(True)
+        return self.deferred
+
+    def test_two_things(self):
+        '''Plugin say two things.'''
+        self.helper.what = [("touser", "text1"), ("touser", "text2")]
+
+        def check(_):
+            self.deferredAssertEqual(self.recorder, [("touser", "text1"),
+                                                     ("touser", "text2")])
+
+        self.deferred.addCallback(check)
+        self.deferred.callback(True)
+        return self.deferred
+
+    def test_two_things(self):
+        '''Plugin say two things.'''
+        self.helper.what = [("touser", "text1"), ("touser", "text2")]
+
+        def check(_):
+            self.deferredAssertEqual(self.recorder, [("touser", "text1"),
+                                                     ("touser", "text2")])
+
+        self.deferred.addCallback(check)
+        self.deferred.callback(True)
+        return self.deferred
+
+    def test_other_channel(self):
+        '''Answers should be in the same channel.'''
+        self.helper.what = [("touser", "text1"), ("#other", "text2")]
+
+        def check(_):
+            self.deferredAssertEqual(self.recorder, [("touser", "text1")])
+
+        self.deferred.addCallback(check)
+        self.deferred.callback(True)
+        return self.deferred

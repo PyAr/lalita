@@ -101,6 +101,7 @@ class Dispatcher(object):
                 logger.debug("WARNING: the plugin is trying to answer in a "
                              "different channel! (from: %s  to: %s)",
                              from_channel, to_where)
+                return
 
         self.msg(to_where, message)
 
