@@ -92,41 +92,41 @@ class TestSend(TestBaseFC):
 
     def test_called_maxq_plus1(self):
         '''With one plus than maxq calls, function is called, and queue!.'''
-        self.fc.send("foo", 5)
-        self.fc.send("bar", 5)
-        self.fc.send("baz", 5)
-        self.fc.send("nop", 5)
-        self.assertEqual(self.rec, [("foo", 5), ("bar", 5), ("baz", 5)])
+        self.fc.send(5, "foo")
+        self.fc.send(5, "bar")
+        self.fc.send(5, "baz")
+        self.fc.send(5, "nop")
+        self.assertEqual(self.rec, [(5, "foo"), (5, "bar"), (5, "baz")])
         self.assertEqual(self.get_queue(5), ["nop"])
 
     def test_called_order(self):
         '''Different 'to's, check order.'''
-        for what, who in zip("1234", "ABAC"):
-            self.fc.send(what, who)
+        for who, what in zip("ABAC", "1234"):
+            self.fc.send(who, what)
 
-        self.assertEqual(self.rec, [("1", "A"), ("2", "B"),
-                                    ("3", "A"), ("4", "C"),
+        self.assertEqual(self.rec, [("A", "1"), ("B", "2"),
+                                    ("A", "3"), ("C", "4"),
                                    ])
 
     def test_called_a_lot_different_tos(self):
         '''A lot of calls, but different 'to's.'''
         # call 2 to A, 5 to B, 1 to C
-        for what, who in zip("12345678", "ABABBCBB"):
-            self.fc.send(what, who)
+        for who, what in zip("ABABBCBB", "12345678"):
+            self.fc.send(who, what)
 
         # A and C are called all the times, no queue
-        self.assertTrue(("1", "A") in self.rec)
-        self.assertTrue(("3", "A") in self.rec)
-        self.assertTrue(("6", "C") in self.rec)
+        self.assertTrue(("A", "1") in self.rec)
+        self.assertTrue(("A", "3") in self.rec)
+        self.assertTrue(("C", "6") in self.rec)
         self.assertEqual(self.get_queue("A"), [])
         self.assertEqual(self.get_queue("C"), [])
 
         # B is called maxq, and the rest is queued
-        self.assertTrue(("2", "B") in self.rec)
-        self.assertTrue(("4", "B") in self.rec)
-        self.assertTrue(("5", "B") in self.rec)
-        self.assertTrue(("7", "B") not in self.rec)
-        self.assertTrue(("8", "B") not in self.rec)
+        self.assertTrue(("B", "2") in self.rec)
+        self.assertTrue(("B", "4") in self.rec)
+        self.assertTrue(("B", "5") in self.rec)
+        self.assertTrue(("B", "7") not in self.rec)
+        self.assertTrue(("B", "8") not in self.rec)
         self.assertEqual(self.get_queue("B"), ["7", "8"])
 
     def test_reset_middle(self):
@@ -156,37 +156,37 @@ class TestMore(TestBaseFC):
     def test_something_queued(self):
         '''Something queued, produce it.'''
         for what in "12345":
-            self.fc.send(what, "pepe")
+            self.fc.send("pepe", what)
         self.rec[:] = []
 
         self.fc.more("pepe")
-        self.assertEqual(self.rec, [("4", "pepe"), ("5", "pepe")])
+        self.assertEqual(self.rec, [("pepe", "4"), ("pepe", "5")])
 
     def test_a_lot_queued(self):
         '''Lot of messages queued, produce until maxq.'''
         for what in "12345678":
-            self.fc.send(what, "foo")
+            self.fc.send("foo", what)
         self.rec[:] = []
 
         # first call, go until maxq
         self.fc.more("foo")
-        self.assertEqual(self.rec, [("4", "foo"), ("5", "foo"), ("6", "foo")])
+        self.assertEqual(self.rec, [("foo", "4"), ("foo", "5"), ("foo", "6")])
 
         # second call, produce the rest
         self.fc.more("foo")
-        self.assertEqual(self.rec, [("4", "foo"), ("5", "foo"), ("6", "foo"),
-                                    ("7", "foo"), ("8", "foo"),
+        self.assertEqual(self.rec, [("foo", "4"), ("foo", "5"), ("foo", "6"),
+                                    ("foo", "7"), ("foo", "8"),
                                    ])
 
     def test_different_to(self):
         '''Queued for different users, produce the for asked one.'''
-        for what, who in zip("123456789", "AABBABBBA"):
-            self.fc.send(what, who)
+        for who, what in zip("AABBABBBA", "123456789"):
+            self.fc.send(who, what)
         self.rec[:] = []
 
         # this should produce B and leave A intact
         self.fc.more("B")
-        self.assertEqual(self.rec, [("7", "B"), ("8", "B")])
+        self.assertEqual(self.rec, [("B", "7"), ("B", "8")])
         self.assertEqual(self.get_queue("A"), ["9"])
 
 
@@ -207,7 +207,7 @@ class TestReset(TestBaseFC):
     def test_reset_queue(self):
         '''Something was queued, reset it.'''
         for what in "12345":
-            self.fc.send(what, "pepe")
+            self.fc.send("pepe", what)
         self.assertEqual(self.get_queue("pepe"), ["4", "5"])
 
         self.fc.reset("pepe")
@@ -215,8 +215,8 @@ class TestReset(TestBaseFC):
 
     def test_different_queues(self):
         '''Queue existed for different users, reset the right one.'''
-        for what, who in zip("123456789", "AABBABBBA"):
-            self.fc.send(what, who)
+        for who, what in zip("AABBABBBA", "123456789"):
+            self.fc.send(who, what)
         self.assertEqual(self.get_queue("A"), ["9"])
         self.assertEqual(self.get_queue("B"), ["7", "8"])
 
@@ -241,7 +241,7 @@ class TestTimeout(TwistedTestCase, TestBaseFC):
         d = defer.Deferred()
 
         for what in "12345":
-            self.fc.send(what, "pepe")
+            self.fc.send("pepe", what)
 
         def check():
             self.assertEqual(self.get_queue("pepe"), ["4", "5"])
@@ -255,7 +255,7 @@ class TestTimeout(TwistedTestCase, TestBaseFC):
         d = defer.Deferred()
 
         for what in "12345":
-            self.fc.send(what, "pepe")
+            self.fc.send("pepe", what)
 
         def check():
             self.assertEqual(self.get_queue("pepe"), [])
@@ -269,11 +269,11 @@ class TestTimeout(TwistedTestCase, TestBaseFC):
         d = defer.Deferred()
 
         for what in "12345":
-            self.fc.send(what, "pepe")
+            self.fc.send("pepe", what)
 
         def add_more():
             for what in "54321":
-                self.fc.send(what, "juan")
+                self.fc.send("juan", what)
 
         def check():
             self.assertEqual(self.get_queue("juan"), ["2", "1"])

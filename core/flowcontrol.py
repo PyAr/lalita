@@ -37,7 +37,7 @@ class FlowController(object):
                 raise ValueError("The timeout if present should be > 0, "
                                  "received: %r" % timeout)
 
-    def send(self, what, to):
+    def send(self, to, what):
         '''Call "func" the first "maxq" times, the rest is queued.'''
         if to in self._queue:
             cant, queue, dcall = self._queue[to]
@@ -52,7 +52,7 @@ class FlowController(object):
                 dcall = reactor.callLater(self.timeout, self.reset, to)
 
         if cant < self.maxq:
-            self.func(what, to)
+            self.func(to, what)
             cant += 1
             self._queue[to] = (cant, queue, dcall)
         else:
@@ -71,7 +71,7 @@ class FlowController(object):
                 except IndexError:
                     # queue is done!
                     break
-                self.func(what, who)
+                self.func(who, what)
 
     def reset(self, who):
         '''Reset the queue for "who".'''
