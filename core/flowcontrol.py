@@ -77,3 +77,8 @@ class FlowController(object):
         '''Reset the queue for "who".'''
         if who in self._queue:
             del self._queue[who]
+
+    def shutdown(self):
+        '''Takes the flow controller down.'''
+        for dcall in reactor.getDelayedCalls():
+            dcall.cancel()

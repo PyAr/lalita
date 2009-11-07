@@ -233,8 +233,7 @@ class TestTimeout(TwistedTestCase, TestBaseFC):
         TwistedTestCase.setUp(self)
 
     def tearDown(self):
-        for dcall in reactor.getDelayedCalls():
-            dcall.cancel()
+        self.fc.shutdown()
 
     def test_called_within_time(self):
         '''The queue is there before the timeout.'''

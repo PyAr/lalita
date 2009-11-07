@@ -12,10 +12,16 @@ from twisted.internet import defer
 import logging
 logger = logging.getLogger ('ircbot.core.dispatcher')
 
-from core import events
+from core import events, flowcontrol
 
 # messages longer than this will be splitted in different server commands
 LENGTH_MSG = 512
+
+# the default max used for the flow controller queue
+DEFAULT_MAXQ = 5
+
+# the timeout for the per process queue of the flow controller, in seconds
+FLOW_TIMEOUT = 120
 
 # these are special events that should be handled by their methods to
 # validate the message reception
@@ -37,6 +43,7 @@ SILENTS = set((
 META_COMMANDS = {
     "help": "meta_help",
     "list": "meta_list",
+    "more": "meta_more",
 }
 
 # the position of the channel parameter in each event
@@ -66,6 +73,13 @@ class Dispatcher(object):
 
     def init(self, config):
         self.length_msg = int(config.get('length_msg', LENGTH_MSG))
+        maxq = int(config.get('flow_maxq', DEFAULT_MAXQ))
+        self.flowcontroller = flowcontrol.FlowController(self.msg,
+                                                         maxq, FLOW_TIMEOUT)
+
+    def shutdown(self):
+        '''Takes the dispatcher down.'''
+        self.flowcontroller.shutdown()
 
     def new_plugin(self, plugin, channel):
         plugin.register = self.register
@@ -103,7 +117,7 @@ class Dispatcher(object):
                              from_channel, to_where)
                 return
 
-        self.msg(to_where, message)
+        self.flowcontroller.send(to_where, message)
 
     def msg(self, to_where, message):
         self.bot.msg(to_where, message.encode("utf8"), self.length_msg)
@@ -128,6 +142,9 @@ class Dispatcher(object):
                 meth = getattr(self, "handle_" + META_COMMANDS[command])
                 meth(*args)
                 return
+
+            # as it's not a meta command, the queue is reset for the user
+            self.flowcontroller.reset(user)
 
             # check if the command is one of those registered for the
             # plugins (the [None] is a special case when registering for
@@ -238,3 +255,7 @@ class Dispatcher(object):
             onlys = set(itertools.chain(*cmds))
             txt = u"Las órdenes son: %s" % list(sorted(onlys))
         self.msg(channel, txt)
+
+    def handle_meta_more(self, user, channel, command, *args):
+        '''Handles the MORE meta command.'''
+        self.flowcontroller.more(user)
