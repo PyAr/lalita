@@ -5,8 +5,11 @@
 # For further info, see LICENSE file
 
 import collections
+import logging
 
 from twisted.internet import reactor
+
+logger = logging.getLogger ('ircbot.core.flowcontroller')
 
 class FlowController(object):
     '''Queue that gets in the middle to control flow and avoid excess.
@@ -56,12 +59,14 @@ class FlowController(object):
             cant += 1
             self._queue[to] = (cant, queue, dcall)
         else:
+            logger.debug("Queuing msg to %r", to)
             queue.append(what)
             self._queue[to] = (cant, queue, dcall)
 
     def more(self, who):
         '''Call "func" the "maxq" times with what is queued for "who".'''
         if who in self._queue:
+            logger.debug("Unqueuing msgs from %r", who)
             cant, queue, dcall = self._queue[who]
             if dcall is not None:
                 dcall.reset(self.timeout)
@@ -76,6 +81,7 @@ class FlowController(object):
     def reset(self, who):
         '''Reset the queue for "who".'''
         if who in self._queue:
+            logger.debug("Resetting queue of %r", who)
             del self._queue[who]
 
     def shutdown(self):

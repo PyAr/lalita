@@ -63,6 +63,23 @@ CHANNEL_POS = {
     events.ACTION: 1,
 }
 
+# the position of the user parameter in each event
+USER_POS = {
+    events.CONNECTION_MADE: None,
+    events.CONNECTION_LOST: None,
+    events.SIGNED_ON: None,
+    events.JOINED: None,
+    events.PRIVATE_MESSAGE: 0,
+    events.TALKED_TO_ME: 0,
+    events.COMMAND: 0,
+    events.PUBLIC_MESSAGE: 0,
+    events.JOIN: 0,
+    events.LEFT: 0,
+    events.QUIT: 0,
+    events.KICK: 0,
+    events.ACTION: 0,
+}
+
 
 class Dispatcher(object):
     def __init__(self, ircclient):
@@ -74,7 +91,7 @@ class Dispatcher(object):
     def init(self, config):
         self.length_msg = int(config.get('length_msg', LENGTH_MSG))
         maxq = int(config.get('flow_maxq', DEFAULT_MAXQ))
-        self.flowcontroller = flowcontrol.FlowController(self.msg,
+        self.flowcontroller = flowcontrol.FlowController(self._msg_unpacker,
                                                          maxq, FLOW_TIMEOUT)
 
     def shutdown(self):
@@ -104,7 +121,7 @@ class Dispatcher(object):
             # don't allow to say anything out of order
             return
 
-        from_channel = self._channel_filter[plugin]
+        from_channel, user = self._channel_filter[plugin]
 
         # from_channel can be None if msg() was used from here (not channel
         # passed), or if was a response from a plugin, but the original
@@ -117,7 +134,12 @@ class Dispatcher(object):
                              from_channel, to_where)
                 return
 
-        self.flowcontroller.send(to_where, message)
+        self.flowcontroller.send(user, (to_where, message))
+
+    def _msg_unpacker(self, user, payload):
+        '''Unpacks the payload.'''
+        to_where, message = payload
+        self.msg(to_where, message)
 
     def msg(self, to_where, message):
         self.bot.msg(to_where, message.encode("utf8"), self.length_msg)
@@ -135,6 +157,10 @@ class Dispatcher(object):
     def push(self, event, *args):
         '''Pushes the received event to the registered method(s).'''
         logger.debug("Received push event %s (%s)", event, args)
+
+        posuser = USER_POS[event]
+        user = None if posuser is None else args[posuser]
+
         # meta commands
         if event == events.COMMAND:
             user, channel, command = args[:3]
@@ -143,9 +169,6 @@ class Dispatcher(object):
                 meth(*args)
                 return
 
-            # as it's not a meta command, the queue is reset for the user
-            self.flowcontroller.reset(user)
-
             # check if the command is one of those registered for the
             # plugins (the [None] is a special case when registering for
             # all of them)
@@ -153,6 +176,9 @@ class Dispatcher(object):
             if cmds != [None] and command not in itertools.chain(*cmds):
                 self.msg(channel, u"%s: No existe esa orden!" % user)
                 return
+
+        # as it's not a meta command, the queue is reset for the user
+        self.flowcontroller.reset(user)
 
         all_registered = self._callbacks.get(event)
         if all_registered is None:
@@ -180,7 +206,7 @@ class Dispatcher(object):
 
             # dispatch!
             if event not in SILENTS:
-                self._channel_filter[instance] = channel
+                self._channel_filter[instance] = (channel, user)
 
             logger.debug("Dispatching event to %s", regist)
             d = defer.maybeDeferred(regist, *args)
