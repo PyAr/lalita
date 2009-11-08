@@ -704,7 +704,8 @@ class TestFlowController(EasyDeferredTests):
             self.recorder[:] = []
 
         def check2(_):
-            self.assertEqual(self.recorder, [])
+            self.assertEqual(self.recorder,
+                             [("#channel", u"No hay nada encolado para vos")])
 
         self.deferred.addCallback(self.user_says, "usr", "#channel", "bu")
         self.deferred.addCallback(check1)
@@ -732,7 +733,8 @@ class TestFlowController(EasyDeferredTests):
             self.recorder[:] = []
 
         def check2(_):
-            self.assertEqual(self.recorder, [])
+            self.assertEqual(self.recorder,
+                             [("#channel", u"No hay nada encolado para vos")])
 
         self.deferred.addCallback(self.user_says, "usr", "#channel", "bu")
         self.deferred.addCallback(check1)

@@ -75,8 +75,12 @@ class FlowController(object):
                     what = queue.popleft()
                 except IndexError:
                     # queue is done!
+                    del self._queue[who]
                     break
                 self.func(who, what)
+            return True
+        else:
+            return False
 
     def reset(self, who):
         '''Reset the queue for "who".'''

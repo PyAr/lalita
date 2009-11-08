@@ -284,4 +284,6 @@ class Dispatcher(object):
 
     def handle_meta_more(self, user, channel, command, *args):
         '''Handles the MORE meta command.'''
-        self.flowcontroller.more(user)
+        if not self.flowcontroller.more(user):
+            self.msg(channel, u"No hay nada encolado para vos")
+

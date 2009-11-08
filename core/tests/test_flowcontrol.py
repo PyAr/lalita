@@ -150,8 +150,9 @@ class TestMore(TestBaseFC):
 
     def test_nothing_queued(self):
         '''Nothing queued, don't produce anything.'''
-        self.fc.more(1)
+        r = self.fc.more(1)
         self.assertEqual(self.rec, [])
+        self.assertFalse(r)
 
     def test_something_queued(self):
         '''Something queued, produce it.'''
@@ -159,8 +160,9 @@ class TestMore(TestBaseFC):
             self.fc.send("pepe", what)
         self.rec[:] = []
 
-        self.fc.more("pepe")
+        r = self.fc.more("pepe")
         self.assertEqual(self.rec, [("pepe", "4"), ("pepe", "5")])
+        self.assertTrue(r)
 
     def test_a_lot_queued(self):
         '''Lot of messages queued, produce until maxq.'''
@@ -177,6 +179,7 @@ class TestMore(TestBaseFC):
         self.assertEqual(self.rec, [("foo", "4"), ("foo", "5"), ("foo", "6"),
                                     ("foo", "7"), ("foo", "8"),
                                    ])
+        self.assertFalse("foo" in self.fc._queue)
 
     def test_different_to(self):
         '''Queued for different users, produce the for asked one.'''
