@@ -44,25 +44,29 @@ class TestList(unittest.TestCase):
     def test_1met_1cmd(self):
         self.disp.register(events.COMMAND, self.helper.f, ("t1",))
         self.disp.push(events.COMMAND, "user", "channel", "list")
-        self.assertEqual(self.said[0][1], PREFIX_LIST + "['t1']")
+        self.assertEqual(self.said[0][1],
+                         PREFIX_LIST + "['help', 'list', 'more', 't1']")
 
     def test_1met_2cmd(self):
         self.disp.register(events.COMMAND, self.helper.f, ("t1", "t2"))
         self.disp.push(events.COMMAND, "user", "channel", "list")
-        self.assertEqual(self.said[0][1], PREFIX_LIST + "['t1', 't2']")
+        self.assertEqual(self.said[0][1],
+                         PREFIX_LIST + "['help', 'list', 'more', 't1', 't2']")
 
     def test_2met_1cmd(self):
         self.disp.register(events.COMMAND, self.helper.f, ("t1",))
         self.disp.register(events.COMMAND, self.helper.g, ("t2",))
         self.disp.push(events.COMMAND, "user", "channel", "list")
-        self.assertEqual(self.said[0][1], PREFIX_LIST + "['t1', 't2']")
+        self.assertEqual(self.said[0][1],
+                         PREFIX_LIST + "['help', 'list', 'more', 't1', 't2']")
 
     def test_2met_2cmd(self):
         self.disp.register(events.COMMAND, self.helper.f, ("t1", "t2"))
         self.disp.register(events.COMMAND, self.helper.g, ("t3", "t4"))
         self.disp.push(events.COMMAND, "user", "channel", "list")
         self.assertEqual(self.said[0][1],
-                         PREFIX_LIST + "['t1', 't2', 't3', 't4']")
+                         PREFIX_LIST + "['help', 'list', 'more', 't1', "
+                                       "'t2', 't3', 't4']")
 
 
 class TestHelp(unittest.TestCase):

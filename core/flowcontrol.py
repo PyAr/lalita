@@ -24,7 +24,7 @@ class FlowController(object):
     def __init__(self, func, maxq, timeout=None):
         self._queue = {}
 
-        if not isinstance(func, collections.Callable):
+        if not callable(func):
             raise TypeError("The func must be callable, received: %r" % func)
         self.func = func
 
