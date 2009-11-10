@@ -148,9 +148,17 @@ class TestMore(TestBaseFC):
         self.assertRaises(TypeError, self.fc.more, 1, 2)
         self.fc.more(1)
 
+    def test_virgin_queue(self):
+        '''Never used queue, don't produce anything.'''
+        r = self.fc.more(1)
+        self.assertEqual(self.rec, [])
+        self.assertFalse(r)
+
     def test_nothing_queued(self):
         '''Nothing queued, don't produce anything.'''
-        r = self.fc.more(1)
+        self.fc.send("pepe", 1)
+        self.rec[:] = []
+        r = self.fc.more("pepe")
         self.assertEqual(self.rec, [])
         self.assertFalse(r)
 

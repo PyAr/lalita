@@ -230,7 +230,7 @@ class Dispatcher(object):
         return command in extra
 
     def handle_meta_help(self, user, channel, command, *args):
-        '''Handles the HELP meta command.'''
+        u"""Devuelve ayuda sobre una órden específica."""
         if not args:
             txt = u'"list" para ver las órdenes; "help cmd" para cada uno'
             self.msg(channel, txt)
@@ -249,10 +249,15 @@ class Dispatcher(object):
         revised = set()
         for (inst, meth, cmds) in registered:
             if args[0] in cmds:
-                modclsmeth = "%s.%s.%s" % ( meth.__module__, meth.__class__.__name__, meth.im_func.func_name)
+                modclsmeth = "%s.%s.%s" % (meth.__module__, meth.__class__.__name__, meth.im_func.func_name)
                 if modclsmeth not in revised:
                     revised.add(modclsmeth)
                     docs.append(meth.__doc__)
+
+        # check meta commands
+        if args[0] in META_COMMANDS:
+            meth = getattr(self, "handle_" + META_COMMANDS[args[0]])
+            docs.append(meth.__doc__)
 
         # no docs!
         if not docs:
@@ -272,18 +277,19 @@ class Dispatcher(object):
             self.msg(channel, u" - " + t)
 
     def handle_meta_list(self, user, channel, command, *args):
-        '''Handles the LIST meta command.'''
+        u"""Lista las órdenes disponibles."""
         try:
             cmds = [x[2] for x in self._callbacks[events.COMMAND]]
         except KeyError:
-            txt = u"Decí alpiste, no hay órdenes todavía..."
+            onlys = []
         else:
-            onlys = set(itertools.chain(*cmds))
-            txt = u"Las órdenes son: %s" % list(sorted(onlys))
+            onlys = list(set(itertools.chain(*cmds)))
+        cmds = onlys + META_COMMANDS.keys()
+        txt = u"Las órdenes son: %s" % list(sorted(cmds))
         self.msg(channel, txt)
 
     def handle_meta_more(self, user, channel, command, *args):
-        '''Handles the MORE meta command.'''
+        u"""Entrega respuestas encoladas para el usuario."""
         if not self.flowcontroller.more(user):
             self.msg(channel, u"No hay nada encolado para vos")
 

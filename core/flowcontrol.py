@@ -65,22 +65,25 @@ class FlowController(object):
 
     def more(self, who):
         '''Call "func" the "maxq" times with what is queued for "who".'''
-        if who in self._queue:
-            logger.debug("Unqueuing msgs from %r", who)
-            cant, queue, dcall = self._queue[who]
-            if dcall is not None:
-                dcall.reset(self.timeout)
-            for i in xrange(self.maxq):
-                try:
-                    what = queue.popleft()
-                except IndexError:
-                    # queue is done!
-                    del self._queue[who]
-                    break
-                self.func(who, what)
-            return True
-        else:
+        if who not in self._queue:
             return False
+
+        logger.debug("Unqueuing msgs from %r", who)
+        cant, queue, dcall = self._queue[who]
+        if dcall is not None:
+            dcall.reset(self.timeout)
+        if not queue:
+            return False
+
+        for i in xrange(self.maxq):
+            try:
+                what = queue.popleft()
+            except IndexError:
+                # queue is done!
+                del self._queue[who]
+                break
+            self.func(who, what)
+        return True
 
     def reset(self, who):
         '''Reset the queue for "who".'''
