@@ -108,12 +108,11 @@ class Url (Plugin):
         # self.cursor.execute (u"""select * from url where url like '%%%s%%'""" % (what[0], ))
         # self.cursor.execute ('''select * from url''')
         results= self.cursor.fetchall ()
-        self.logger.debug (results)
-        if len (results)>0:
+        self.logger.debug('found %d results', len(results))
+        if len(results) > 0:
             for result in results:
-                data= dict (zip (('id', 'url', 'date', 'time', 'poster', 'title'), result))
-                self.logger.debug (u'found %s' % data['url'])
-                self.say (channel, self.config['found_format'] % data)
+                data = dict(zip(('id', 'url', 'date', 'time', 'poster', 'title'), result))
+                self.say(channel, self.config['found_format'] % data)
         else:
             self.say (channel, '%s: 404 Search term not found: %s' % (user, what[0]))
 
