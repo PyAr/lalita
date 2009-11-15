@@ -483,7 +483,7 @@ class TestSay(EasyDeferredTests):
 
         # let's register what the dispatcher says that plugin said
         self.recorder = []
-        disp.msg = lambda *a: self.recorder.append(a)
+        disp._msg = lambda *a: self.recorder.append(a)
         disp.init({})
 
         class Helper(object):
@@ -556,7 +556,7 @@ class TestFlowController(EasyDeferredTests):
 
         # let's register what the dispatcher says that plugin said
         self.recorder = []
-        disp.msg = lambda *a: self.recorder.append(a)
+        disp._msg = lambda *a: self.recorder.append(a)
         disp.init({})
 
         class Helper(object):
@@ -764,8 +764,10 @@ class TestPluginI18n(EasyDeferredTests):
 
         class Helper(Plugin):
             def init(self, *args):
-                self.register_translation(self, {'a message':{'es':'un mensaje'},
-                                                      'with args: %s':{'es':'con args: %s'}})
+                d = {'a message' : {'es' : 'un mensaje'},
+                     'with args: %s' : {'es' : 'con args: %s'}
+                    }
+                self.register_translation(self, d)
             def simple(self, user, channel, *args):
                 self.say(channel, 'a message')
                 self.test(True)
@@ -782,6 +784,7 @@ class TestPluginI18n(EasyDeferredTests):
         bot.msg = g
 
     def tearDown(self):
+        self.disp.shutdown()
         super(TestPluginI18n, self).tearDown()
         bot.msg = self.old_msg
 

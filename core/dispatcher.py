@@ -157,22 +157,27 @@ class Dispatcher(object):
                              from_channel, to_where)
                 return
 
-        self.flowcontroller.send(user, (to_where, message, args))
+        # translate it!
+        message = self.get_translation(plugin, to_where, message, args)
+
+        # send to the flow controller
+        self.flowcontroller.send(user, (to_where, message))
 
     def _msg_unpacker(self, user, payload):
         '''Unpacks the payload.'''
-        to_where, message, args = payload
-        self.msg(to_where, message, *args)
+        to_where, message = payload
+        self._msg(to_where, message)
 
     def msg(self, to_where, message, *args):
-        message = self.get_translation(self, to_where, message)
-        if args and len(args) == 1 and \
-           (type(args[0]) == types.DictType) and args[0]:
-            args = args[0]
-        message = message % args
-        self.bot.msg(to_where, message.encode("utf8"), self.length_msg)
+        """Fills, and pushes to the bot."""
+        message = self.get_translation(self, to_where, message, args)
+        self._msg(to_where, message)
 
-    def get_translation(self, instance, channel, message):
+    def _msg(self, to, mess):
+        """Really sends the message."""
+        self.bot.msg(to, mess.encode("utf8"), self.length_msg)
+
+    def get_translation(self, instance, channel, message, args):
         """Get the translated message for (instance, channel).
 
         If there is no language specified in the channel config, server config
@@ -182,7 +187,15 @@ class Dispatcher(object):
         # channel might be an user if this is called from a privmsg handler
         channel_config = self.config.get('channels', {}).get(channel, {})
         lang = channel_config.get('language', self.config.get('language', None))
-        return self._translations.get(instance, {}).get(message, {}).get(lang, message)
+        trans =  self._translations.get(instance, {}).get(message, {}).get(lang, message)
+
+        # fill it
+        if args and len(args) == 1 and \
+           (type(args[0]) == types.DictType) and args[0]:
+            args = args[0]
+        finalmsg = trans % args
+
+        return  finalmsg
 
     def _error(self, error, instance):
         logger.debug("ERROR in instance %s: %s", instance, error)
