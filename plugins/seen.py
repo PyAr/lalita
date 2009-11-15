@@ -10,10 +10,19 @@ import shelve
 
 from lalita import Plugin
 
+TRANSLATION_TABLE = {u"%s: acástoi, papafrita!": { 'en': u"%s: I'm here!"},
+                     u"%s: andá mirate en el espejo del baño": { 'en': u"%s: Go look in the mirror in the bathroom"},
+                     u"%s: se me quedó en la otra pollera :|": { 'en': u"%s: I left it in the other skirt :|"},
+                     u'%s: lo último fue "lo último fue ..."': { 'en': u'%s: the latter was "the last was ..."'},
+                     u"%s: me tiraste la orden": { 'en': u"%s: requested this command"}
+                    }
+
+
 class Seen(Plugin):
     '''Plugin that implements the "seen" and "last" commands.'''
     def init(self, config):
         base = config.get('base_dir', None)
+        self.register_translation(self, TRANSLATION_TABLE)
         if base is not None:
             if not os.path.exists(base):
                 os.makedirs(base)

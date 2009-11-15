@@ -6,6 +6,7 @@
 
 import itertools
 import functools
+import types
 
 from twisted.internet import defer
 
@@ -81,14 +82,30 @@ USER_POS = {
 }
 
 
+TRANSLATION_TABLE = {u"%s: No existe esa orden!":{'en': u"%s: command not found!"},
+                     u'"list" para ver las órdenes; "help cmd" para cada uno':
+                        {'en': u'"list" To see the available commands ; "help cmd" for specific command help'},
+                     u"No hay ninguna orden registrada...":{'en': u"PANIC! I have no commands!!!"},
+                     u"Esa orden no existe...":{'en': u"No such command..."},
+                     u"%sNo tiene documentación, y yo no soy adivina...":{'en': u"%sMissing documentation"},
+                     u"No tiene documentación, y yo no soy adivina...":{'en': u"Missing documentation"},
+                     u"Hay varios métodos para esa orden:": {'en': u"Several handlers for the same command:"},
+                     u"Decí alpiste, no hay órdenes todavía...": {'en': u"No commands available (yet)"},
+                     u"Las órdenes son: %s": {'en': u"The available commands are: %s"}
+                    }
+
+
 class Dispatcher(object):
     def __init__(self, ircclient):
         self._callbacks = {}
         self.bot = ircclient
         self._plugins = {}
         self._channel_filter = {}
+        self._translations = {}
+        self.register_translation(self, TRANSLATION_TABLE)
 
     def init(self, config):
+        self.config = config
         self.length_msg = int(config.get('length_msg', LENGTH_MSG))
         maxq = int(config.get('flow_maxq', DEFAULT_MAXQ))
         self.flowcontroller = flowcontrol.FlowController(self._msg_unpacker,
@@ -100,6 +117,7 @@ class Dispatcher(object):
 
     def new_plugin(self, plugin, channel):
         plugin.register = self.register
+        plugin.register_translation = self.register_translation
         plugin.say = functools.partial(self._msg_from_plugin, plugin)
         logger.debug('plugin %s is in channel %s', plugin, channel)
         self._plugins[plugin] = channel
@@ -115,7 +133,12 @@ class Dispatcher(object):
         instance = func.im_self
         self._callbacks.setdefault(event, []).append((instance, func, extra))
 
-    def _msg_from_plugin(self, plugin, to_where, message):
+    def register_translation(self, instance, table):
+        '''Register translation table for a plugin.'''
+        logger.debug('registering translation table for %s', instance)
+        self._translations[instance] = table
+
+    def _msg_from_plugin(self, plugin, to_where, message, *args):
         """Message from the plugin."""
         if plugin not in self._channel_filter:
             # don't allow to say anything out of order
@@ -134,15 +157,32 @@ class Dispatcher(object):
                              from_channel, to_where)
                 return
 
-        self.flowcontroller.send(user, (to_where, message))
+        self.flowcontroller.send(user, (to_where, message, args))
 
     def _msg_unpacker(self, user, payload):
         '''Unpacks the payload.'''
-        to_where, message = payload
-        self.msg(to_where, message)
+        to_where, message, args = payload
+        self.msg(to_where, message, *args)
 
-    def msg(self, to_where, message):
+    def msg(self, to_where, message, *args):
+        message = self.get_translation(self, to_where, message)
+        if args and len(args) == 1 and \
+           (type(args[0]) == types.DictType) and args[0]:
+            args = args[0]
+        message = message % args
         self.bot.msg(to_where, message.encode("utf8"), self.length_msg)
+
+    def get_translation(self, instance, channel, message):
+        """Get the translated message for (instance, channel).
+
+        If there is no language specified in the channel config, server config
+        is used.  If there is no translation of message for the language,
+        message is returned.
+        """
+        # channel might be an user if this is called from a privmsg handler
+        channel_config = self.config.get('channels', {}).get(channel, {})
+        lang = channel_config.get('language', self.config.get('language', None))
+        return self._translations.get(instance, {}).get(message, {}).get(lang, message)
 
     def _error(self, error, instance):
         logger.debug("ERROR in instance %s: %s", instance, error)
@@ -273,8 +313,8 @@ class Dispatcher(object):
         # several methods for the same command
         self.msg(channel, u"Hay varios métodos para esa orden:")
         for doc in docs:
-            t = doc if doc else u"No tiene documentación, y yo no soy adivina..."
-            self.msg(channel, u" - " + t)
+            t = "%s"+doc if doc else u"%sNo tiene documentación, y yo no soy adivina..."
+            self.msg(channel, t, u" - ")
 
     def handle_meta_list(self, user, channel, command, *args):
         u"""Lista las órdenes disponibles."""
