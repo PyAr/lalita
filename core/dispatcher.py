@@ -91,7 +91,8 @@ TRANSLATION_TABLE = {u"%s: No existe esa orden!":{'en': u"%s: command not found!
                      u"No tiene documentación, y yo no soy adivina...":{'en': u"Missing documentation"},
                      u"Hay varios métodos para esa orden:": {'en': u"Several handlers for the same command:"},
                      u"Decí alpiste, no hay órdenes todavía...": {'en': u"No commands available (yet)"},
-                     u"Las órdenes son: %s": {'en': u"The available commands are: %s"}
+                     u"Las órdenes son: %s": {'en': u"The available commands are: %s"},
+                     u"No hay nada encolado para vos": {'en': u"Nothing queued for you"},
                     }
 
 
@@ -338,8 +339,7 @@ class Dispatcher(object):
         else:
             onlys = list(set(itertools.chain(*cmds)))
         cmds = onlys + META_COMMANDS.keys()
-        txt = u"Las órdenes son: %s" % list(sorted(cmds))
-        self.msg(channel, txt)
+        self.msg(channel, u"Las órdenes son: %s", list(sorted(cmds)))
 
     def handle_meta_more(self, user, channel, command, *args):
         u"""Entrega respuestas encoladas para el usuario."""
