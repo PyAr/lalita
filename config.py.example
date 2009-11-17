@@ -9,13 +9,15 @@ servers = {
             encoding='utf8',
             host='127.0.0.1', port=6667,
             nickname='examplia',
+            lang='es',
             channels= {
                 '#humites': dict (plugins={
                     'url.Url': { },
-                    'seen.Seen': { },
                 }),
-                '#perrites': dict (plugins={
-                    'seen.Seen': {'base_dir':'<path/to/shelves_dir>'}, # two shelf's are going to be created (iolog and saylog) 
+                '#perrites': dict (
+                    lang='en',
+                    plugins={
+                        'seen.Seen': {'base_dir':'<path/to/shelves_dir>'}, # two shelf's are going to be created (iolog and saylog) 
                 }),
             },
             plugins= {

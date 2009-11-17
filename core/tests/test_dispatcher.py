@@ -5,11 +5,13 @@
 import unittest
 import re
 
+from collections import defaultdict
 from twisted.trial.unittest import TestCase as TwistedTestCase
 from twisted.internet import defer, reactor
 
 from core import events
 from core import dispatcher
+from core import Plugin
 import ircbot
 
 server = dict(
@@ -17,7 +19,7 @@ server = dict(
     host="0.0.0.0",
     port=6667,
     nickname="test",
-    channels={},
+    channels=defaultdict(lambda: {}),
     plugins={},
 )
 
@@ -25,6 +27,7 @@ ircbot_factory = ircbot.IRCBotFactory(server)
 ircbot.logger.setLevel("error")
 bot = ircbot.IrcBot()
 bot.factory = ircbot_factory
+bot.config = ircbot_factory.config
 bot.msg = lambda *a:None
 
 MY_NICKNAME = server['nickname']
@@ -480,7 +483,7 @@ class TestSay(EasyDeferredTests):
 
         # let's register what the dispatcher says that plugin said
         self.recorder = []
-        disp.msg = lambda *a: self.recorder.append(a)
+        disp._msg = lambda *a: self.recorder.append(a)
         disp.init({})
 
         class Helper(object):
@@ -553,7 +556,7 @@ class TestFlowController(EasyDeferredTests):
 
         # let's register what the dispatcher says that plugin said
         self.recorder = []
-        disp.msg = lambda *a: self.recorder.append(a)
+        disp._msg = lambda *a: self.recorder.append(a)
         disp.init({})
 
         class Helper(object):
@@ -751,3 +754,86 @@ class TestFlowController(EasyDeferredTests):
         return self.deferred
     test_timeout.timeout = 3
 
+
+class TestPluginI18n(EasyDeferredTests):
+
+    def setUp(self):
+        super(TestPluginI18n, self).setUp()
+        self.disp = dispatcher.Dispatcher(bot)
+        self.disp.init({})
+
+        class Helper(Plugin):
+            def init(self, *args):
+                d = {'a message' : {'es' : 'un mensaje'},
+                     'with args: %s' : {'es' : 'con args: %s'}
+                    }
+                self.register_translation(self, d)
+            def simple(self, user, channel, *args):
+                self.say(channel, 'a message')
+                self.test(True)
+            def withargs(self, user, channel, command, *args):
+                self.say(channel, 'with args: %s', command)
+                self.test(True)
+
+        self.helper = Helper({'nickname':'helper', 'encoding':'fake'}, 'DEBUG')
+        self.disp.config['channels'] = {'channel-es':{'language':'es'}}
+        self.old_msg = bot.msg
+        self.answer = []
+        def g(towhere, msg, _):
+            self.answer.append((towhere, msg.decode("utf8")))
+        bot.msg = g
+
+    def tearDown(self):
+        self.disp.shutdown()
+        super(TestPluginI18n, self).tearDown()
+        bot.msg = self.old_msg
+
+    def test_simple_message(self):
+        self.disp.new_plugin(self.helper, "channel")
+        self.helper.init({})
+        def test(_):
+            self.deferred.callback(True)
+        self.helper.test = test
+        self.disp.register(events.COMMAND, self.helper.simple)
+        self.disp.push(events.COMMAND, 'user', 'channel', 'command', 'foo', 'bar')
+        self.deferred.addCallback(
+            lambda _: self.assertEqual(self.answer[0][1], u'a message'))
+        return self.deferred
+
+    def test_simple_message_es(self):
+        self.disp.new_plugin(self.helper, "channel-es")
+        self.helper.init({})
+        def test(_):
+            self.deferred.callback(True)
+        self.helper.test = test
+        self.disp.register(events.COMMAND, self.helper.simple)
+        self.disp.push(events.COMMAND, 'user', 'channel-es', 'command', 'foo', 'bar')
+        self.deferred.addCallback(
+            lambda _: self.assertEqual(self.answer[0][1], u'un mensaje'))
+        return self.deferred
+
+    def test_message_with_args(self):
+        self.disp.new_plugin(self.helper, "channel")
+        self.helper.init({})
+        def test(_):
+            self.deferred.callback(True)
+        self.helper.test = test
+        self.disp.register(events.COMMAND, self.helper.withargs)
+        self.disp.push(events.COMMAND, 'user', 'channel', 'command', 'foo', 'bar')
+        self.deferred.addCallback(
+            lambda _: self.assertEqual(self.answer[0][1],
+                                       u'with args: command'))
+        return self.deferred
+
+    def test_message_with_args(self):
+        self.disp.new_plugin(self.helper, "channel-es")
+        self.helper.init({})
+        def test(_):
+            self.deferred.callback(True)
+        self.helper.test = test
+        self.disp.register(events.COMMAND, self.helper.withargs)
+        self.disp.push(events.COMMAND, 'user', 'channel-es', 'command', 'foo', 'bar')
+        self.deferred.addCallback(
+            lambda _: self.assertEqual(self.answer[0][1],
+                                       u'con args: command'))
+        return self.deferred
