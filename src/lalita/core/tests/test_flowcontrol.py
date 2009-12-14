@@ -8,7 +8,7 @@ from collections import deque
 from twisted.trial.unittest import TestCase as TwistedTestCase
 from twisted.internet import defer, reactor
 
-from core import flowcontrol
+from lalita.core import flowcontrol
 
 
 class TestBaseFC(unittest.TestCase):

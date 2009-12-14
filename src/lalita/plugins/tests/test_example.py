@@ -4,9 +4,9 @@
 # License: GPL v3
 # For further info, see LICENSE file
 
-from core import events
-
+from lalita import events
 from .helper import PluginTest
+
 
 class TestMethods(PluginTest):
     '''Example of unit test for plugins.
@@ -19,7 +19,7 @@ class TestMethods(PluginTest):
 
     def setUp(self):
         '''Just init your module.Class.'''
-        self.init("example.Example")
+        self.init("lalita.plugins.example.Example")
 
     def test_private(self):
         '''Check 'private' functionality.'''

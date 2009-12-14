@@ -11,9 +11,7 @@ from collections import defaultdict
 from twisted.trial.unittest import TestCase as TwistedTestCase
 from twisted.internet import defer, reactor
 
-from core import events
-from core import dispatcher
-import ircbot
+from lalita import dispatcher, events, ircbot
 
 ircbot_factory = ircbot.IRCBotFactory(dict(log_config="error", channels=defaultdict(lambda: {})))
 ircbot.logger.setLevel("error")

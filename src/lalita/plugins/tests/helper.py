@@ -4,7 +4,7 @@
 
 import unittest
 
-import ircbot
+from lalita import ircbot
 
 
 class PluginTest(unittest.TestCase):

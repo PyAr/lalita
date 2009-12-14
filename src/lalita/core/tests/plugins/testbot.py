@@ -9,8 +9,8 @@
 
 from twisted.internet import reactor
 
-from core import dispatcher
-from core import events as evt
+from lalita.core import dispatcher
+from lalita.core import events as evt
 
 
 class TestPlugin(object):

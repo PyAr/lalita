@@ -115,7 +115,7 @@ servers = {
             'plugins':{
                 'testbot.TestPlugin': {'other': 'scratchy'}
                 },
-            'plugins_dir': "./core/tests/plugins",
+            'plugins_dir': "./src/lalita/core/tests/plugins",
             },
         'testbot-b':{
             'encoding': 'utf8',
@@ -130,7 +130,7 @@ servers = {
             'plugins':{
                 'testbot.TestPlugin': {'other':'itchy'}
                 },
-            'plugins_dir': "./core/tests/plugins",
+            'plugins_dir': "./src/lalita/core/tests/plugins",
             },
         'perrito1':{
             'encoding': 'utf8',

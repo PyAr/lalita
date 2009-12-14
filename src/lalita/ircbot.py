@@ -6,31 +6,23 @@
 
 # based on irc client example, Copyright (c) 2001-2004 Twisted Matrix Laboratories.
 
-# twisted imports
-from twisted.words.protocols import irc
-from twisted.internet import reactor, protocol, ssl
-from twisted.python import log
-
 # system imports
-import time
-import sys
+import inspect
 import logging
+import optparse
 import os
 import os.path
-import inspect
-import optparse
+import sys
+import time
 from traceback import print_exc
 
-# if we're in production, this should work and no magic is necessary
-try:
-    import lalita
-except ImportError:
-    import core
-    sys.modules["lalita"] = core
+# twisted imports
+from twisted.internet import reactor, protocol, ssl
+from twisted.python import log
+from twisted.words.protocols import irc
 
 # local imports
-from core import events
-from core import dispatcher
+from lalita import dispatcher, events
 
 LOG_LEVELS = {
     "debug": logging.DEBUG,
@@ -49,6 +41,7 @@ logger = logging.getLogger('ircbot')
 logger.addHandler(log_stdout_handler)
 logger.setLevel(logging.DEBUG)
 
+
 class IrcBot (irc.IRCClient):
     """A IRC bot."""
     def __init__ (self, *more):
@@ -64,10 +57,10 @@ class IrcBot (irc.IRCClient):
                                 'plugins')
         sys.path.append(path)
 
-        modname, klassname= plugin_name.split ('.')
+        modname, klassname= plugin_name.rsplit ('.', 1)
         loglvl = self.config["log_config"].get(plugin_name)
         try:
-            module = __import__(modname)
+            module = __import__(modname, globals(), locals(), [''])
             klass = getattr(module, klassname)
             instance = klass(params, loglvl)
             self.dispatcher.new_plugin(instance, channel)
