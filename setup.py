@@ -3,11 +3,22 @@ setup(
     # metadata
     name='lalita',
     version='0.1',
+    author='laliputienses',
+    description='Yet another IRC bot, one where new functionality is simple ' \
+                'to create just adding easy-to-write plugins.',
+    license='GNU GPL v3 ',
+    keywords='irc bot twisted plugin',
+    url='https://launchpad.net/lalita/',
 
     # content
     package_dir={'': 'src'},
-    packages=['lalita', 'lalita.core',
-              'lalita.plugins', 'lalita.plugins.randomer_utils'],
+    packages=find_packages('src',
+        exclude=['*.tests', '*.tests.*', 'tests.*', 'tests']),
     package_data={'lalita.plugins.randomer_utils': ['#pyar.log']},
 
+    # scripts
+    scripts=['scripts/lalita'],
+
+    # dependencies
+    install_requires=["twisted", "pyopenssl"],
 )

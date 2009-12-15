@@ -240,19 +240,26 @@ def main(to_use, plugins_loglvl):
 
 
 if __name__ == '__main__':
-    msg = u"""
-  ircbot.py [-t][-a][-o output_loglvl][-p plugins_loglvl]
-            [-f fileloglvl][-n logfname] [server1, [...]]
+    script_name = os.path.basename(sys.argv[0])
+    options=['-c filename ', '[-t]', '[-a]', '[-o output_loglvl]',
+             '[-p plugins_loglvl]', '[-f fileloglvl]', '[-n logfname]',
+             ' ', '[server1, [...]]']
+    options_str = ''.join(options)
 
+    msg = u"""
+%s %s
+  the config filename is required
   the servers are optional if -a is passed
   the output_loglevel is the log level for the standard output
   the file_loglevel is the log level for the output that goes to file
   the pluginloglevel is a list of plugin_name:loglevel separated by commas
   the logfname is the filename to write the logs to
-"""
+""" % (script_name, options_str)
 
     parser = optparse.OptionParser()
     parser.set_usage(msg)
+    parser.add_option("-c", "--config", action="store", dest="config_filename",
+                      help="sets the configuration filename to use.")
     parser.add_option("-t", "--test", action="store_true", dest="test",
                       help="runs two bots that talk to each other, tesing.")
     parser.add_option("-a", "--all", action="store_true", dest="all_servers",
@@ -274,6 +281,13 @@ if __name__ == '__main__':
     if not args and not all_servers and not test:
         parser.print_help()
         exit()
+
+    # control the configuration file
+    if options.config_filename is None:
+        parser.print_help()
+        exit()
+    else:
+        config_filename = options.config_filename
 
     # control the output log level
     if options.outloglvl is None:
@@ -305,10 +319,11 @@ if __name__ == '__main__':
             raise
 
     try:
-        import config
+        config = {}
+        execfile(config_filename, config)
     except ImportError:
         print "A config file is needed to run this program."
-        print "See as an example the included here config.py.example"
+        print "See as an example the included here lalita.cfg.sample"
         sys.exit()
 
     # handles the log file and its level
@@ -332,7 +347,7 @@ if __name__ == '__main__':
     logger.addHandler(fh)
 
     # get all servers or the indicated ones
-    servers = config.servers
+    servers = config.get('servers', {})
     if all_servers:
         to_use = [v for k,v in servers.items() if not k.startswith("testbot")]
     elif test:
