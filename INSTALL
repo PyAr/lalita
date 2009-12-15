@@ -1,4 +1,11 @@
-There's no install. You just run the bot from the directory where you get it.
+This package has a setuptools compatible setup.py file.
+Just follow the usual steps, e.g.
+
+python setup.py install -- to install it into the site-packages folder
+
+Alternatively, you can run the bot directly from the directory where you get it.
+There is a convenience script (lalita) in the scripts folder that runs the bot.
+
 Just a couple of things:
 
  * Depends on twisted (more specificaly, twisted words) and python-pysqlite2.
@@ -6,3 +13,6 @@ Just a couple of things:
  * url.Url plugin depends on Beautiful Soup v3.1.0.1 or similar (just check that
    XHTML_ENTITIES exist), python-magic and python-chardet (and twisted web, just
    in case you installed a partial twisted).
+
+ * All dependencies but python-magic are automatically installed by the setup
+   script upon installation.
