@@ -28,7 +28,7 @@ setup(
     package_data={'lalita.plugins.randomer_utils': ['#pyar.log']},
 
     # scripts
-    scripts=['scripts/lalita'],
+    scripts=['src/lalita/ircbot.py'],
 
     # dependencies
     install_requires=[

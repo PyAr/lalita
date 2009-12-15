@@ -4,7 +4,6 @@ Just follow the usual steps, e.g.
 python setup.py install -- to install it into the site-packages folder
 
 Alternatively, you can run the bot directly from the directory where you get it.
-There is a convenience script (lalita) in the scripts folder that runs the bot.
 
 Just a couple of things:
 
