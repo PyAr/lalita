@@ -11,7 +11,6 @@ setup(
     license='GNU GPL v3 ',
     keywords='irc bot twisted plugin',
     url='https://launchpad.net/lalita/',
-    download_url='https://launchpad.net/lalita/+download/',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
