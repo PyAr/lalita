@@ -10,8 +10,12 @@ import re
 import sqlite3
 from random import random, randrange
 
-db_file = pkg_resources.resource_filename(__name__, 'logs.sqlite')
-conn = sqlite3.connect(db_file)
+if pkg_resources.resource_exists(__name__, 'logs.sqlite'):
+    db_filename = pkg_resources.resource_filename(__name__, 'logs.sqlite')
+else:
+    db_filename = 'logs.sqlite'
+
+conn = sqlite3.connect(db_filename)
 cursor = conn.cursor()
 
 def magic(line):
