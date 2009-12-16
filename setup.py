@@ -5,11 +5,12 @@ setup(
     # metadata
     name='lalita',
     version='0.1',
-    author='laliputienses',
+    maintainer='laliputienses',
+    maintainer_email='',
     description='Yet another IRC bot, one where new functionality is simple ' \
                 'to create just adding easy-to-write plugins.',
     license='GNU GPL v3 ',
-    keywords='irc bot twisted plugin',
+    keywords=['irc', 'bot', 'twisted', 'plugin'],
     url='https://launchpad.net/lalita/',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
@@ -25,12 +26,13 @@ setup(
     package_dir={'': 'src'},
     packages=find_packages('src',
         exclude=['*.tests', '*.tests.*', 'tests.*', 'tests']),
-    package_data={'lalita.plugins.randomer_utils': ['#pyar.log']},
+    include_package_data=True,
 
     # scripts
     scripts=['src/lalita/ircbot.py'],
 
     # dependencies
+    setup_requires=['setuptools-bzr'],
     install_requires=[
         'beautifulsoup>=3.1.0.1',
         'chardet',
