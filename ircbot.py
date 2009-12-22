@@ -177,12 +177,6 @@ class IrcBot (irc.IRCClient):
         self.dispatcher.push(events.ACTION, user, channel, msg)
 
     # irc callbacks
-    def irc_NICK(self, prefix, params):
-        """Called when an IRC user changes their nickname."""
-        old_nick = nick (prefix)
-        new_nick = params[0]
-        irc.IRCClient.irc_NICK (self, prefix, params)
-
     def userJoined(self, user, channel):
         """Called when I see another user joining a channel."""
         logger.debug("%s joined to %s", user, channel)

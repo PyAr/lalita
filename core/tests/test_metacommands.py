@@ -28,6 +28,7 @@ GENERIC_HELP = u'"list" para ver las órdenes; "help cmd" para cada uno'.encode(
 NODOCSTRING = u"No tiene documentación, y yo no soy adivina...".encode("utf8")
 MULTI_NODOCSTRING = u"%sNo tiene documentación, y yo no soy adivina...".encode("utf8")
 SEVERALDOCS = u"Hay varios métodos para esa orden:".encode("utf8")
+NOSUCHCMD = u"Esa orden no existe..."
 
 trans_table = dispatcher.TRANSLATION_TABLE
 PREFIX_LIST_EN = trans_table[u"Las órdenes son: %s"]['en'].encode("utf8")
@@ -35,9 +36,15 @@ GENERIC_HELP_EN = trans_table[u'"list" para ver las órdenes; "help cmd" para ca
 NODOCSTRING_EN = trans_table[u"No tiene documentación, y yo no soy adivina..."]['en'].encode("utf8")
 MULTI_NODOCSTRING_EN = trans_table[u"%sNo tiene documentación, y yo no soy adivina..."]['en'].encode("utf8")
 SEVERALDOCS_EN = trans_table[u"Hay varios métodos para esa orden:"]['en'].encode("utf8")
+NOSUCHCMD_EN = u"No such command..."
 
 
 class TestList(unittest.TestCase):
+
+    class Helper(object):
+        def f(self, *a): pass
+        def g(self, *a): pass
+
     def setUp(self):
         self.disp = dispatcher.Dispatcher(bot)
         self.disp.init({})
@@ -45,10 +52,7 @@ class TestList(unittest.TestCase):
         self.said = []
         bot.msg = lambda *a: self.said.append(a)
 
-        class Helper(object):
-            def f(self, *a): pass
-            def g(self, *a): pass
-        self.helper = Helper()
+        self.helper = self.Helper()
         self.disp.new_plugin(self.helper, "channel")
         self.prefix_list = PREFIX_LIST
 
@@ -78,8 +82,27 @@ class TestList(unittest.TestCase):
         self.assertEqual(self.said[0][1], self.prefix_list +
                             "['help', 'list', 'more', 't1', 't2', 't3', 't4']")
 
+    def test_different_channels(self):
+        helper2 = self.Helper()
+        self.disp.new_plugin(helper2, "channel2")
+        self.disp.register(events.COMMAND, self.helper.f, ("t1",))
+        self.disp.register(events.COMMAND, helper2.f, ("t2",))
+        self.disp.push(events.COMMAND, "user", "channel", "list")
+        self.assertEqual(self.said[0][1],
+                         self.prefix_list + "['help', 'list', 'more', 't1']")
+
 
 class TestHelp(unittest.TestCase):
+    class Helper(object):
+        def f(self, *a):
+            pass
+        def g(self, *a):
+            "foo"
+        def h(self, *a):
+            "bar"
+        def i(self, *a):
+            pass
+
     def setUp(self):
         self.disp = dispatcher.Dispatcher(bot)
         self.disp.init({})
@@ -87,20 +110,12 @@ class TestHelp(unittest.TestCase):
         self.said = []
         bot.msg = lambda *a: self.said.append(a)
 
-        class Helper(object):
-            def f(self, *a):
-                pass
-            def g(self, *a):
-                "foo"
-            def h(self, *a):
-                "bar"
-            def i(self, *a):
-                pass
-        self.helper = Helper()
+        self.helper = self.Helper()
         self.disp.new_plugin(self.helper, "channel")
         self.generic_help = GENERIC_HELP
         self.nodocstring = NODOCSTRING
         self.severaldocs = SEVERALDOCS
+        self.nosuchcmd = NOSUCHCMD
 
     def test_generic_help(self):
         self.disp.push(events.COMMAND, "user", "channel", "help")
@@ -139,6 +154,21 @@ class TestHelp(unittest.TestCase):
         self.assertEqual(self.said[0][1], self.severaldocs)
         self.assertEqual(self.said[1][1], " - foo")
         self.assertEqual(self.said[2][1], " - " + self.nodocstring)
+
+    def test_different_channels(self):
+        helper2 = self.Helper()
+        self.disp.new_plugin(helper2, "channel2")
+        self.disp.register(events.COMMAND, self.helper.g, ("cmd1",))
+        self.disp.register(events.COMMAND, helper2.g, ("cmd2",))
+
+        # check from channel
+        self.disp.push(events.COMMAND, "user", "channel", "help", "cmd1")
+        self.assertEqual(self.said[0][1], "foo")
+
+        # reset said, and check from channel2
+        self.said[:] = []
+        self.disp.push(events.COMMAND, "user", "channel2", "help", "cmd1")
+        self.assertEqual(self.said[0][1], self.nosuchcmd)
 
 
 class TestMoreHelp(unittest.TestCase):
@@ -221,6 +251,7 @@ class TestHelpI18n(TestHelp):
         self.generic_help = GENERIC_HELP_EN
         self.nodocstring = NODOCSTRING_EN
         self.severaldocs = SEVERALDOCS_EN
+        self.nosuchcmd = NOSUCHCMD_EN
         self.disp.config['language'] = 'en'
 
 
