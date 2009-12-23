@@ -1,3 +1,7 @@
+# Copyright 2009 laliputienses
+# License: GPL v3
+# For further info, see LICENSE file
+
 CONNECTION_MADE = 0
 CONNECTION_LOST = 1
 SIGNED_ON = 2

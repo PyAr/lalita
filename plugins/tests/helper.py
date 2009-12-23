@@ -1,6 +1,11 @@
+# Copyright 2009 laliputienses
+# License: GPL v3
+# For further info, see LICENSE file
+
 import unittest
 
 import ircbot
+
 
 class PluginTest(unittest.TestCase):
 
@@ -40,3 +45,11 @@ class PluginTest(unittest.TestCase):
                 break
         else:
             raise ValueError("The searched plugin does not exist!")
+
+    def assertMessageInAnswer(self, message_idx, expected):
+        """assert the content of message with index: message_idx in self.answer
+        and handle unexpected errors properly."""
+        try:
+            self.assertEqual(self.answer[message_idx][1], expected, self.answer)
+        except Exception, e:
+            self.fail('Error: %s\nexpected: %r, but was: %r' % (e, expected, self.answer))

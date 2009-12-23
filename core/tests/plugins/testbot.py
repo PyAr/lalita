@@ -1,5 +1,9 @@
 # -*- coding: utf8 -*-
 
+# Copyright 2009 laliputienses
+# License: GPL v3
+# For further info, see LICENSE file
+
 # This is not a standard test case, but a special plugin that expect
 # to be instantiated twice to talk to each other
 

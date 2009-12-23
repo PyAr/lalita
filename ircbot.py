@@ -1,5 +1,9 @@
 # -*- coding: utf8 -*-
 
+# Copyright 2009 laliputienses
+# License: GPL v3
+# For further info, see LICENSE file
+
 # based on irc client example, Copyright (c) 2001-2004 Twisted Matrix Laboratories.
 
 # twisted imports
@@ -36,25 +40,23 @@ LOG_LEVELS = {
     "critical": logging.CRITICAL,
 }
 
-handler = logging.StreamHandler(sys.stdout)
-formatter = logging.Formatter(
-                            "%(asctime)s %(name)s:%(lineno)-4d %(levelname)-8s %(message)s",
-                            '%H:%M:%S')
-handler.setFormatter(formatter)
+log_stdout_handler = logging.StreamHandler(sys.stdout)
+formatter = logging.Formatter("%(asctime)s %(name)s:%(lineno)-4d "
+                              "%(levelname)-8s %(message)s",
+                              '%Y-%m-%d %H:%M:%S')
+log_stdout_handler.setFormatter(formatter)
 logger = logging.getLogger('ircbot')
-logger.addHandler(handler)
-
+logger.addHandler(log_stdout_handler)
+logger.setLevel(logging.DEBUG)
 
 class IrcBot (irc.IRCClient):
     """A IRC bot."""
     def __init__ (self, *more):
         self.dispatcher = dispatcher.Dispatcher(self)
         self._plugins = {}
-        logger.debug ("we're in(ited)!")
-        # logger.debug (more)
+        logger.info("We're in(ited)!")
 
     def load_plugin (self, plugin_name, config, params, channel=None):
-        # logger.debug (config)
         if "plugins_dir" in self.config:
             path = self.config["plugins_dir"]
         else:
@@ -71,22 +73,22 @@ class IrcBot (irc.IRCClient):
             self.dispatcher.new_plugin(instance, channel)
             instance.init(config)
         except ImportError, e:
-            logger.error('%s not instanced: %s' % (plugin_name, e))
+            logger.error('%s not instanced: %s', plugin_name, e)
         except AttributeError, e:
-            logger.error('%s not instanced: %s' % (plugin_name, e))
+            logger.error('%s not instanced: %s', plugin_name, e)
         except Exception, e:
-            logger.error('%s not instanced: %s' % (plugin_name, e))
+            logger.error('%s not instanced: %s', plugin_name, e)
             print_exc (e)
         else:
-            logger.info ('%s instanced for %s' % (plugin_name,
-                (channel is not None) and channel or 'server'))
+            logger.info('%s instanced for %s', plugin_name,
+                        (channel is not None) and channel or 'server')
 
     def load_server_plugins(self):
         params = {'nickname': self.nickname,
                   'encoding': self.encoding_server}
 
         plugins= self.config.get('plugins', {})
-        logger.debug ("server plugins: %s" % plugins)
+        logger.debug("server plugins: %s", plugins)
         for plugin, config in plugins.items():
             self.load_plugin(plugin, config, params)
 
@@ -96,7 +98,7 @@ class IrcBot (irc.IRCClient):
                                        self.encoding_server)}
 
         plugins= self.config['channels'][channel].get ('plugins', {})
-        logger.debug ("channel plugins: %s" % plugins)
+        logger.debug("channel plugins: %s", plugins)
         for plugin, config in plugins.items ():
             self.load_plugin (plugin, config, params, channel)
 
@@ -109,8 +111,8 @@ class IrcBot (irc.IRCClient):
                                       if "encoding" in v)
         self.password = self.config.get('password', None)
         irc.IRCClient.connectionMade (self)
-        logger.info("connected to %s:%d" %
-            (self.config['host'], self.config['port']))
+        logger.info("connected to %s:%d",
+                    self.config['host'], self.config['port'])
         self.load_server_plugins()
         # configure the dispatcher
         self.dispatcher.init(self.config)
@@ -118,26 +120,26 @@ class IrcBot (irc.IRCClient):
 
     def connectionLost(self, reason):
         irc.IRCClient.connectionLost(self, reason)
-        logger.info ("disconnected from %s:%d" %
-            (self.config.get('host'), self.config.get('port')))
+        logger.info("disconnected from %s:%d",
+                    self.config.get('host'), self.config.get('port'))
         self.dispatcher.push(events.CONNECTION_LOST)
 
     def signedOn(self):
-        logger.debug ("signed on %s:%d" %
-            (self.config['host'], self.config['port']))
+        logger.debug("signed on %s:%d",
+                     self.config['host'], self.config['port'])
         self.dispatcher.push(events.SIGNED_ON)
         for channel in self.config.get ('channels', []):
-            logger.debug ("joining %s on %s:%d" %
-                (channel, self.config['host'], self.config['port']))
+            logger.debug("joining %s on %s:%d",
+                         channel, self.config['host'], self.config['port'])
             self.join (channel)
 
     def receivedMOTD(self, motd):
-        logger.debug ("motd from %s:%d" %
-            (self.config['host'], self.config['port']))
+        logger.debug("motd from %s:%d",
+                     self.config['host'], self.config['port'])
 
     def joined(self, channel):
         """This will get called when the bot joins the channel."""
-        logger.info ("joined to %s" % channel)
+        logger.info("joined to %s", channel)
         self.load_channel_plugins (channel)
         self.dispatcher.push(events.JOINED, channel)
 
@@ -147,9 +149,8 @@ class IrcBot (irc.IRCClient):
         encoding = self.encoding_channels.get(channel, self.encoding_server)
         msg = msg.decode(encoding)
 
-        logger.debug ("[%s] %s: %s" % (channel, user, msg))
+        logger.debug("[%s] %s: %s", channel, user, msg)
         user = user.split('!', 1)[0]
-        # self.logger.log("<%s> %s" % (user, msg))
 
         # Check to see if they're sending me a private message
         if channel == self.nickname:
@@ -176,12 +177,6 @@ class IrcBot (irc.IRCClient):
         self.dispatcher.push(events.ACTION, user, channel, msg)
 
     # irc callbacks
-    def irc_NICK(self, prefix, params):
-        """Called when an IRC user changes their nickname."""
-        old_nick = nick (prefix)
-        new_nick = params[0]
-        irc.IRCClient.irc_NICK (self, prefix, params)
-
     def userJoined(self, user, channel):
         """Called when I see another user joining a channel."""
         logger.debug("%s joined to %s", user, channel)
@@ -221,7 +216,7 @@ class IRCBotFactory(protocol.ClientFactory):
         """
         If we get disconnected, reconnect to server.
         """
-        logger.debug("%s got disconnected because of %s", connector, str(reason))
+        logger.debug("We got disconnected because of %s", reason)
         connector.connect()
 
     def clientConnectionFailed(self, connector, reason):
@@ -229,7 +224,7 @@ class IRCBotFactory(protocol.ClientFactory):
         Stop main loop if connection failed, this should be changed to stop
         only when no client remains connected
         """
-        logger.debug("Connection failed because of %s" % str(reason))
+        logger.debug("Connection failed because of %s", reason)
         # reactor.stop()
 
     def buildProtocol(self, addr):
@@ -293,8 +288,7 @@ class FactoriesWrapper(object):
 def main(to_use, plugin_loglvl, manhole_opts=None):
     factories = {}
     for server in to_use:
-        # logger.debug (plugin_loglvl)
-        server["log_config"] = plugin_loglvl
+        server["log_config"] = plugins_loglvl
         bot = IRCBotFactory(server)
         factories[server.get('host')] = bot
         if server.get('ssl', False):
@@ -312,11 +306,14 @@ def main(to_use, plugin_loglvl, manhole_opts=None):
 
 if __name__ == '__main__':
     msg = u"""
-  ircbot.py [-t][-a][-o output_loglvl][-p plugin_loglvl] [server1, [...]]
+  ircbot.py [-t][-a][-o output_loglvl][-p plugins_loglvl]
+            [-f fileloglvl][-n logfname] [server1, [...]]
 
   the servers are optional if -a is passed
-  the output_loglevel is the log level default for all the system
+  the output_loglevel is the log level for the standard output
+  the file_loglevel is the log level for the output that goes to file
   the pluginloglevel is a list of plugin_name:loglevel separated by commas
+  the logfname is the filename to write the logs to
 """
 
     parser = optparse.OptionParser()
@@ -329,6 +326,10 @@ if __name__ == '__main__':
                       help="sets the output log level.")
     parser.add_option("-p", "--plugin-log-level", dest="plugloglvl",
                       help="sets the plugin log level. format is plugin:level,...")
+    parser.add_option("-f", "--file-log-level", dest="fileloglvl",
+                      help="sets the output log level.")
+    parser.add_option("-n", "--log-filename", dest="logfname",
+                      help="specifies the name of the log file.")
     # manhole option group
     manhole = parser.add_option_group('manhole')
     manhole.add_option("--manhole", dest="manhole", action="store_true",
@@ -357,27 +358,28 @@ if __name__ == '__main__':
         parser.print_help()
         exit()
 
-    # control the log level
+    # control the output log level
     if options.outloglvl is None:
-        output_loglevel = "debug"
+        output_loglevel = "info"
     else:
         output_loglevel = options.outloglvl.lower()
     try:
-        logger.setLevel(LOG_LEVELS[output_loglevel])
+        log_stdout_handler.setLevel(LOG_LEVELS[output_loglevel])
     except KeyError:
         print "The log level can be only:", LOG_LEVELS.keys()
         exit(1)
 
+    # control the plugins log level
     plugins_loglvl = {}
     if options.plugloglvl is not None:
         try:
             for pair in options.plugloglvl.split(","):
                 plugin, loglvl = pair.split(":")
                 loglvl = loglvl.lower()
-                logger.debug ("plugin %s, loglevel %s" % (plugin, loglvl))
+                logger.debug("plugin %s, loglevel %s" % (plugin, loglvl))
                 if loglvl not in LOG_LEVELS:
                     print "The log level can be only:", LOG_LEVELS.keys()
-                    exit()
+                    exit(1)
                 plugins_loglvl[plugin] = LOG_LEVELS[loglvl]
         except:
             print "Remember that the plugin log level format is"
@@ -391,6 +393,26 @@ if __name__ == '__main__':
         print "A config file is needed to run this program."
         print "See as an example the included here config.py.example"
         sys.exit()
+
+    # handles the log file and its level
+    if options.logfname is None:
+        log_filename = "lalita.log"
+    else:
+        log_filename = options.logfname
+
+    if options.fileloglvl is None:
+        file_loglevel = logging.INFO
+    else:
+        try:
+            file_loglevel = LOG_LEVELS[options.fileloglvl.lower()]
+        except KeyError:
+            print "The log level can be only:", LOG_LEVELS.keys()
+            exit(1)
+
+    fh = logging.FileHandler(log_filename)
+    fh.setLevel(file_loglevel)
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
 
     # get all servers or the indicated ones
     servers = config.servers

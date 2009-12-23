@@ -1,12 +1,17 @@
+# Copyright 2009 laliputienses
+# License: GPL v3
+# For further info, see LICENSE file
 
 import unittest
 import re
 
+from collections import defaultdict
 from twisted.trial.unittest import TestCase as TwistedTestCase
 from twisted.internet import defer, reactor
 
 from core import events
 from core import dispatcher
+from core import Plugin
 import ircbot
 
 server = dict(
@@ -14,7 +19,7 @@ server = dict(
     host="0.0.0.0",
     port=6667,
     nickname="test",
-    channels={},
+    channels=defaultdict(lambda: {}),
     plugins={},
 )
 
@@ -22,12 +27,15 @@ ircbot_factory = ircbot.IRCBotFactory(server)
 ircbot.logger.setLevel("error")
 bot = ircbot.IrcBot()
 bot.factory = ircbot_factory
+bot.config = ircbot_factory.config
 bot.msg = lambda *a:None
 
 MY_NICKNAME = server['nickname']
 
 
 class EasyDeferredTests(TwistedTestCase):
+    '''Base class for deferred tests.'''
+
     def setUp(self):
         self.deferred = defer.Deferred()
         self.timeout = 1
@@ -100,6 +108,7 @@ class TestRegister(unittest.TestCase):
 
 
 class TestPush(EasyDeferredTests):
+    '''Test that push works.'''
 
     def setUp(self):
         super(TestPush, self).setUp()
@@ -148,6 +157,7 @@ class TestPush(EasyDeferredTests):
 
 
 class TestEvents(EasyDeferredTests):
+    '''Test all the events.'''
 
     def setUp(self):
         super(TestEvents, self).setUp()
@@ -463,3 +473,367 @@ class TestEvents(EasyDeferredTests):
         self.disp.push(events.KICK, "kickee", "channel", "kicker", "msg")
         return self.deferred
 
+
+class TestSay(EasyDeferredTests):
+    '''Plugins say stuff, the dispatcher transmit that.'''
+
+    def setUp(self):
+        super(TestSay, self).setUp()
+        self._disp = disp = dispatcher.Dispatcher(bot)
+
+        # let's register what the dispatcher says that plugin said
+        self.recorder = []
+        disp._msg = lambda *a: self.recorder.append(a)
+        disp.init({})
+
+        class Helper(object):
+            '''Plugin that says what we tell to say.'''
+            def f(self, *args):
+                for to, msg in self.what:
+                    self.say(to, msg)
+
+        self.helper = Helper()
+        disp.new_plugin(self.helper, "#channel")
+        disp.register(events.PUBLIC_MESSAGE, self.helper.f)
+        self.deferred.addCallback(lambda _: disp.push(events.PUBLIC_MESSAGE,
+                                                      "usr", "#channel", "bu"))
+
+    def tearDown(self):
+        self._disp.shutdown()
+
+    def test_nothing(self):
+        '''Plugin don't say anything.'''
+        self.helper.what = []
+
+        def check(_):
+            self.assertEqual(self.recorder, [])
+
+        self.deferred.addCallback(check)
+        self.deferred.callback(True)
+        return self.deferred
+
+    def test_one_thing(self):
+        '''Plugin say one thing.'''
+        self.helper.what = [("touser", "text")]
+
+        def check(_):
+            self.assertEqual(self.recorder, [("touser", "text")])
+
+        self.deferred.addCallback(check)
+        self.deferred.callback(True)
+        return self.deferred
+
+    def test_two_things(self):
+        '''Plugin say two things.'''
+        self.helper.what = [("user", "t1"), ("user", "t2")]
+
+        def check(_):
+            self.assertEqual(self.recorder, [("user", "t1"), ("user", "t2")])
+
+        self.deferred.addCallback(check)
+        self.deferred.callback(True)
+        return self.deferred
+
+    def test_other_channel(self):
+        '''Answers should be in the same channel.'''
+        self.helper.what = [("touser", "text1"), ("#other", "text2")]
+
+        def check(_):
+            self.assertEqual(self.recorder, [("touser", "text1")])
+
+        self.deferred.addCallback(check)
+        self.deferred.callback(True)
+        return self.deferred
+
+
+class TestFlowController(EasyDeferredTests):
+    '''Plugins say stuff, the dispatcher transmit that.'''
+
+    def setUp(self):
+        super(TestFlowController, self).setUp()
+        dispatcher.FLOW_TIMEOUT = 1
+        self.disp = disp = dispatcher.Dispatcher(bot)
+
+        # let's register what the dispatcher says that plugin said
+        self.recorder = []
+        disp._msg = lambda *a: self.recorder.append(a)
+        disp.init({})
+
+        class Helper(object):
+            '''Plugin that says what we tell to say.'''
+            def f(self, usr, chnl, txt):
+                for to, msg in self.what:
+                    if usr == to:
+                        self.say(to, msg)
+
+            def g(self, *a):
+                '''nothing!'''
+
+        self.helper = Helper()
+        disp.new_plugin(self.helper, "#channel")
+        disp.register(events.PUBLIC_MESSAGE, self.helper.f)
+        disp.register(events.COMMAND, self.helper.g, ("void",))
+
+    def tearDown(self):
+        self.disp.shutdown()
+
+    def user_says(self, _, user, channel, text):
+        self.disp.push(events.PUBLIC_MESSAGE, user, channel, text)
+
+    def test_nothing(self):
+        '''Plugin don't say anything.'''
+        self.helper.what = []
+
+        def check(_):
+            self.assertEqual(self.recorder, [])
+
+        self.deferred.addCallback(self.user_says, "usr", "#channel", "bu")
+        self.deferred.addCallback(check)
+        self.deferred.callback(True)
+        return self.deferred
+
+    def test_short(self):
+        '''One answer, receive it.'''
+        self.helper.what = [("usr", "froobar")]
+
+        def check(_):
+            self.assertEqual(self.recorder, [("usr", "froobar")])
+
+        self.deferred.addCallback(self.user_says, "usr", "#channel", "bu")
+        self.deferred.addCallback(check)
+        self.deferred.callback(True)
+        return self.deferred
+
+    def test_long(self):
+        '''Several answers, receive only the first ones.'''
+        self.helper.what = []
+        for i in range(7):
+            self.helper.what.append(("usr", "r %d" % i))
+
+        def check(_):
+            self.assertEqual(self.recorder, [("usr", "r 0"), ("usr", "r 1"),
+                                             ("usr", "r 2"), ("usr", "r 3"),
+                                             ("usr", "r 4"),
+                                            ])
+
+        self.deferred.addCallback(self.user_says, "usr", "#channel", "bu")
+        self.deferred.addCallback(check)
+        self.deferred.callback(True)
+        return self.deferred
+
+    def test_more(self):
+        '''Get what's queued.'''
+        self.helper.what = []
+        for i in range(7):
+            self.helper.what.append(("usr", "r %d" % i))
+
+        def check1(_):
+            self.assertEqual(self.recorder, [("usr", "r 0"), ("usr", "r 1"),
+                                             ("usr", "r 2"), ("usr", "r 3"),
+                                             ("usr", "r 4"),
+                                            ])
+            self.recorder[:] = []
+
+        def check2(_):
+            self.assertEqual(self.recorder, [("usr", "r 5"), ("usr", "r 6")])
+
+        self.deferred.addCallback(self.user_says, "usr", "#channel", "bu")
+        self.deferred.addCallback(check1)
+        self.deferred.addCallback(lambda _: self.disp.push(events.COMMAND,
+                                                           "usr", "#channel",
+                                                           "more", ()))
+        self.deferred.addCallback(check2)
+        self.deferred.callback(True)
+        return self.deferred
+
+    def test_more_different_users(self):
+        '''More discriminates per talking user.'''
+        self.helper.what = []
+        for i in range(7):
+            self.helper.what.append(("usr1", "r %d" % i))
+            self.helper.what.append(("usr2", "r %d" % i))
+
+        def reset_recorder(_):
+            self.recorder[:] = []
+
+        def check2(_):
+            self.assertEqual(self.recorder, [("usr2", "r 5"), ("usr2", "r 6")])
+
+        self.deferred.addCallback(self.user_says, "usr1", "#channel", "bu")
+        self.deferred.addCallback(self.user_says, "usr2", "#channel", "bu")
+        self.deferred.addCallback(reset_recorder)
+        self.deferred.addCallback(lambda _: self.disp.push(events.COMMAND,
+                                                           "usr2", "#channel",
+                                                           "more", ()))
+        self.deferred.addCallback(check2)
+        self.deferred.callback(True)
+        return self.deferred
+
+    def test_more_different_channel(self):
+        '''More discriminates per channel.'''
+        self.disp.new_plugin(self.helper, "#channel1")
+        self.disp.new_plugin(self.helper, "#channel2")
+        self.helper.what = []
+        for i in range(7):
+            self.helper.what.append(("usr", "r %d" % i))
+
+        def reset_recorder(_):
+            self.recorder[:] = []
+
+        def check2(_):
+            self.assertEqual(self.recorder, [("usr", "r 5"), ("usr", "r 6")])
+
+        self.deferred.addCallback(self.user_says, "usr", "#channel1", "bu")
+        self.deferred.addCallback(self.user_says, "usr", "#channel2", "bu")
+        self.deferred.addCallback(reset_recorder)
+        self.deferred.addCallback(lambda _: self.disp.push(events.COMMAND,
+                                                           "usr", "#channel1",
+                                                           "more", ()))
+        self.deferred.addCallback(check2)
+        self.deferred.callback(True)
+        return self.deferred
+
+    def test_reset(self):
+        '''Other than more, the queue is reseted.'''
+        self.helper.what = []
+        for i in range(7):
+            self.helper.what.append(("usr", "r %d" % i))
+
+        def check1(_):
+            self.assertEqual(self.recorder, [("usr", "r 0"), ("usr", "r 1"),
+                                             ("usr", "r 2"), ("usr", "r 3"),
+                                             ("usr", "r 4"),
+                                            ])
+            self.recorder[:] = []
+
+        def check2(_):
+            self.assertEqual(self.recorder,
+                             [("#channel", u"No hay nada encolado para vos")])
+
+        self.deferred.addCallback(self.user_says, "usr", "#channel", "bu")
+        self.deferred.addCallback(check1)
+        self.deferred.addCallback(lambda _: self.disp.push(events.COMMAND,
+                                                           "usr", "#channel",
+                                                           "void", ()))
+        self.deferred.addCallback(lambda _: self.disp.push(events.COMMAND,
+                                                           "usr", "#channel",
+                                                           "more", ()))
+        self.deferred.addCallback(check2)
+        self.deferred.callback(True)
+        return self.deferred
+
+    def test_timeout(self):
+        '''The queue dissappears after some time.'''
+        self.helper.what = []
+        for i in range(7):
+            self.helper.what.append(("usr", "r %d" % i))
+
+        def check1(_):
+            self.assertEqual(self.recorder, [("usr", "r 0"), ("usr", "r 1"),
+                                             ("usr", "r 2"), ("usr", "r 3"),
+                                             ("usr", "r 4"),
+                                            ])
+            self.recorder[:] = []
+
+        def check2(_):
+            self.assertEqual(self.recorder,
+                             [("#channel", u"No hay nada encolado para vos")])
+
+        self.deferred.addCallback(self.user_says, "usr", "#channel", "bu")
+        self.deferred.addCallback(check1)
+
+        # second part of the test, time later
+        d2 = defer.Deferred()
+        d2.addCallback(lambda _: self.disp.push(events.COMMAND, "usr",
+                                               "#channel", "more", ()))
+        d2.addCallback(check2)
+        self.deferred.addCallback(lambda _: d2)
+
+        reactor.callLater(1.5, d2.callback, None)
+        self.deferred.callback(True)
+        return self.deferred
+    test_timeout.timeout = 3
+
+
+class TestPluginI18n(EasyDeferredTests):
+
+    def setUp(self):
+        super(TestPluginI18n, self).setUp()
+        self.disp = dispatcher.Dispatcher(bot)
+        self.disp.init({})
+
+        class Helper(Plugin):
+            def init(self, *args):
+                d = {'a message' : {'es' : 'un mensaje'},
+                     'with args: %s' : {'es' : 'con args: %s'}
+                    }
+                self.register_translation(self, d)
+            def simple(self, user, channel, *args):
+                self.say(channel, 'a message')
+                self.test(True)
+            def withargs(self, user, channel, command, *args):
+                self.say(channel, 'with args: %s', command)
+                self.test(True)
+
+        self.helper = Helper({'nickname':'helper', 'encoding':'fake'}, 'DEBUG')
+        self.disp.config['channels'] = {'channel-es':{'language':'es'}}
+        self.old_msg = bot.msg
+        self.answer = []
+        def g(towhere, msg, _):
+            self.answer.append((towhere, msg.decode("utf8")))
+        bot.msg = g
+
+    def tearDown(self):
+        self.disp.shutdown()
+        super(TestPluginI18n, self).tearDown()
+        bot.msg = self.old_msg
+
+    def test_simple_message(self):
+        self.disp.new_plugin(self.helper, "channel")
+        self.helper.init({})
+        def test(_):
+            self.deferred.callback(True)
+        self.helper.test = test
+        self.disp.register(events.COMMAND, self.helper.simple)
+        self.disp.push(events.COMMAND, 'user', 'channel', 'command', 'foo', 'bar')
+        self.deferred.addCallback(
+            lambda _: self.assertEqual(self.answer[0][1], u'a message'))
+        return self.deferred
+
+    def test_simple_message_es(self):
+        self.disp.new_plugin(self.helper, "channel-es")
+        self.helper.init({})
+        def test(_):
+            self.deferred.callback(True)
+        self.helper.test = test
+        self.disp.register(events.COMMAND, self.helper.simple)
+        self.disp.push(events.COMMAND, 'user', 'channel-es', 'command', 'foo', 'bar')
+        self.deferred.addCallback(
+            lambda _: self.assertEqual(self.answer[0][1], u'un mensaje'))
+        return self.deferred
+
+    def test_message_with_args(self):
+        self.disp.new_plugin(self.helper, "channel")
+        self.helper.init({})
+        def test(_):
+            self.deferred.callback(True)
+        self.helper.test = test
+        self.disp.register(events.COMMAND, self.helper.withargs)
+        self.disp.push(events.COMMAND, 'user', 'channel', 'command', 'foo', 'bar')
+        self.deferred.addCallback(
+            lambda _: self.assertEqual(self.answer[0][1],
+                                       u'with args: command'))
+        return self.deferred
+
+    def test_message_with_args(self):
+        self.disp.new_plugin(self.helper, "channel-es")
+        self.helper.init({})
+        def test(_):
+            self.deferred.callback(True)
+        self.helper.test = test
+        self.disp.register(events.COMMAND, self.helper.withargs)
+        self.disp.push(events.COMMAND, 'user', 'channel-es', 'command', 'foo', 'bar')
+        self.deferred.addCallback(
+            lambda _: self.assertEqual(self.answer[0][1],
+                                       u'con args: command'))
+        return self.deferred

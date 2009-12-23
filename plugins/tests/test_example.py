@@ -1,5 +1,9 @@
 # -*- coding: utf8 -*-
 
+# Copyright 2009 laliputienses
+# License: GPL v3
+# For further info, see LICENSE file
+
 from core import events
 
 from .helper import PluginTest
@@ -20,7 +24,7 @@ class TestMethods(PluginTest):
     def test_private(self):
         '''Check 'private' functionality.'''
         self.disp.push(events.PRIVATE_MESSAGE, "testuser", "mensaje")
-        self.assertEqual(self.answer[0][1], u'Me dijiste "mensaje"')
+        self.assertMessageInAnswer(0, u'Me dijiste "mensaje"')
 
     def test_talkedtome(self):
         '''Check 'talked to me' functionality.'''
@@ -37,7 +41,7 @@ class TestMethods(PluginTest):
     def test_cmd_foo_sth(self):
         '''Check 'foo' functionality, with something.'''
         self.disp.push(events.COMMAND, "Usr", "chnl", "foo", "repite")
-        self.assertEqual(self.answer[0][1], u"repite")
+        self.assertMessageInAnswer(0, u"repite")
 
     def test_cmd_bar(self):
         '''Check 'bar' functionality.'''

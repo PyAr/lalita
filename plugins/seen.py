@@ -1,6 +1,8 @@
 # -*- coding: utf8 -*-
 
-# (c) 2009 Marcos Dione <mdione@grulic.org.ar>
+# Copyright 2009 laliputienses
+# License: GPL v3
+# For further info, see LICENSE file
 
 import datetime
 import os
@@ -8,10 +10,19 @@ import shelve
 
 from lalita import Plugin
 
+TRANSLATION_TABLE = {u"%s: acástoi, papafrita!": { 'en': u"%s: I'm here!"},
+                     u"%s: andá mirate en el espejo del baño": { 'en': u"%s: Go look in the mirror in the bathroom"},
+                     u"%s: se me quedó en la otra pollera :|": { 'en': u"%s: I left it in the other skirt :|"},
+                     u'%s: lo último fue "lo último fue ..."': { 'en': u'%s: last said was "last said was ..."'},
+                     u"%s: me tiraste la orden": { 'en': u"%s: you requested this command"}
+                    }
+
+
 class Seen(Plugin):
     '''Plugin that implements the "seen" and "last" commands.'''
     def init(self, config):
         base = config.get('base_dir', None)
+        self.register_translation(self, TRANSLATION_TABLE)
         if base is not None:
             if not os.path.exists(base):
                 os.makedirs(base)
@@ -54,11 +65,11 @@ class Seen(Plugin):
     def seen(self, user, channel, command, nick):
         u'''Indica cuando fue visto por última vez un usuario y qué hizo.'''
         if self.config['clever'] and nick == self.nickname:
-            self.say(channel, u"%s: acástoi, papafrita!" % user)
+            self.say(channel, u"%s: acástoi, papafrita!", user)
             return
 
         if self.config['clever'] and nick == user:
-            self.say(channel, u"%s: andá mirate en el espejo del baño" % user)
+            self.say(channel, u"%s: andá mirate en el espejo del baño", user)
             return
         encoded_nick = nick.encode(self.encoding)
         what1, when1 = self.iolog.get(encoded_nick, (None, None))
@@ -67,7 +78,7 @@ class Seen(Plugin):
 
         # didn't se him at all or he has just been silent
         if when1 is None and when2 is None:
-            self.say(channel, u"%s: se me quedó en la otra pollera :|" % user)
+            self.say(channel, u"%s: se me quedó en la otra pollera :|", user)
             return
 
         # seen him join or part and,
@@ -77,16 +88,16 @@ class Seen(Plugin):
             what = u"%s: [%s] -- %s" % (user, when1.strftime ("%x %X"), what1)
         else:
             what = u"%s: [%s] %s" % (user, when2.strftime ("%x %X"), what2)
-        self.say (channel, what)
+        self.say(channel, what)
 
     def last(self, user, channel, command, nick):
         u'''Muestra que fue lo último que dijo un usuario.'''
         if self.config['clever'] and nick == self.nickname:
-            self.say(channel, u'%s: lo último fue "lo último fue ..."' % user)
+            self.say(channel, u'%s: lo último fue "lo último fue ..."', user)
             return
 
         if self.config['clever'] and nick == user:
-            self.say(channel, u"%s: me tiraste la orden" % user)
+            self.say(channel, u"%s: me tiraste la orden", user)
             return
 
         encoded_nick = nick.encode(self.encoding)
@@ -96,7 +107,7 @@ class Seen(Plugin):
 
         # he has just been silent
         if when2 is None:
-            self.say(channel, u"%s: yo no oí nada..." % user)
+            self.say(channel, u"%s: yo no oí nada...", user)
             return
 
         self.say(channel,

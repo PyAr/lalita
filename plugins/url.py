@@ -1,6 +1,8 @@
 # -*- coding: utf8 -*-
 
-# (c) 2009 Marcos Dione <mdione@grulic.org.ar>
+# Copyright 2009 laliputienses
+# License: GPL v3
+# For further info, see LICENSE file
 
 import re
 from twisted.web import client
@@ -24,11 +26,11 @@ class Url (Plugin):
     url_re= re.compile ('((https?|ftp)://[^ ]+)', re.IGNORECASE|re.DOTALL)
     title_re= re.compile (
         '< *title *>([^<]+)< */ *title *>', re.IGNORECASE|re.DOTALL)
-    content_type_re= re.compile (
-        '<meta http-equiv="Content-Type" content="([^"]+)">',
+    content_type_re = re.compile(
+        '<meta http-equiv="Content-Type" content="([^"]+)" .*?>',
         re.IGNORECASE|re.DOTALL)
     xhtml_re= re.compile ('<!DOCTYPE +html')
-    mimetype_re= re.compile ('([a-z-/]+);?( charset=(.*))?')
+    mimetype_re = re.compile('([a-z-/]+);?( *charset=(.*))?')
 
     def init(self, config):
         self.register (self.events.PUBLIC_MESSAGE, self.message)
@@ -93,23 +95,34 @@ class Url (Plugin):
         data= dict (zip (('id', 'url', 'date', 'time', 'poster', 'title'), result))
         self.say(channel, (self.config['in_format'] % data))
 
-    def dig (self, user, channel, command, *what):
-        self.logger.debug (u'looking for %s' % what)
+    def dig(self, user, channel, command, *what):
+        u'''Busca 'algo' en los títulos o URLs que se dijeron antes.'''
+        self.logger.debug(u'looking for %s', what)
+        if not what:
+            self.say(channel,
+                     u"%s: necesito que me pases algo a buscar..." % user)
+            return
+
         self.cursor.execute ('''select * from url
             where title like '%%%s%%' or url like '%%%s%%' ''' % (what[0], what[0]))
         # self.cursor.execute (u"""select * from url where url like '%%%s%%'""" % (what[0], ))
         # self.cursor.execute ('''select * from url''')
         results= self.cursor.fetchall ()
-        self.logger.debug (results)
-        if len (results)>0:
+        self.logger.debug('found %d results', len(results))
+        if len(results) > 0:
             for result in results:
-                data= dict (zip (('id', 'url', 'date', 'time', 'poster', 'title'), result))
-                self.logger.debug (u'found %s' % data['url'])
-                self.say (channel, self.config['found_format'] % data)
+                data = dict(zip(('id', 'url', 'date', 'time', 'poster', 'title'), result))
+                self.say(channel, self.config['found_format'] % data)
         else:
             self.say (channel, '%s: 404 Search term not found: %s' % (user, what[0]))
 
     def delete (self, user, channel, command, *what):
+        u'''Borra de los registros los IDs indicados.'''
+        if not what:
+            self.say(channel,
+                     u"%s: no pasaste ningún ID a borrar..." % user)
+            return
+
         for uid in what:
             self.logger.debug (u'deleting %s' % uid)
             self.cursor.execute ('''delete from url
@@ -135,25 +148,25 @@ class Url (Plugin):
                 # go fetch it
                 self.logger.debug ('fetching %s' % url)
                 promise= client.getPage (str (url), headers=dict (
-                    Range='bytes=0-%d' % self.config['block_size'])
+                    Range='bytes=1-%d' % self.config['block_size'])
                     )
                 promise.addCallback (self.guessFile, user, channel, url, date, time)
                 promise.addErrback (self.failed, user, channel, url, date, time)
                 return promise
 
     ##### encoding detectors #####
-    def pageContentType (self, page):
-        encoding= None
+    def pageContentType(self, page):
+        encoding = None
 
-        g= self.content_type_re.search (page)
+        g = self.content_type_re.search(page)
         if g is not None:
-            mimetype_enc= g.groups ()[0]
-            self.logger.debug (mimetype_enc)
+            mimetype_enc = g.groups()[0]
+            self.logger.debug(mimetype_enc)
             # text/html; charset=utf-8
-            g= self.mimetype_re.search (mimetype_enc)
+            g = self.mimetype_re.search(mimetype_enc)
             if g is not None:
-                mimetype= g.groups ()[0]
-                encoding= g.groups ()[2]
+                mimetype = g.groups()[0]
+                encoding = g.groups()[2]
             else:
                 self.logger.warning ("further mimetype detection failed: %s" % mimetype_enc)
         else:
@@ -174,22 +187,15 @@ class Url (Plugin):
         return encoding
 
     def hardCoded (self, page):
-        # good as any
-        encoding= 'utf-8'
-
-        return encoding
+        '''good as any'''
+        return 'utf-8'
 
     def guessFile (self, page, user, channel, url, date, time):
-        # try utf-8 first because chardet is used very often
-        # and it gets easily confused (?!?!) by perfect utf-8
-        # and returns any vegetable instead
-        encodings= ['utf-8']
-
         mimetype_enc= self.magic.buffer (page)
-        g= self.mimetype_re.search (mimetype_enc)
+        g = self.mimetype_re.search(mimetype_enc)
         if g is not None:
-            mimetype= g.groups ()[0]
-            encoding= g.groups ()[2]
+            mimetype= g.groups()[0]
+            encoding= g.groups()[2]
         else:
             self.logger.warn ("initial mimetype detection failed: %s" % mimetype_enc)
 
@@ -209,23 +215,21 @@ class Url (Plugin):
                 self.titleFound= True
                 title= g.groups ()[0]
 
-                for method in (self.pageContentType, self.guess, self.hardCoded):
-                    # returns an encoding and a dict to update the locals
-                    # encoding, local= method (page)
-                    # locals ().update (local)
-                    encoding= method (page)
+                # we leave self.guess to the end because chardet gets easily
+                # confused if we use it too much (?)
+                for method in (self.pageContentType, self.hardCoded, self.guess):
+                    encoding = method(page)
+                    self.logger.debug("Getting encoding with %s: %s",
+                                      method.im_func.func_name, encoding)
                     if encoding is not None:
-                        encodings.append (encoding)
-
-                for encoding in encodings:
-                    try:
-                        data= title.decode (encoding)
-                    except UnicodeDecodeError:
-                        self.logger.debug ("tried encoding %s but failed" % encoding)
-                    else:
-                        self.logger.debug ("suceeded with encoding %s" % encoding)
-                        title= data
-                        break
+                        try:
+                            data = title.decode(encoding)
+                        except UnicodeDecodeError:
+                            self.logger.debug("failed!")
+                        else:
+                            self.logger.debug("suceeded!")
+                            title = data
+                            break
 
                 # convert xhtml entities
                 title= BeautifulStoneSoup (title,

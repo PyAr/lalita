@@ -1,17 +1,28 @@
 # -*- coding: utf8 -*-
 
+# Copyright 2009 laliputienses
+# License: GPL v3
+# For further info, see LICENSE file
+
 import itertools
 import functools
+import types
 
 from twisted.internet import defer
 
 import logging
 logger = logging.getLogger ('ircbot.core.dispatcher')
 
-from core import events
+from core import events, flowcontrol
 
 # messages longer than this will be splitted in different server commands
 LENGTH_MSG = 512
+
+# the default max used for the flow controller queue
+DEFAULT_MAXQ = 5
+
+# the timeout for the per process queue of the flow controller, in seconds
+FLOW_TIMEOUT = 120
 
 # these are special events that should be handled by their methods to
 # validate the message reception
@@ -33,6 +44,7 @@ SILENTS = set((
 META_COMMANDS = {
     "help": "meta_help",
     "list": "meta_list",
+    "more": "meta_more",
 }
 
 # the position of the channel parameter in each event
@@ -52,6 +64,37 @@ CHANNEL_POS = {
     events.ACTION: 1,
 }
 
+# the position of the user parameter in each event
+USER_POS = {
+    events.CONNECTION_MADE: None,
+    events.CONNECTION_LOST: None,
+    events.SIGNED_ON: None,
+    events.JOINED: None,
+    events.PRIVATE_MESSAGE: 0,
+    events.TALKED_TO_ME: 0,
+    events.COMMAND: 0,
+    events.PUBLIC_MESSAGE: 0,
+    events.JOIN: 0,
+    events.LEFT: 0,
+    events.QUIT: 0,
+    events.KICK: 0,
+    events.ACTION: 0,
+}
+
+
+TRANSLATION_TABLE = {u"%s: No existe esa orden!":{'en': u"%s: command not found!"},
+                     u'"list" para ver las órdenes; "help cmd" para cada uno':
+                        {'en': u'"list" To see the available commands ; "help cmd" for specific command help'},
+                     u"No hay ninguna orden registrada...":{'en': u"PANIC! I have no commands!!!"},
+                     u"Esa orden no existe...":{'en': u"No such command..."},
+                     u"%sNo tiene documentación, y yo no soy adivina...":{'en': u"%sMissing documentation"},
+                     u"No tiene documentación, y yo no soy adivina...":{'en': u"Missing documentation"},
+                     u"Hay varios métodos para esa orden:": {'en': u"Several handlers for the same command:"},
+                     u"Decí alpiste, no hay órdenes todavía...": {'en': u"No commands available (yet)"},
+                     u"Las órdenes son: %s": {'en': u"The available commands are: %s"},
+                     u"No hay nada encolado para vos": {'en': u"Nothing queued for you"},
+                    }
+
 
 class Dispatcher(object):
     def __init__(self, ircclient):
@@ -59,12 +102,23 @@ class Dispatcher(object):
         self.bot = ircclient
         self._plugins = {}
         self._channel_filter = {}
+        self._translations = {}
+        self.register_translation(self, TRANSLATION_TABLE)
 
     def init(self, config):
+        self.config = config
         self.length_msg = int(config.get('length_msg', LENGTH_MSG))
+        maxq = int(config.get('flow_maxq', DEFAULT_MAXQ))
+        self.flowcontroller = flowcontrol.FlowController(self._msg_unpacker,
+                                                         maxq, FLOW_TIMEOUT)
+
+    def shutdown(self):
+        '''Takes the dispatcher down.'''
+        self.flowcontroller.shutdown()
 
     def new_plugin(self, plugin, channel):
         plugin.register = self.register
+        plugin.register_translation = self.register_translation
         plugin.say = functools.partial(self._msg_from_plugin, plugin)
         logger.debug('plugin %s is in channel %s', plugin, channel)
         self._plugins[plugin] = channel
@@ -80,13 +134,18 @@ class Dispatcher(object):
         instance = func.im_self
         self._callbacks.setdefault(event, []).append((instance, func, extra))
 
-    def _msg_from_plugin(self, plugin, to_where, message):
+    def register_translation(self, instance, table):
+        '''Register translation table for a plugin.'''
+        logger.debug('registering translation table for %s', instance)
+        self._translations[instance] = table
+
+    def _msg_from_plugin(self, plugin, to_where, message, *args):
         """Message from the plugin."""
         if plugin not in self._channel_filter:
             # don't allow to say anything out of order
             return
 
-        from_channel = self._channel_filter[plugin]
+        from_channel, user = self._channel_filter[plugin]
 
         # from_channel can be None if msg() was used from here (not channel
         # passed), or if was a response from a plugin, but the original
@@ -97,11 +156,47 @@ class Dispatcher(object):
                 logger.debug("WARNING: the plugin is trying to answer in a "
                              "different channel! (from: %s  to: %s)",
                              from_channel, to_where)
+                return
 
-        self.msg(to_where, message)
+        # translate it!
+        message = self.get_translation(plugin, to_where, message, args)
 
-    def msg(self, to_where, message):
-        self.bot.msg(to_where, message.encode("utf8"), self.length_msg)
+        # send to the flow controller
+        self.flowcontroller.send(user, (to_where, message))
+
+    def _msg_unpacker(self, user, payload):
+        '''Unpacks the payload.'''
+        to_where, message = payload
+        self._msg(to_where, message)
+
+    def msg(self, to_where, message, *args):
+        """Fills, and pushes to the bot."""
+        message = self.get_translation(self, to_where, message, args)
+        self._msg(to_where, message)
+
+    def _msg(self, to, mess):
+        """Really sends the message."""
+        self.bot.msg(to, mess.encode("utf8"), self.length_msg)
+
+    def get_translation(self, instance, channel, message, args):
+        """Get the translated message for (instance, channel).
+
+        If there is no language specified in the channel config, server config
+        is used.  If there is no translation of message for the language,
+        message is returned.
+        """
+        # channel might be an user if this is called from a privmsg handler
+        channel_config = self.config.get('channels', {}).get(channel, {})
+        lang = channel_config.get('language', self.config.get('language', None))
+        trans =  self._translations.get(instance, {}).get(message, {}).get(lang, message)
+
+        # fill it
+        if args and len(args) == 1 and \
+           (type(args[0]) == types.DictType) and args[0]:
+            args = args[0]
+        finalmsg = trans % args
+
+        return  finalmsg
 
     def _error(self, error, instance):
         logger.debug("ERROR in instance %s: %s", instance, error)
@@ -116,6 +211,10 @@ class Dispatcher(object):
     def push(self, event, *args):
         '''Pushes the received event to the registered method(s).'''
         logger.debug("Received push event %s (%s)", event, args)
+
+        posuser = USER_POS[event]
+        user = None if posuser is None else args[posuser]
+
         # meta commands
         if event == events.COMMAND:
             user, channel, command = args[:3]
@@ -131,6 +230,9 @@ class Dispatcher(object):
             if cmds != [None] and command not in itertools.chain(*cmds):
                 self.msg(channel, u"%s: No existe esa orden!" % user)
                 return
+
+        # as it's not a meta command, the queue is reset for the user
+        self.flowcontroller.reset(user)
 
         all_registered = self._callbacks.get(event)
         if all_registered is None:
@@ -158,7 +260,7 @@ class Dispatcher(object):
 
             # dispatch!
             if event not in SILENTS:
-                self._channel_filter[instance] = channel
+                self._channel_filter[instance] = (channel, user)
 
             logger.debug("Dispatching event to %s", regist)
             d = defer.maybeDeferred(regist, *args)
@@ -182,7 +284,7 @@ class Dispatcher(object):
         return command in extra
 
     def handle_meta_help(self, user, channel, command, *args):
-        '''Handles the HELP meta command.'''
+        u"""Devuelve ayuda sobre una órden específica."""
         if not args:
             txt = u'"list" para ver las órdenes; "help cmd" para cada uno'
             self.msg(channel, txt)
@@ -200,11 +302,23 @@ class Dispatcher(object):
         docs = []
         revised = set()
         for (inst, meth, cmds) in registered:
+            chan = self._plugins[inst]
+            if chan is not None and chan != channel:
+                # if it's a channel plugin, it should be here
+                continue
+
             if args[0] in cmds:
-                modclsmeth = "%s.%s.%s" % ( meth.__module__, meth.__class__.__name__, meth.im_func.func_name)
+                modclsmeth = "%s.%s.%s" % (meth.__module__,
+                                           meth.__class__.__name__,
+                                           meth.im_func.func_name)
                 if modclsmeth not in revised:
                     revised.add(modclsmeth)
                     docs.append(meth.__doc__)
+
+        # check meta commands
+        if args[0] in META_COMMANDS:
+            meth = getattr(self, "handle_" + META_COMMANDS[args[0]])
+            docs.append(meth.__doc__)
 
         # no docs!
         if not docs:
@@ -212,24 +326,37 @@ class Dispatcher(object):
             return
 
         # only one method for that command
+        nodoc = u"No tiene documentación, y yo no soy adivina..."
         if len(docs) == 1:
-            t = docs[0] if docs[0] else u"No tiene documentación, y yo no soy adivina..."
+            t = docs[0] if docs[0] else nodoc
             self.msg(channel, t)
             return
 
         # several methods for the same command
         self.msg(channel, u"Hay varios métodos para esa orden:")
         for doc in docs:
-            t = doc if doc else u"No tiene documentación, y yo no soy adivina..."
-            self.msg(channel, u" - " + t)
+            t = u"%s" + doc if doc else u"%s" + nodoc
+            self.msg(channel, t, u" - ")
 
     def handle_meta_list(self, user, channel, command, *args):
-        '''Handles the LIST meta command.'''
+        u"""Lista las órdenes disponibles."""
         try:
-            cmds = [x[2] for x in self._callbacks[events.COMMAND]]
+            all_cmds = []
+            for (inst, meth, cmds) in self._callbacks[events.COMMAND]:
+                chan = self._plugins[inst]
+                if chan is not None and chan != channel:
+                    # if it's a channel plugin, it should be here
+                    continue
+                all_cmds.append(cmds)
         except KeyError:
-            txt = u"Decí alpiste, no hay órdenes todavía..."
+            onlys = []
         else:
-            onlys = set(itertools.chain(*cmds))
-            txt = u"Las órdenes son: %s" % list(sorted(onlys))
-        self.msg(channel, txt)
+            onlys = list(set(itertools.chain(*all_cmds)))
+        cmds = onlys + META_COMMANDS.keys()
+        self.msg(channel, u"Las órdenes son: %s", list(sorted(cmds)))
+
+    def handle_meta_more(self, user, channel, command, *args):
+        u"""Entrega respuestas encoladas para el usuario."""
+        if not self.flowcontroller.more(user):
+            self.msg(channel, u"No hay nada encolado para vos")
+
