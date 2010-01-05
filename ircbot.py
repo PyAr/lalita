@@ -239,7 +239,7 @@ def start_manhole(servers, port, user, password):
         from twisted.conch import manhole, manhole_ssh
         from twisted.cred import portal, checkers
     except ImportError, e:
-        logger.warning('Manhole not available: %s', str(e))
+        logger.warning('Manhole not available: %s', e)
         return
 
     def getManholeFactory(namespace, **passwords):
