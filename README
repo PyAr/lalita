@@ -25,6 +25,20 @@ need to have Nose installed).
 
 To create a plugin, check the plugins/example.py one, and use it as a start.
 
+Manhole
+-------
+The --manhole[-*] options enable a manhole ssh server the provides an interactive
+interpreter to poke the bot instance(s).
+Example:
+$> python ircbot.py --manhole &  
+$> ssh admin@localhost -p 2222
+admin@localhost's password: admin
+# this will drop you in a python shell
+>>> bot = servers['<server name>']
+# bot is a IrcBot instance
+>>> bot.say('<channel>', 'something')
+
+
 We don't have a mail list for the project, but you can check in #pyar on 
 Freenode, most of developers are around there.
 
