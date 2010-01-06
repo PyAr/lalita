@@ -29,3 +29,30 @@ We don't have a mail list for the project, but you can check in #pyar on
 Freenode, most of developers are around there.
 
 Enjoy it!
+
+
+Manhole
+-------
+
+The --manhole[-*] options enable a manhole ssh server the provides an interactive
+interpreter to poke the bot instance(s).
+
+Example:
+
+Start the bot with "--manhole" option:
+
+    $ python ircbot.py --manhole
+
+From another terminal, connect to the machine where the bot is running, port 2222:
+
+    $ ssh admin@localhost -p 2222
+    admin@localhost's password: admin
+
+This will drop you in a python shell:
+
+    >>> bot = servers['<server name>']
+    # bot is a IrcBot instance
+    >>> bot.say('<channel>', 'something')
+
+WARNING: this is a potential security hole if the port 2222 (or the one you 
+configure with --manhole-port) is accesible from internet or other machines.
