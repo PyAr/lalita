@@ -32,9 +32,9 @@ setup(
     scripts=['src/lalita/ircbot.py'],
 
     # dependencies
-    setup_requires=['setuptools-bzr'],
+    setup_requires=['setuptools>=0.6c10', 'setuptools-bzr'],
     install_requires=[
-        'beautifulsoup>=3.1.0.1',
+        'beautifulsoup',
         'chardet',
         'pyopenssl',
         'pysqlite',
