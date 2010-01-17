@@ -420,6 +420,9 @@ Para activarla, sólo tenemos que hacer::
 
         self.set_options(automatic_command=True)
 
+*FIXME: no vamos a tener set_options, todas las opciones serán manejadas
+desde la config.*
+
 De esta manera, todos los eventos ``TALKED_TO_ME`` y ``PRIVATE_MESSAGE``
 que tengan un mensaje que comiencen con un comando registrado, serán
 modificados y enviados al plugin como si hubiese sido justamente una
@@ -537,6 +540,9 @@ Si necesitamos cualquiera de estas dos funcionalidades, debemos desactivar esta
 restricción, de la siguiente manera::
 
         self.set_options(free_talk=True)
+
+*FIXME: no vamos a tener set_options, todas las opciones serán manejadas
+desde la config.*
 
 Luego de esa configuración, podremos generar los mensajes que deseemos
 desde el plugin, a cualquier destino, y sin importar si nos hablaron
@@ -790,10 +796,6 @@ más serios, o cualquier combinación que nos plazca.
 
 Con *-n* (o *--log-filename*) especificamos en qué archivo queremos
 que se loguee la información que va a un archivo.
-
-
-*FIXME: agregar en algún lado una sección que explique todos los
-set_options, y que apunten al mismo cada vez que los mencionamos.*
 
 
 .. _IRC: http://es.wikipedia.org/wiki/Internet_Relay_Chat
