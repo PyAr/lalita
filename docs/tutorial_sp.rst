@@ -112,7 +112,8 @@ tenemos que cambiar algo del texto porque instalado así se usa distinto.*
 
 *FIXME: re-redactar esto! tenemos que arrancar con los tres pasos para
 hacerlo funcionar, y luego explicamos qué es cada cosa, de manera que le
-sirva también a aquellos que no quieren leer.*
+sirva también a aquellos que no quieren leer.  Para hacerla más fácil
+daremos un ejemplo que se conecte a freenode.*
 
 Entrando al directorio donde está el proyecto, hay tres archivos que tenemos
 que considerar para probar el ejemplo.
@@ -290,6 +291,8 @@ usuario que generó el comando original diga ``@more``, haciendo que Lalita
 muestre las próximas 5 lineas encoladas, y así hasta que se acabe lo
 encolado, el usuario diga otra cosa, o pase un determinado tiempo que hace
 caducar a la cola de respuestas.
+
+*FIXME: indicar cómo se configura ese "5" para que no sea mágico.*
 
 
 ¿Cuales son los eventos que podemos recibir?
