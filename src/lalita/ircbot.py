@@ -241,14 +241,14 @@ def main(to_use, plugins_loglvl):
 
 if __name__ == '__main__':
     script_name = os.path.basename(sys.argv[0])
-    options=['-c filename ', '[-t]', '[-a]', '[-o output_loglvl]',
+    options=['config_filename [-t]', '[-a]', '[-o output_loglvl]',
              '[-p plugins_loglvl]', '[-f fileloglvl]', '[-n logfname]',
              ' ', '[server1, [...]]']
     options_str = ''.join(options)
 
     msg = u"""
 %s %s
-  the config filename is required
+  the config_filename is required
   the servers are optional if -a is passed
   the output_loglevel is the log level for the standard output
   the file_loglevel is the log level for the output that goes to file
@@ -258,8 +258,6 @@ if __name__ == '__main__':
 
     parser = optparse.OptionParser()
     parser.set_usage(msg)
-    parser.add_option("-c", "--config", action="store", dest="config_filename",
-                      help="sets the configuration filename to use.")
     parser.add_option("-t", "--test", action="store_true", dest="test",
                       help="runs two bots that talk to each other, tesing.")
     parser.add_option("-a", "--all", action="store_true", dest="all_servers",
@@ -277,17 +275,17 @@ if __name__ == '__main__':
     test = bool(options.test)
     all_servers = bool(options.all_servers)
 
-    # control the servers
-    if not args and not all_servers and not test:
-        parser.print_help()
-        exit()
-
     # control the configuration file
-    if options.config_filename is None:
+    if len(args) < 1:
         parser.print_help()
         exit()
     else:
-        config_filename = options.config_filename
+        config_filename = args[0]
+
+    # control the servers
+    if len(args) < 2 and not all_servers and not test:
+        parser.print_help()
+        exit()
 
     # control the output log level
     if options.outloglvl is None:
@@ -353,7 +351,7 @@ if __name__ == '__main__':
     elif test:
         to_use = [servers[x] for x in ("testbot-a", "testbot-b")]
     else:
-        to_use = [servers[x] for x in args]
+        to_use = [servers[x] for x in args[1:]]
 
 
     main(to_use, plugins_loglvl)
