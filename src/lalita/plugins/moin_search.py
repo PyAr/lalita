@@ -103,6 +103,3 @@ class MoinSearch(Plugin):
             self.say(channel,' '.join(results))
         self.drop_internal(id)
 
-if __name__ == '__main__':
-    main()
-

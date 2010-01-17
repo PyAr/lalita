@@ -302,8 +302,15 @@ class Dispatcher(object):
         docs = []
         revised = set()
         for (inst, meth, cmds) in registered:
+            chan = self._plugins[inst]
+            if chan is not None and chan != channel:
+                # if it's a channel plugin, it should be here
+                continue
+
             if args[0] in cmds:
-                modclsmeth = "%s.%s.%s" % (meth.__module__, meth.__class__.__name__, meth.im_func.func_name)
+                modclsmeth = "%s.%s.%s" % (meth.__module__,
+                                           meth.__class__.__name__,
+                                           meth.im_func.func_name)
                 if modclsmeth not in revised:
                     revised.add(modclsmeth)
                     docs.append(meth.__doc__)
@@ -319,25 +326,32 @@ class Dispatcher(object):
             return
 
         # only one method for that command
+        nodoc = u"No tiene documentación, y yo no soy adivina..."
         if len(docs) == 1:
-            t = docs[0] if docs[0] else u"No tiene documentación, y yo no soy adivina..."
+            t = docs[0] if docs[0] else nodoc
             self.msg(channel, t)
             return
 
         # several methods for the same command
         self.msg(channel, u"Hay varios métodos para esa orden:")
         for doc in docs:
-            t = "%s"+doc if doc else u"%sNo tiene documentación, y yo no soy adivina..."
+            t = u"%s" + doc if doc else u"%s" + nodoc
             self.msg(channel, t, u" - ")
 
     def handle_meta_list(self, user, channel, command, *args):
         u"""Lista las órdenes disponibles."""
         try:
-            cmds = [x[2] for x in self._callbacks[events.COMMAND]]
+            all_cmds = []
+            for (inst, meth, cmds) in self._callbacks[events.COMMAND]:
+                chan = self._plugins[inst]
+                if chan is not None and chan != channel:
+                    # if it's a channel plugin, it should be here
+                    continue
+                all_cmds.append(cmds)
         except KeyError:
             onlys = []
         else:
-            onlys = list(set(itertools.chain(*cmds)))
+            onlys = list(set(itertools.chain(*all_cmds)))
         cmds = onlys + META_COMMANDS.keys()
         self.msg(channel, u"Las órdenes son: %s", list(sorted(cmds)))
 

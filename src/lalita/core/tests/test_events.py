@@ -2,11 +2,9 @@
 # License: GPL v3
 # For further info, see LICENSE file
 
-import unittest
-import re
 
 from twisted.trial.unittest import TestCase as TwistedTestCase
-from twisted.internet import defer, reactor
+from twisted.internet import defer
 
 from lalita import dispatcher, events, ircbot
 
@@ -96,12 +94,6 @@ class TestConnection(TestBase):
         '''Calling bot.joined'''
         bot.joined("channel")
         self.check_pushed(events.JOINED, "channel")
-        return self.deferred
-
-    def test_connection_made(self):
-        '''Calling bot.connectionMade'''
-        bot.connectionMade()
-        self.check_pushed(events.CONNECTION_MADE)
         return self.deferred
 
 

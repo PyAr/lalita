@@ -3,7 +3,6 @@
 # For further info, see LICENSE file
 
 import unittest
-from collections import deque
 
 from twisted.trial.unittest import TestCase as TwistedTestCase
 from twisted.internet import defer, reactor
