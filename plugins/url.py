@@ -9,7 +9,7 @@ from twisted.web import client
 from twisted.internet import defer, reactor
 from twisted.python import failure
 
-from BeautifulSoup import BeautifulSoup, BeautifulStoneSoup
+from BeautifulSoup import BeautifulStoneSoup
 
 import magic
 import chardet
@@ -18,7 +18,6 @@ import sqlite3
 import datetime
 
 import random
-from time import sleep
 
 from lalita import Plugin
 
@@ -182,7 +181,9 @@ class Url (Plugin):
             encoding= detect['encoding']
             self.logger.debug ("chardet says it's %s" % encoding)
         else:
-            self.logger.warning ("chardet says it's %s, but with very low confidence: %f" % (encoding, confidence))
+            self.logger.warning("chardet says it's %s, but with very "
+                                "low confidence: %f",
+                                encoding, detect['confidence'])
 
         return encoding
 

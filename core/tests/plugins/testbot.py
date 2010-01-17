@@ -7,9 +7,6 @@
 # This is not a standard test case, but a special plugin that expect
 # to be instantiated twice to talk to each other
 
-from twisted.internet import reactor
-
-from core import dispatcher
 from core import events as evt
 
 

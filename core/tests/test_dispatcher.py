@@ -825,7 +825,7 @@ class TestPluginI18n(EasyDeferredTests):
                                        u'with args: command'))
         return self.deferred
 
-    def test_message_with_args(self):
+    def test_message_with_args_es(self):
         self.disp.new_plugin(self.helper, "channel-es")
         self.helper.init({})
         def test(_):
