@@ -1,5 +1,3 @@
-# -*- coding: utf8 -*-
-
 # Copyright 2009 laliputienses
 # License: GPL v3
 # For further info, see LICENSE file
@@ -9,15 +7,11 @@
 # twisted imports
 from twisted.words.protocols import irc
 from twisted.internet import reactor, protocol, ssl
-from twisted.python import log
 
 # system imports
-import time
 import sys
 import logging
-import os
 import os.path
-import inspect
 import optparse
 from traceback import print_exc
 
@@ -305,7 +299,7 @@ def main(to_use, plugin_loglvl, manhole_opts=None):
 
 
 if __name__ == '__main__':
-    msg = u"""
+    msg = """
   ircbot.py [-t][-a][-o output_loglvl][-p plugins_loglvl]
             [-f fileloglvl][-n logfname] [server1, [...]]
 
