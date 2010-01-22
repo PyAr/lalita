@@ -72,7 +72,7 @@ Analicemos esa linea con más detalle::
 El método ``self.register`` es el que usamos para registrarnos en un
 evento.  Al mismo le pasaremos al menos dos parámetros (ver más abajo para
 una descripción detallada de todos los casos), el evento y un método propio.
-
+jconti
 En este caso el evento es ``TALKED_TO_ME``, que sucede cuando en el canal
 se le habla al bot, y se accede a través del atributo ``self.events``.  Y
 el método que le decimos que ejecute es ``self.action``, que definimos ahí
@@ -130,8 +130,8 @@ que considerar para probar el ejemplo.
   veremos aquí mismo cómo hacer uno básico que nos sirva para probar
   el ejemplo.
 
-La configuración no es más que un diccionario Python con toda la info
-necesaria.  Aquí mostramos una configuración muy sencilla... pueden ver
+La configuración no es más que un diccionario Python con toda la información
+necesaria.  Aquí mostramos una configuración muy sencilla. Pueden ver
 el ``config.py.example`` para otras configuraciones, y abajo en este
 mismo documento para más explicaciones.
 
@@ -154,8 +154,9 @@ En nuestro caso usaremos::
 En este caso tenemos un sólo server configurado, llamado ``example``,
 apuntando a localhost en el puerto 6667 (lo más fácil para probar ejemplos
 y desarrollar nuestro propio plugin es instalar un servidor de IRC en la
-propia computadora... yo utilizo ``dancer-ircd``, más que nada porque al
-instalarlo ya queda funcionando como queremos y no hay que configurar nada).
+propia computadora. Por ejemplo, se puede utilizar ``dancer-ircd``,
+principalmente porque al instalarlo ya queda funcionando como queremos y 
+no hay que realizar configuraciones adicionales).
 
 En la configuración decimos que el nick del bot será ``examplia``, y
 utilizará UTF-8 como encoding, y nos conectaremos al canal ``#humites``,
@@ -373,6 +374,7 @@ siguientes lineas::
     self.register(self.events.COMMAND, self.divide, ("div",))
 
 
+*FIXME: no hay ejemplo para "varios métodos para un determinado comando".*
 
 Filtrando los mensajes
 ----------------------
@@ -455,7 +457,7 @@ recomienda que el texto sea siempre una cadena Unicode, incluso si en
 el mensaje no estamos utilizando caracteres no ASCII.
 
 Si queremos componer el mensaje con algunos parámetros (como el nombre
-del usuario o el resultado de la suma en el ejemplo anterior), debemos NO
+del usuario o el resultado de la suma en el ejemplo anterior), NO debemos
 hacer el reemplazo directamente, sino armar la cadena como corresponde y
 pasar los argumentos luego del texto.
 
