@@ -284,7 +284,7 @@ class Dispatcher(object):
         return command in extra
 
     def handle_meta_help(self, user, channel, command, *args):
-        u"""Devuelve ayuda sobre una órden específica."""
+        u"""Devuelve ayuda sobre una orden específica."""
         if not args:
             txt = u'"list" para ver las órdenes; "help cmd" para cada uno'
             self.msg(channel, txt)
