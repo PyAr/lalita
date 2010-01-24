@@ -53,6 +53,11 @@ class TestSeen(PluginTest):
     def setUp(self):
         self.init("seen.Seen")
 
+    def test_missing(self):
+        '''User asks about nothing.'''
+        self.disp.push(events.COMMAND, "pepe", "channel", "seen")
+        self.assertEqual(self.answer[0][1], u"pepe: tenés que indicar un nick")
+
     def test_plugin(self):
         '''User asks about the bot.'''
         self.disp.push(events.COMMAND, "pepe", "channel",
@@ -172,6 +177,11 @@ class TestSeen(PluginTest):
 class TestLast(PluginTest):
     def setUp(self):
         self.init("seen.Seen")
+
+    def test_missing(self):
+        '''User asks about nothing.'''
+        self.disp.push(events.COMMAND, "pepe", "channel", "last")
+        self.assertEqual(self.answer[0][1], u"pepe: tenés que indicar un nick")
 
     def test_plugin(self):
         '''User asks about the bot.'''
