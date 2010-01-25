@@ -81,7 +81,7 @@ class IrcBot (irc.IRCClient):
         params = {'nickname': self.nickname,
                   'encoding': self.encoding_server}
 
-        plugins= self.config.get('plugins', {})
+        plugins = self.config.get('plugins', {})
         logger.debug("server plugins: %s", plugins)
         for plugin, config in plugins.items():
             self.load_plugin(plugin, config, params)
@@ -91,10 +91,10 @@ class IrcBot (irc.IRCClient):
                   'encoding': self.encoding_channels.get('channel',
                                        self.encoding_server)}
 
-        plugins= self.config['channels'][channel].get ('plugins', {})
+        plugins = self.config['channels'][channel].get('plugins', {})
         logger.debug("channel plugins: %s", plugins)
         for plugin, config in plugins.items ():
-            self.load_plugin (plugin, config, params, channel)
+            self.load_plugin(plugin, config, params, channel)
 
     def connectionMade(self):
         self.config = self.factory.config
