@@ -113,7 +113,7 @@ servers = {
                     },
                 },
             'plugins':{
-                'testbot.TestPlugin': {'other': 'scratchy'}
+                'deathmatch.TestPlugin': {'other': 'scratchy'}
                 },
             'plugins_dir': "./core/tests/plugins",
             },
@@ -128,7 +128,7 @@ servers = {
                     },
                 },
             'plugins':{
-                'testbot.TestPlugin': {'other':'itchy'}
+                'deathmatch.TestPlugin': {'other':'itchy'}
                 },
             'plugins_dir': "./core/tests/plugins",
             },
