@@ -6,8 +6,7 @@
 from twisted.trial.unittest import TestCase as TwistedTestCase
 from twisted.internet import defer
 
-from core import events
-import ircbot
+from lalita import dispatcher, events, ircbot
 
 server = dict(
     encoding='utf8',

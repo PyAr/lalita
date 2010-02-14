@@ -1,8 +1,59 @@
-There's no install. You just run the bot from the directory where you get it.
+QUICK HOWTO
+-----------
+
+This package has a setuptools compatible setup.py file.
+If all requirements are met, just follow the usual steps, e.g.
+
+python setup.py install -- to install it into the site-packages folder
+
+Alternatively, you can run the bot directly from the directory where you get it.
+
 Just a couple of things:
 
  * Depends on twisted (more specificaly, twisted words) and python-pysqlite2.
 
+ * Sqlite3 has to be installed (specifically its headers).
+
  * url.Url plugin depends on Beautiful Soup v3.1.0.1 or similar (just check that
    XHTML_ENTITIES exist), python-magic and python-chardet (and twisted web, just
    in case you installed a partial twisted).
+
+ * All dependencies but python-magic are automatically installed by the setup
+   script upon installation.
+
+
+BUILD STEPS
+-----------
+
+For building the package without installing, choose any of the following:
+
+a. Build the package
+
+	python setup.py build
+
+b. Build a binary distribution
+
+	python setup.py bdist
+
+c. Build a source distribution
+
+	python setup.py sdist
+
+d. Build an .egg file 
+
+	python setup.py bdist_egg
+
+
+INSTALL STEPS
+-------------
+
+For installing on a completely clean system, follow the steps (as root):
+
+1. Install sqlite3 headers
+
+	apt-get install libsqlite3-dev
+
+2. Build and install the package
+
+	python setup.py install
+

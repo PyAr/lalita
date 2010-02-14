@@ -17,13 +17,14 @@ servers = {
                 '#perrites': dict (
                     lang='en',
                     plugins={
-                        'seen.Seen': {'base_dir':'<path/to/shelves_dir>'}, # two shelf's are going to be created (iolog and saylog) 
+                        # two shelves are going to be created (iolog and saylog)
+                        'lalita.plugins.seen.Seen': {'base_dir':'<path/to/shelves_dir>'},
                 }),
             },
             plugins= {
                 # 'url.Url': { },
                 # 'seen.Seen': { },
-                'misc.Ping': { },
+                'lalita.plugins.misc.Ping': { },
             },
         ),
         'example': dict (
@@ -34,7 +35,7 @@ servers = {
                 '#humites': dict(plugins={}),
             },
             plugins= {
-                'example.Example': { },
+                'lalita.plugins.example.Example': { },
             },
         ),
         'private-server': dict (
@@ -47,7 +48,7 @@ servers = {
                 '#humites': dict(plugins={}),
             },
             plugins= {
-                'example.Example': { },
+                'lalita.plugins.example.Example': { },
             },
         ),
         'freenode': dict (
@@ -65,10 +66,10 @@ servers = {
                 }),
             },
             plugins= {
-                'freenode.Register': { 'password': 'zaraza' },
-                'url.Url': { },
-                'seen.Seen': { },
-                'misc.Ping': { },
+                'lalita.plugins.freenode.Register': { 'password': 'zaraza' },
+                'lalita.plugins.url.Url': { },
+                'lalita.plugins.seen.Seen': { },
+                'lalita.plugins.misc.Ping': { },
             },
         ),
         'perrito':{
@@ -79,27 +80,27 @@ servers = {
             'channels':{
                 '#humites':{
                     'plugins':{
-                        'url.Url': dict (
+                        'lalita.plugins.url.Url': dict (
                             database= 'url_public',
                         ),
-                        'seen.Seen': {},
+                        'lalita.plugins.seen.Seen': {},
                     },
                     'encoding': 'utf8',
                     },
                 '#perrites':{
                     'encoding': 'utf8',
                     'plugins':{
-                        'url.Url': dict (
+                        'lalita.plugins.url.Url': dict (
                             database= 'url_perrites_private',
                         ),
                     },
                     },
                 },
             'plugins':{
-                'url.Url': dict (
+                'lalita.plugins.url.Url': dict (
                     database= 'url_public',
                 ),
-                'seen.Seen': {},
+                'lalita.plugins.seen.Seen': {},
                 }
             },
         'testbot-a':{
@@ -113,9 +114,9 @@ servers = {
                     },
                 },
             'plugins':{
-                'deathmatch.TestPlugin': {'other': 'scratchy'}
+                'lalita.plugins.deathmatch.TestPlugin': {'other': 'scratchy'}
                 },
-            'plugins_dir': "./core/tests/plugins",
+            'plugins_dir': "./src/lalita/core/tests/plugins",
             },
         'testbot-b':{
             'encoding': 'utf8',
@@ -128,9 +129,9 @@ servers = {
                     },
                 },
             'plugins':{
-                'deathmatch.TestPlugin': {'other':'itchy'}
+                'lalita.plugins.deathmatch.TestPlugin': {'other':'itchy'}
                 },
-            'plugins_dir': "./core/tests/plugins",
+            'plugins_dir': "./src/lalita/core/tests/plugins",
             },
         'perrito1':{
             'encoding': 'utf8',
@@ -139,15 +140,15 @@ servers = {
             'nickname' : "lolita",
                 'channels':{
                     '#humites':{
-                        'plugins':{ 'Log':{} },
+                        'plugins':{ 'lalita.plugins.Log':{} },
                         'encoding': 'utf8',
                         },
                     '#perrites':{
-                        'plugins':{ 'Log':{} }
+                        'plugins':{ 'lalita.plugins.Log':{} }
                         }
                     },
                 'plugins':{
-                    'Log': {}
+                    'lalita.plugins.Log': {}
                     }
                 },
         'pyar2':{
@@ -157,12 +158,12 @@ servers = {
             'nickname' : "apu",
             'channels':{
                 'pyar':{
-                    'plugins':{ 'Log':{} },
+                    'plugins':{ 'lalita.plugins.Log':{} },
                     'encoding': 'utf8',
                     },
                 },
             'plugins':{
-                'Log': {}
+                'lalita.plugins.Log': {}
                 }
             },
         'javito':{
@@ -173,7 +174,7 @@ servers = {
             'channels':{
                 '#humites':{
                     'plugins':{
-                        'randomer.Randomer': dict (
+                        'lalita.plugins.randomer.Randomer': dict (
                             database= 'url_public',
                         )
                     },

@@ -7,6 +7,7 @@
 # This is not a standard test case, but a special plugin that expect
 # to be instantiated twice to talk to each other
 
+
 from lalita import Plugin
 
 

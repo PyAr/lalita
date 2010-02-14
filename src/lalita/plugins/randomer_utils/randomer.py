@@ -4,14 +4,18 @@
 # License: GPL v3
 # For further info, see LICENSE file
 
+import os
+import pkg_resources
 import re
 import sqlite3
 from random import random, randrange
-import os
 
-puaj_path = os.path.dirname(__file__)
+if pkg_resources.resource_exists(__name__, 'logs.sqlite'):
+    db_filename = pkg_resources.resource_filename(__name__, 'logs.sqlite')
+else:
+    db_filename = 'logs.sqlite'
 
-conn = sqlite3.connect(os.path.join(puaj_path,'logs.sqlite'))
+conn = sqlite3.connect(db_filename)
 cursor = conn.cursor()
 
 def magic(line):
@@ -25,7 +29,7 @@ try:
     cursor.execute("""create table logs (id integer primary key, next integer, whom text, txt text, magic real)""")
     pattern = re.compile('\d\d:\d\d <.([^>]*)> (.*)')
     personal_pattern = re.compile('[^:]*:(.*)')
-    logs = file(os.path.join(puaj_path,'#pyar.log')).read()
+    logs = pkg_resources.resource_string(__name__, '#pyar.log')
     matchs = re.findall(pattern,logs)
     matchs.reverse()
     for name,match in matchs:

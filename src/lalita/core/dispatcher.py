@@ -13,7 +13,7 @@ from twisted.internet import defer
 import logging
 logger = logging.getLogger ('ircbot.core.dispatcher')
 
-from core import events, flowcontrol
+from . import events, flowcontrol
 
 # messages longer than this will be splitted in different server commands
 LENGTH_MSG = 512

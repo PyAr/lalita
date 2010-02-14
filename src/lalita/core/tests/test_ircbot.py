@@ -3,16 +3,8 @@
 # For further info, see LICENSE file
 
 import unittest
-import re
 
-from collections import defaultdict
-from twisted.trial.unittest import TestCase as TwistedTestCase
-from twisted.internet import defer, reactor
-
-from core import events
-from core import dispatcher
-from core import Plugin
-import ircbot
+from lalita import ircbot
 
 server = dict(
     encoding = 'utf8',
