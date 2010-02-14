@@ -4,10 +4,6 @@
 
 # based on irc client example, Copyright (c) 2001-2004 Twisted Matrix Laboratories.
 
-# twisted imports
-from twisted.words.protocols import irc
-from twisted.internet import reactor, protocol, ssl
-
 # system imports
 import sys
 import logging
@@ -17,7 +13,6 @@ from traceback import print_exc
 
 # twisted imports
 from twisted.internet import reactor, protocol, ssl
-from twisted.python import log
 from twisted.words.protocols import irc
 
 # local imports
