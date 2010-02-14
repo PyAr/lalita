@@ -18,7 +18,7 @@ servers = {
                     lang='en',
                     plugins={
                         # two shelves are going to be created (iolog and saylog)
-                        'lalita.plugins.seen.Seen': {'base_dir':'<path/to/shelves_dir>'},
+                        'lalita.plugins.seen.Seen': {'base_dir':'/tmp'},
                 }),
             },
             plugins= {
