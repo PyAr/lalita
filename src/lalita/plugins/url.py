@@ -56,7 +56,7 @@ class Url (Plugin):
     def initDb (self):
         # sqlite stuff
         basedir = self.config.get('basedir', 'db')
-        if not os.path.exist(basedir):
+        if not os.path.exists(basedir):
             os.mkdir(basedir)
         db = os.path.join(basedir, self.config.get('database', 'url.db'))
         self.logger.debug('connecting to %r', db)
