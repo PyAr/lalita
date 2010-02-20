@@ -12,7 +12,7 @@ servers = {
             lang='es',
             channels= {
                 '#humites': dict (plugins={
-                    'url.Url': { },
+                    'lalita.plugins.url.Url': { },
                 }),
                 '#perrites': dict (
                     lang='en',

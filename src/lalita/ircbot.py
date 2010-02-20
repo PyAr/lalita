@@ -51,6 +51,7 @@ class IrcBot (irc.IRCClient):
         else:
             path = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),
                                 'plugins')
+        logger.debug("Adding plugin's path %r", path)
         sys.path.append(path)
 
         modname, klassname= plugin_name.rsplit ('.', 1)

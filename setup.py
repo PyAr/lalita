@@ -35,6 +35,6 @@ setup(
         'chardet',
         'pyopenssl',
         'pysqlite',
-#        'twisted',
+        'twisted',
     ],
 )
