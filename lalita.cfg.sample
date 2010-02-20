@@ -116,7 +116,7 @@ servers = {
             'plugins':{
                 'lalita.plugins.deathmatch.TestPlugin': {'other': 'scratchy'}
                 },
-            'plugins_dir': "./src/lalita/core/tests/plugins",
+            'plugins_dir': "./lalita/core/tests/plugins",
             },
         'testbot-b':{
             'encoding': 'utf8',
@@ -131,7 +131,7 @@ servers = {
             'plugins':{
                 'lalita.plugins.deathmatch.TestPlugin': {'other':'itchy'}
                 },
-            'plugins_dir': "./src/lalita/core/tests/plugins",
+            'plugins_dir': "./lalita/core/tests/plugins",
             },
         'perrito1':{
             'encoding': 'utf8',
