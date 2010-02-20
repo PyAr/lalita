@@ -1,12 +1,10 @@
+#!/usr/bin/env python
+
 # Copyright 2009 laliputienses
 # License: GPL v3
 # For further info, see LICENSE file
 
 # based on irc client example, Copyright (c) 2001-2004 Twisted Matrix Laboratories.
-
-# twisted imports
-from twisted.words.protocols import irc
-from twisted.internet import reactor, protocol, ssl
 
 # system imports
 import sys
@@ -15,16 +13,12 @@ import os.path
 import optparse
 from traceback import print_exc
 
-# if we're in production, this should work and no magic is necessary
-try:
-    import lalita
-except ImportError:
-    import core
-    sys.modules["lalita"] = core
+# twisted imports
+from twisted.internet import reactor, protocol, ssl
+from twisted.words.protocols import irc
 
 # local imports
-from core import events
-from core import dispatcher
+from lalita import dispatcher, events
 
 LOG_LEVELS = {
     "debug": logging.DEBUG,
@@ -43,6 +37,7 @@ logger = logging.getLogger('ircbot')
 logger.addHandler(log_stdout_handler)
 logger.setLevel(logging.DEBUG)
 
+
 class IrcBot (irc.IRCClient):
     """A IRC bot."""
     def __init__ (self, *more):
@@ -56,12 +51,13 @@ class IrcBot (irc.IRCClient):
         else:
             path = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),
                                 'plugins')
+        logger.debug("Adding plugin's path %r", path)
         sys.path.append(path)
 
-        modname, klassname= plugin_name.split ('.')
+        modname, klassname= plugin_name.rsplit ('.', 1)
         loglvl = self.config["log_config"].get(plugin_name)
         try:
-            module = __import__(modname)
+            module = __import__(modname, globals(), locals(), [''])
             klass = getattr(module, klassname)
             instance = klass(params, loglvl)
             self.dispatcher.new_plugin(instance, channel)
@@ -300,9 +296,10 @@ def main(to_use, plugin_loglvl, manhole_opts=None):
 
 if __name__ == '__main__':
     msg = """
-  ircbot.py [-t][-a][-o output_loglvl][-p plugins_loglvl]
+  ircbot.py config_filename [-t][-a][-o output_loglvl][-p plugins_loglvl]
             [-f fileloglvl][-n logfname] [server1, [...]]
 
+  the config_filename is required
   the servers are optional if -a is passed
   the output_loglevel is the log level for the standard output
   the file_loglevel is the log level for the output that goes to file
@@ -347,8 +344,15 @@ if __name__ == '__main__':
     test = bool(options.test)
     all_servers = bool(options.all_servers)
 
+    # control the configuration file
+    if len(args) < 1:
+        parser.print_help()
+        exit()
+    else:
+        config_filename = args[0]
+
     # control the servers
-    if not args and not all_servers and not test:
+    if len(args) < 2 and not all_servers and not test:
         parser.print_help()
         exit()
 
@@ -382,10 +386,11 @@ if __name__ == '__main__':
             raise
 
     try:
-        import config
+        config = {}
+        execfile(config_filename, config)
     except ImportError:
         print "A config file is needed to run this program."
-        print "See as an example the included here config.py.example"
+        print "See as an example the included here lalita.cfg.sample"
         sys.exit()
 
     # handles the log file and its level
@@ -409,13 +414,13 @@ if __name__ == '__main__':
     logger.addHandler(fh)
 
     # get all servers or the indicated ones
-    servers = config.servers
+    servers = config.get('servers', {})
     if all_servers:
         to_use = [v for k,v in servers.items() if not k.startswith("testbot")]
     elif test:
         to_use = [servers[x] for x in ("testbot-a", "testbot-b")]
     else:
-        to_use = [servers[x] for x in args]
+        to_use = [servers[x] for x in args[1:]]
 
     if options.manhole:
         manhole_opts = dict(user=options.manhole_user,

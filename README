@@ -18,7 +18,10 @@ The project page is
 
   https://edge.launchpad.net/lalita
 
-To run the bot, rename config.py.examples to config.py and run ircbot.py
+To run the bot, create a config file (you can use the sample lalita.cfg.sample)
+as a guideline, and run
+
+ircbot.py -c <configfile> <server>
 
 There're a lot of test cases! You can try them running "nosetests" (you 
 need to have Nose installed).
@@ -56,3 +59,16 @@ This will drop you in a python shell:
 
 WARNING: this is a potential security hole if the port 2222 (or the one you 
 configure with --manhole-port) is accesible from internet or other machines.
+
+
+How to run lalita without installing
+------------------------------------
+
+Change directory into "./src", and run:
+
+    PYTHONPATH=. python lalita/ircbot.py
+
+For example, setting logs in debug mode, pointing to the sample 
+configuration, and choosing a server in localhost:
+
+    PYTHONPATH=. python lalita/ircbot.py -o DEBUG ../lalita.cfg.sample localhost

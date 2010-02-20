@@ -4,13 +4,13 @@
 # License: GPL v3
 # For further info, see LICENSE file
 
-from core import events
-
+from lalita import events
 from .helper import PluginTest
+
 
 class TestPing(PluginTest):
     def setUp(self):
-        self.init("misc.Ping")
+        self.init("lalita.plugins.misc.Ping")
 
     def test_ping(self):
         '''Test ping.'''

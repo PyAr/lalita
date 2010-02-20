@@ -4,19 +4,18 @@
 # License: GPL v3
 # For further info, see LICENSE file
 
-from core import events
-
-from .helper import PluginTest
-
 import os
 import re
 import shutil
 import tempfile
 
+from lalita import events
+from .helper import PluginTest
+
 
 class TestLog(PluginTest):
     def setUp(self):
-        self.init("seen.Seen")
+        self.init("lalita.plugins.seen.Seen")
 
     def test_joined(self):
         '''Logs joined.'''
@@ -51,7 +50,7 @@ class TestLog(PluginTest):
 
 class TestSeen(PluginTest):
     def setUp(self):
-        self.init("seen.Seen")
+        self.init("lalita.plugins.seen.Seen")
 
     def test_missing(self):
         '''User asks about nothing.'''
@@ -176,7 +175,7 @@ class TestSeen(PluginTest):
 
 class TestLast(PluginTest):
     def setUp(self):
-        self.init("seen.Seen")
+        self.init("lalita.plugins.seen.Seen")
 
     def test_missing(self):
         '''User asks about nothing.'''
@@ -292,7 +291,7 @@ class TestLogPersistent(TestLog):
     def setUp(self):
         self.base_dir = tempfile.mktemp()
         os.makedirs(self.base_dir)
-        self.init("seen.Seen", {'base_dir':self.base_dir})
+        self.init("lalita.plugins.seen.Seen", {'base_dir':self.base_dir})
 
     def tearDown(self):
         shutil.rmtree(self.base_dir)
@@ -303,7 +302,7 @@ class TestSeenPersistent(TestSeen):
     def setUp(self):
         self.base_dir = tempfile.mktemp()
         os.makedirs(self.base_dir)
-        self.init("seen.Seen", {'base_dir':self.base_dir})
+        self.init("lalita.plugins.seen.Seen", {'base_dir':self.base_dir})
 
     def tearDown(self):
         shutil.rmtree(self.base_dir)
@@ -314,7 +313,7 @@ class TestLastPersistent(TestLast):
     def setUp(self):
         self.base_dir = tempfile.mktemp()
         os.makedirs(self.base_dir)
-        self.init("seen.Seen", {'base_dir':self.base_dir})
+        self.init("lalita.plugins.seen.Seen", {'base_dir':self.base_dir})
 
     def tearDown(self):
         shutil.rmtree(self.base_dir)
