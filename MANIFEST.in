@@ -1,0 +1,2 @@
+include README gpl-3.0.txt INSTALL lalita.cfg.sample LICENSE
+recursive-include docs *

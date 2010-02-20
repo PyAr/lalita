@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from setuptools import setup, find_packages
+from distutils.core import setup
 
 setup(
     # metadata
@@ -24,16 +24,13 @@ setup(
 
     # content
     package_dir={'': 'src'},
-    packages=find_packages('src',
-        exclude=['*.tests', '*.tests.*', 'tests.*', 'tests']),
-    include_package_data=True,
+    packages=['lalita', 'lalita.core', 'lalita.plugins'],
 
     # scripts
     scripts=['src/lalita/ircbot.py'],
 
     # dependencies
-    setup_requires=['setuptools>=0.6c10', 'setuptools-bzr'],
-    install_requires=[
+    requires=[
         'beautifulsoup',
         'chardet',
         'pyopenssl',

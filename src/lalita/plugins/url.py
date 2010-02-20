@@ -4,7 +4,9 @@
 # License: GPL v3
 # For further info, see LICENSE file
 
+import os
 import re
+
 from twisted.web import client
 from twisted.internet import defer, reactor
 from twisted.python import failure
@@ -53,10 +55,13 @@ class Url (Plugin):
     ##### database handling #####
     def initDb (self):
         # sqlite stuff
-        db= 'db/'+self.config.get ('database', 'url.db')
-        self.logger.debug ('connecting to '+db)
-        self.conn= sqlite3.connect (db)
-        self.cursor= self.conn.cursor ()
+        basedir = self.config.get('basedir', 'db')
+        if not os.path.exists(basedir):
+            os.mkdir(basedir)
+        db = os.path.join(basedir, self.config.get('database', 'url.db'))
+        self.logger.debug('connecting to %r', db)
+        self.conn = sqlite3.connect(db)
+        self.cursor = self.conn.cursor()
 
         self.cursor.execute ('''create table if not exists url (
             id integer primary key autoincrement,

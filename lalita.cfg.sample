@@ -12,13 +12,13 @@ servers = {
             lang='es',
             channels= {
                 '#humites': dict (plugins={
-                    'url.Url': { },
+                    'lalita.plugins.url.Url': { },
                 }),
                 '#perrites': dict (
                     lang='en',
                     plugins={
                         # two shelves are going to be created (iolog and saylog)
-                        'lalita.plugins.seen.Seen': {'base_dir':'<path/to/shelves_dir>'},
+                        'lalita.plugins.seen.Seen': {'base_dir':'/tmp'},
                 }),
             },
             plugins= {
@@ -114,7 +114,7 @@ servers = {
                     },
                 },
             'plugins':{
-                'lalita.plugins.testbot.TestPlugin': {'other': 'scratchy'}
+                'lalita.plugins.deathmatch.TestPlugin': {'other': 'scratchy'}
                 },
             'plugins_dir': "./src/lalita/core/tests/plugins",
             },
@@ -129,7 +129,7 @@ servers = {
                     },
                 },
             'plugins':{
-                'lalita.plugins.testbot.TestPlugin': {'other':'itchy'}
+                'lalita.plugins.deathmatch.TestPlugin': {'other':'itchy'}
                 },
             'plugins_dir': "./src/lalita/core/tests/plugins",
             },

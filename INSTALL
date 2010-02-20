@@ -57,3 +57,8 @@ For installing on a completely clean system, follow the steps (as root):
 
 	python setup.py install
 
+
+HOW TO RUN WITHOUT INSTALLING
+-----------------------------
+
+Check the README file!

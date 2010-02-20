@@ -112,7 +112,8 @@ tenemos que cambiar algo del texto porque instalado así se usa distinto.*
 
 *FIXME: re-redactar esto! tenemos que arrancar con los tres pasos para
 hacerlo funcionar, y luego explicamos qué es cada cosa, de manera que le
-sirva también a aquellos que no quieren leer.*
+sirva también a aquellos que no quieren leer.  Para hacerla más fácil
+daremos un ejemplo que se conecte a freenode.*
 
 Entrando al directorio donde está el proyecto, hay tres archivos que tenemos
 que considerar para probar el ejemplo.
@@ -129,8 +130,8 @@ que considerar para probar el ejemplo.
   veremos aquí mismo cómo hacer uno básico que nos sirva para probar
   el ejemplo.
 
-La configuración no es más que un diccionario Python con toda la info
-necesaria.  Aquí mostramos una configuración muy sencilla... pueden ver
+La configuración no es más que un diccionario Python con toda la información
+necesaria.  Aquí mostramos una configuración muy sencilla. Pueden ver
 el ``config.py.example`` para otras configuraciones, y abajo en este
 mismo documento para más explicaciones.
 
@@ -153,8 +154,9 @@ En nuestro caso usaremos::
 En este caso tenemos un sólo server configurado, llamado ``example``,
 apuntando a localhost en el puerto 6667 (lo más fácil para probar ejemplos
 y desarrollar nuestro propio plugin es instalar un servidor de IRC en la
-propia computadora... yo utilizo ``dancer-ircd``, más que nada porque al
-instalarlo ya queda funcionando como queremos y no hay que configurar nada).
+propia computadora. Por ejemplo, se puede utilizar ``dancer-ircd``,
+principalmente porque al instalarlo ya queda funcionando como queremos y
+no hay que realizar configuraciones adicionales).
 
 En la configuración decimos que el nick del bot será ``examplia``, y
 utilizará UTF-8 como encoding, y nos conectaremos al canal ``#humites``,
@@ -291,6 +293,8 @@ muestre las próximas 5 lineas encoladas, y así hasta que se acabe lo
 encolado, el usuario diga otra cosa, o pase un determinado tiempo que hace
 caducar a la cola de respuestas.
 
+*FIXME: indicar cómo se configura ese "5" para que no sea mágico.*
+
 
 ¿Cuales son los eventos que podemos recibir?
 ============================================
@@ -369,6 +373,7 @@ siguientes lineas::
     self.register(self.events.COMMAND, self.multiply, ("mult", "multiply"))
     self.register(self.events.COMMAND, self.divide, ("div",))
 
+*FIXME: no hay ejemplo para "varios métodos para un determinado comando".*
 
 
 Filtrando los mensajes
@@ -420,6 +425,9 @@ Para activarla, sólo tenemos que hacer::
 
         self.set_options(automatic_command=True)
 
+*FIXME: no vamos a tener set_options, todas las opciones serán manejadas
+desde la config.*
+
 De esta manera, todos los eventos ``TALKED_TO_ME`` y ``PRIVATE_MESSAGE``
 que tengan un mensaje que comiencen con un comando registrado, serán
 modificados y enviados al plugin como si hubiese sido justamente una
@@ -449,7 +457,7 @@ recomienda que el texto sea siempre una cadena Unicode, incluso si en
 el mensaje no estamos utilizando caracteres no ASCII.
 
 Si queremos componer el mensaje con algunos parámetros (como el nombre
-del usuario o el resultado de la suma en el ejemplo anterior), debemos NO
+del usuario o el resultado de la suma en el ejemplo anterior), NO debemos
 hacer el reemplazo directamente, sino armar la cadena como corresponde y
 pasar los argumentos luego del texto.
 
@@ -537,6 +545,9 @@ Si necesitamos cualquiera de estas dos funcionalidades, debemos desactivar esta
 restricción, de la siguiente manera::
 
         self.set_options(free_talk=True)
+
+*FIXME: no vamos a tener set_options, todas las opciones serán manejadas
+desde la config.*
 
 Luego de esa configuración, podremos generar los mensajes que deseemos
 desde el plugin, a cualquier destino, y sin importar si nos hablaron
@@ -790,10 +801,6 @@ más serios, o cualquier combinación que nos plazca.
 
 Con *-n* (o *--log-filename*) especificamos en qué archivo queremos
 que se loguee la información que va a un archivo.
-
-
-*FIXME: agregar en algún lado una sección que explique todos los
-set_options, y que apunten al mismo cada vez que los mencionamos.*
 
 
 .. _IRC: http://es.wikipedia.org/wiki/Internet_Relay_Chat

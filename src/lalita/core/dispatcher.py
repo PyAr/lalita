@@ -199,7 +199,7 @@ class Dispatcher(object):
         return  finalmsg
 
     def _error(self, error, instance):
-        logger.debug("ERROR in instance %s: %s", instance, error)
+        logger.error("ERROR in instance %s: %s", instance, error)
         if instance in self._channel_filter:
             del self._channel_filter[instance]
 
@@ -284,7 +284,7 @@ class Dispatcher(object):
         return command in extra
 
     def handle_meta_help(self, user, channel, command, *args):
-        u"""Devuelve ayuda sobre una órden específica."""
+        u"""Devuelve ayuda sobre una orden específica."""
         if not args:
             txt = u'"list" para ver las órdenes; "help cmd" para cada uno'
             self.msg(channel, txt)

@@ -1,12 +1,10 @@
+#!/usr/bin/env python
+
 # Copyright 2009 laliputienses
 # License: GPL v3
 # For further info, see LICENSE file
 
 # based on irc client example, Copyright (c) 2001-2004 Twisted Matrix Laboratories.
-
-# twisted imports
-from twisted.words.protocols import irc
-from twisted.internet import reactor, protocol, ssl
 
 # system imports
 import sys
@@ -17,7 +15,6 @@ from traceback import print_exc
 
 # twisted imports
 from twisted.internet import reactor, protocol, ssl
-from twisted.python import log
 from twisted.words.protocols import irc
 
 # local imports
@@ -54,6 +51,7 @@ class IrcBot (irc.IRCClient):
         else:
             path = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),
                                 'plugins')
+        logger.debug("Adding plugin's path %r", path)
         sys.path.append(path)
 
         modname, klassname= plugin_name.rsplit ('.', 1)
@@ -79,7 +77,7 @@ class IrcBot (irc.IRCClient):
         params = {'nickname': self.nickname,
                   'encoding': self.encoding_server}
 
-        plugins= self.config.get('plugins', {})
+        plugins = self.config.get('plugins', {})
         logger.debug("server plugins: %s", plugins)
         for plugin, config in plugins.items():
             self.load_plugin(plugin, config, params)
@@ -89,10 +87,10 @@ class IrcBot (irc.IRCClient):
                   'encoding': self.encoding_channels.get('channel',
                                        self.encoding_server)}
 
-        plugins= self.config['channels'][channel].get ('plugins', {})
+        plugins = self.config['channels'][channel].get('plugins', {})
         logger.debug("channel plugins: %s", plugins)
         for plugin, config in plugins.items ():
-            self.load_plugin (plugin, config, params, channel)
+            self.load_plugin(plugin, config, params, channel)
 
     def connectionMade(self):
         self.config = self.factory.config
