@@ -3,16 +3,17 @@ from distutils.core import setup
 
 setup(
     # metadata
-    name='lalita',
-    version='0.1',
-    maintainer='laliputienses',
-    maintainer_email='',
-    description='Yet another IRC bot, one where new functionality is simple ' \
-                'to create just adding easy-to-write plugins.',
-    license='GNU GPL v3 ',
-    keywords=['irc', 'bot', 'twisted', 'plugin'],
-    url='https://launchpad.net/lalita/',
-    classifiers=[
+    name = 'lalita',
+    version = '0.1.1',
+    maintainer = 'laliputienses',
+    maintainer_email = '',
+    description = 'Yet another IRC bot, one where new functionality is simple ' \
+                  'to create just adding easy-to-write plugins.',
+    long_description = open('README.txt').read(),
+    license = 'GNU GPL v3',
+    keywords = ['irc', 'bot', 'twisted', 'plugin'],
+    url = 'https://launchpad.net/lalita/',
+    classifiers = [
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
         'Framework :: Twisted',
@@ -23,18 +24,20 @@ setup(
     ],
 
     # content
-    package_dir={'': 'src'},
-    packages=['lalita', 'lalita.core', 'lalita.plugins'],
+    packages = ['lalita', 'lalita.core', 'lalita.core.tests',
+                'lalita.core.tests.plugins', 'lalita.plugins',
+                'lalita.plugins.randomer_utils', 'lalita.plugins.tests'],
+    package_data = {
+        'lalita.plugins.randomer_utils': ['#pyar.log'],
+    },
 
     # scripts
-    scripts=['src/lalita/ircbot.py'],
+    scripts = ['lalita/ircbot.py'],
 
     # dependencies
-    requires=[
+    requires = [
+        'twisted',
         'beautifulsoup',
         'chardet',
-        'pyopenssl',
-        'pysqlite',
-        'twisted',
     ],
 )

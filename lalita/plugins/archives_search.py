@@ -2,8 +2,6 @@
 # License: GPL v3
 # For further info, see LICENSE file
 
-#import plugins.plugin
-
 import urllib
 from BeautifulSoup import BeautifulSoup, Tag
 
