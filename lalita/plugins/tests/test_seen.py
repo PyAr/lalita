@@ -291,7 +291,7 @@ class TestLogPersistent(TestLog):
     def setUp(self):
         self.base_dir = tempfile.mktemp()
         os.makedirs(self.base_dir)
-        self.init("lalita.plugins.seen.Seen", {'base_dir':self.base_dir})
+        self.init("lalita.plugins.seen.Seen", {'basedir':self.base_dir})
 
     def tearDown(self):
         shutil.rmtree(self.base_dir)
@@ -302,7 +302,7 @@ class TestSeenPersistent(TestSeen):
     def setUp(self):
         self.base_dir = tempfile.mktemp()
         os.makedirs(self.base_dir)
-        self.init("lalita.plugins.seen.Seen", {'base_dir':self.base_dir})
+        self.init("lalita.plugins.seen.Seen", {'basedir':self.base_dir})
 
     def tearDown(self):
         shutil.rmtree(self.base_dir)
@@ -313,7 +313,7 @@ class TestLastPersistent(TestLast):
     def setUp(self):
         self.base_dir = tempfile.mktemp()
         os.makedirs(self.base_dir)
-        self.init("lalita.plugins.seen.Seen", {'base_dir':self.base_dir})
+        self.init("lalita.plugins.seen.Seen", {'basedir':self.base_dir})
 
     def tearDown(self):
         shutil.rmtree(self.base_dir)
