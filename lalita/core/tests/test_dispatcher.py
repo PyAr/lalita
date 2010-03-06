@@ -71,14 +71,34 @@ class TestAddIRCCallback(unittest.TestCase):
         self.disp.add_irc_callback(numeric_to_symbolic.get(RPL_NAMREPLY), names)
         self.assertEqual(self.bot.irc_RPL_NAMREPLY, names)
 
+        # make sure to clean up
+        del self.bot.irc_RPL_NAMREPLY
+
+    def test_numeric_callback(self):
+        def names(self, *args):
+            pass
+
+        self.assertRaises(AttributeError, getattr, self.bot,
+            'irc_RPL_NAMREPLY')
+        self.disp.add_irc_callback(RPL_NAMREPLY, names)
+        self.assertEqual(self.bot.irc_RPL_NAMREPLY, names)
+
+        # make sure to clean up
+        del self.bot.irc_RPL_NAMREPLY
+
     def test_add_existing_callback(self):
         def join(self, *args):
             pass
+
+        _irc_JOIN = self.bot.irc_JOIN
 
         self.assertTrue(hasattr(self.bot, 'irc_JOIN'))
         self.assertNotEqual(self.bot.irc_JOIN, join)
         self.disp.add_irc_callback('JOIN', join)
         self.assertEqual(self.bot.irc_JOIN, join)
+
+        # make sure to clean up
+        self.bot.irc_JOIN = _irc_JOIN
 
 
 class TestRegister(unittest.TestCase):

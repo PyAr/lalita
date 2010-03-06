@@ -9,6 +9,7 @@ import functools
 import types
 
 from twisted.internet import defer
+from twisted.words.protocols.irc import numeric_to_symbolic
 
 import logging
 logger = logging.getLogger ('ircbot.core.dispatcher')
@@ -140,6 +141,7 @@ class Dispatcher(object):
 
         Callbacks are registered as irc_CALLBACK.
         '''
+        callback = numeric_to_symbolic.get(callback, callback)
         setattr(self.bot, "irc_%s" % callback, func)
 
     def register_translation(self, instance, table):
