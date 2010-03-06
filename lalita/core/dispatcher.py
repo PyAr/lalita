@@ -119,6 +119,7 @@ class Dispatcher(object):
     def new_plugin(self, plugin, channel):
         plugin.register = self.register
         plugin.register_translation = self.register_translation
+        plugin.add_irc_callback = self.add_irc_callback
         plugin.say = functools.partial(self._msg_from_plugin, plugin)
         logger.debug('plugin %s is in channel %s', plugin, channel)
         self._plugins[plugin] = channel
@@ -133,6 +134,13 @@ class Dispatcher(object):
         logger.debug('registering %s for event %s', func, event)
         instance = func.im_self
         self._callbacks.setdefault(event, []).append((instance, func, extra))
+
+    def add_irc_callback(self, callback, func):
+        '''Register a callback for an irc event.
+
+        Callbacks are registered as irc_CALLBACK.
+        '''
+        setattr(self.bot, "irc_%s" % callback, func)
 
     def register_translation(self, instance, table):
         '''Register translation table for a plugin.'''

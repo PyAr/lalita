@@ -8,6 +8,7 @@ import re
 from collections import defaultdict
 from twisted.trial.unittest import TestCase as TwistedTestCase
 from twisted.internet import defer, reactor
+from twisted.words.protocols.irc import RPL_NAMREPLY, numeric_to_symbolic
 
 from lalita import Plugin, dispatcher, events, ircbot
 
@@ -51,6 +52,33 @@ class Helper(object):
         pass
     def h(self):
         pass
+
+
+class TestAddIRCCallback(unittest.TestCase):
+    def setUp(self):
+        self.bot = bot
+        self.disp = dispatcher.Dispatcher(bot)
+        self.disp.init({})
+
+    def test_method_exists(self):
+        self.assertTrue(hasattr(self.disp, 'add_irc_callback'))
+
+    def test_add_nonexisting_callback(self):
+        def names(self, *args):
+            pass
+
+        self.assertRaises(AttributeError, getattr, self.bot, 'irc_RPL_NAMREPLY')
+        self.disp.add_irc_callback(numeric_to_symbolic.get(RPL_NAMREPLY), names)
+        self.assertEqual(self.bot.irc_RPL_NAMREPLY, names)
+
+    def test_add_existing_callback(self):
+        def join(self, *args):
+            pass
+
+        self.assertTrue(hasattr(self.bot, 'irc_JOIN'))
+        self.assertNotEqual(self.bot.irc_JOIN, join)
+        self.disp.add_irc_callback('JOIN', join)
+        self.assertEqual(self.bot.irc_JOIN, join)
 
 
 class TestRegister(unittest.TestCase):
