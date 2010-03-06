@@ -20,6 +20,8 @@ from twisted.words.protocols import irc
 # local imports
 from lalita import dispatcher, events
 
+COMMAND_CHAR = '@'
+
 LOG_LEVELS = {
     "debug": logging.DEBUG,
     "info": logging.INFO,
@@ -151,7 +153,7 @@ class IrcBot (irc.IRCClient):
             if msg[0] in (":", " ", ","):
                 msg = msg[1:].strip()
                 self.dispatcher.push(events.TALKED_TO_ME, user, channel, msg)
-        elif msg[0] == '@':
+        elif msg[0] == COMMAND_CHAR:
             args = msg.split()
             command = args.pop(0)[1:]
             self.dispatcher.push(events.COMMAND, user, channel, command, *args)
@@ -293,6 +295,10 @@ def main(to_use, plugin_loglvl, manhole_opts=None):
         start_manhole(**manhole_opts)
     reactor.run()
 
+def set_global_configuration(config):
+    global COMMAND_CHAR
+    COMMAND_CHAR = config.command_char
+
 
 if __name__ == '__main__':
     msg = """
@@ -430,4 +436,5 @@ if __name__ == '__main__':
     else:
         manhole_opts = None
 
+    set_global_configuration(config)
     main(to_use, plugins_loglvl, manhole_opts=manhole_opts)
