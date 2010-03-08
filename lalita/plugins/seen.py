@@ -22,9 +22,10 @@ TRANSLATION_TABLE = {u"%s: acástoi, papafrita!": { 'en': u"%s: I'm here!"},
 class Seen(Plugin):
     '''Plugin that implements the "seen" and "last" commands.'''
     def init(self, config):
-        base = config.get('base_dir', None)
+        base = config.get('basedir', None)
         self.register_translation(self, TRANSLATION_TABLE)
         if base is not None:
+            base = os.path.join(base, config.get('channel_folder', ''))
             if not os.path.exists(base):
                 os.makedirs(base)
             self.iolog = shelve.open(os.path.join(base, 'iolog'))
