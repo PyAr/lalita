@@ -152,6 +152,24 @@ class TestMessages(TestBase):
         self.check_pushed(events.PUBLIC_MESSAGE, "user", "chnl", "blah")
         return self.deferred
 
+    def test_privmsg_command_char(self):
+        '''Calling bot.privmsg with custom command char'''
+        # set up command char config
+        _COMMAND_CHAR = ircbot.COMMAND_CHAR
+
+        # set custom command char
+        config = type('config', (object,), {'command_char': '!'})
+        ircbot.set_global_configuration(config)
+
+        # call command and test
+        bot.privmsg("user", "chnl", "!cmd foo")
+        self.check_pushed(events.COMMAND, "user", "chnl", "cmd", "foo")
+
+        # cleanup
+        ircbot.COMMAND_CHAR = _COMMAND_CHAR
+
+        return self.deferred
+
     def test_action(self):
         '''Calling bot.action'''
         bot.action("user!foo!bar", "chnl", "blah")

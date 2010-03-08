@@ -4,6 +4,10 @@
 # License: GPL v3
 # For further info, see LICENSE file
 
+# Global Configuration Settings
+command_char = '@'
+
+# Servers Configuration Settings
 servers = {
         'localhost': dict (
             encoding='utf8',

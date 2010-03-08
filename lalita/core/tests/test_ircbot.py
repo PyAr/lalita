@@ -113,3 +113,12 @@ class TestConfiguration(unittest.TestCase):
         self.bot.load_channel_plugins("#testchn3")
         self.assertEqual(self.results, [])
 
+    def test_set_global_configuration(self):
+        _COMMAND_CHAR = ircbot.COMMAND_CHAR
+
+        config = type('config', (object,), {'command_char': '!'})
+        ircbot.set_global_configuration(config)
+        self.assertEqual(ircbot.COMMAND_CHAR, '!')
+
+        ircbot.COMMAND_CHAR = _COMMAND_CHAR
+
