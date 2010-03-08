@@ -10,7 +10,7 @@ from .helper import PluginTest
 
 class TestPing(PluginTest):
     def setUp(self):
-        self.init("lalita.plugins.misc.Ping")
+        self.init(client_plugin=("lalita.plugins.misc.Ping", {}, "channel"))
 
     def test_ping(self):
         '''Test ping.'''
