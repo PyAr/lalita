@@ -9,6 +9,7 @@ import functools
 import types
 
 from twisted.internet import defer
+from twisted.words.protocols.irc import numeric_to_symbolic
 
 import logging
 logger = logging.getLogger ('ircbot.core.dispatcher')
@@ -119,6 +120,7 @@ class Dispatcher(object):
     def new_plugin(self, plugin, channel):
         plugin.register = self.register
         plugin.register_translation = self.register_translation
+        plugin.add_irc_callback = self.add_irc_callback
         plugin.say = functools.partial(self._msg_from_plugin, plugin)
         logger.debug('plugin %s is in channel %s', plugin, channel)
         self._plugins[plugin] = channel
@@ -133,6 +135,14 @@ class Dispatcher(object):
         logger.debug('registering %s for event %s', func, event)
         instance = func.im_self
         self._callbacks.setdefault(event, []).append((instance, func, extra))
+
+    def add_irc_callback(self, callback, func):
+        '''Register a callback for an irc event.
+
+        Callbacks are registered as irc_CALLBACK.
+        '''
+        callback = numeric_to_symbolic.get(callback, callback)
+        setattr(self.bot, "irc_%s" % callback, func)
 
     def register_translation(self, instance, table):
         '''Register translation table for a plugin.'''
@@ -244,13 +254,19 @@ class Dispatcher(object):
         else:
             channel= None
 
+        # get all the useful plugins! to avoid duplicate calls, when there's
+        # more than one instance that registered the same method for the
+        # same event, just choose one
+        useful = {}
         for instance, regist, extra in all_registered:
-            # see if the instances can listen in the channels
             allowed_channel = self._plugins[instance]
-            if allowed_channel is not None:
-                if channel is not None and channel != allowed_channel:
-                    continue
+            # server messages go everywhere, or it's a channel message and
+            # we're allowed
+            if channel is None or \
+               channel == allowed_channel:
+                useful[regist.im_func] = (instance, regist, extra)
 
+        for instance, regist, extra in useful.values():
             # check "extra" restrictions
             if event in MAP_EVENTS:
                 meth = getattr(self, "handle_" + MAP_EVENTS[event])

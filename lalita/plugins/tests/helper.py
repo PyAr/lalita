@@ -17,8 +17,16 @@ class PluginTest(unittest.TestCase):
         plugins_dir="plugins",
     )
 
-    def init(self, plugin_name, config={}):
-        self.test_server["plugins"] = { plugin_name: config }
+    def init(self, client_plugin=None, server_plugin=None):
+        if client_plugin is not None:
+            (plugin_name, config, channel) = client_plugin
+            self.test_server["channels"] = { channel : { 'plugins' :
+                                                    { plugin_name: config }}}
+
+        if server_plugin is not None:
+            (plugin_name, config) = server_plugin
+            self.test_server["plugins"] = { plugin_name: config }
+
         self.test_server["log_config"] = { plugin_name: "error" }
         ircbot.logger.setLevel("error")
         ircbot_factory = ircbot.IRCBotFactory(self.test_server)
@@ -28,7 +36,14 @@ class PluginTest(unittest.TestCase):
         self.bot.nickname = "TestBot"
         self.bot.encoding_server = "utf-8"
         self.bot.encoding_channels = {}
-        self.bot.load_server_plugins()
+
+        if client_plugin is not None:
+            (plugin_name, config, channel) = client_plugin
+            self.bot.load_channel_plugins(channel)
+
+        if server_plugin is not None:
+            self.bot.load_server_plugins()
+
         # configure the dispatcher
         self.bot.dispatcher.init(self.bot.config)
 

@@ -8,32 +8,37 @@ import re
 from collections import defaultdict
 from twisted.trial.unittest import TestCase as TwistedTestCase
 from twisted.internet import defer, reactor
+from twisted.words.protocols.irc import RPL_NAMREPLY, numeric_to_symbolic
 
 from lalita import Plugin, dispatcher, events, ircbot
 
-server = dict(
-    encoding='utf8',
-    host="0.0.0.0",
-    port=6667,
-    nickname="test",
-    channels=defaultdict(lambda: {}),
-    plugins={},
-)
 
-ircbot_factory = ircbot.IRCBotFactory(server)
-ircbot.logger.setLevel("error")
-bot = ircbot.IrcBot()
-bot.factory = ircbot_factory
-bot.config = ircbot_factory.config
-bot.msg = lambda *a:None
+class Base(TwistedTestCase):
+    """Base class that setups a bot."""
 
-MY_NICKNAME = server['nickname']
+    def setUp(self):
+        server = dict(
+            encoding='utf8',
+            host="0.0.0.0",
+            port=6667,
+            nickname="test",
+            channels=defaultdict(lambda: {}),
+            plugins={},
+        )
+
+        ircbot_factory = ircbot.IRCBotFactory(server)
+        ircbot.logger.setLevel("error")
+        self.bot = ircbot.IrcBot()
+        self.bot.factory = ircbot_factory
+        self.bot.config = ircbot_factory.config
+        self.bot.msg = lambda *a:None
 
 
-class EasyDeferredTests(TwistedTestCase):
+class EasyDeferredTests(Base):
     '''Base class for deferred tests.'''
 
     def setUp(self):
+        Base.setUp(self)
         self.deferred = defer.Deferred()
         self.timeout = 1
 
@@ -53,9 +58,57 @@ class Helper(object):
         pass
 
 
-class TestRegister(unittest.TestCase):
+class TestAddIRCCallback(Base):
     def setUp(self):
-        self.disp = dispatcher.Dispatcher(bot)
+        Base.setUp(self)
+        self.disp = dispatcher.Dispatcher(self.bot)
+        self.disp.init({})
+
+    def test_method_exists(self):
+        self.assertTrue(hasattr(self.disp, 'add_irc_callback'))
+
+    def test_add_nonexisting_callback(self):
+        def names(self, *args):
+            pass
+
+        self.assertRaises(AttributeError, getattr, self.bot, 'irc_RPL_NAMREPLY')
+        self.disp.add_irc_callback(numeric_to_symbolic.get(RPL_NAMREPLY), names)
+        self.assertEqual(self.bot.irc_RPL_NAMREPLY, names)
+
+        # make sure to clean up
+        del self.bot.irc_RPL_NAMREPLY
+
+    def test_numeric_callback(self):
+        def names(self, *args):
+            pass
+
+        self.assertRaises(AttributeError, getattr, self.bot,
+            'irc_RPL_NAMREPLY')
+        self.disp.add_irc_callback(RPL_NAMREPLY, names)
+        self.assertEqual(self.bot.irc_RPL_NAMREPLY, names)
+
+        # make sure to clean up
+        del self.bot.irc_RPL_NAMREPLY
+
+    def test_add_existing_callback(self):
+        def join(self, *args):
+            pass
+
+        _irc_JOIN = self.bot.irc_JOIN
+
+        self.assertTrue(hasattr(self.bot, 'irc_JOIN'))
+        self.assertNotEqual(self.bot.irc_JOIN, join)
+        self.disp.add_irc_callback('JOIN', join)
+        self.assertEqual(self.bot.irc_JOIN, join)
+
+        # make sure to clean up
+        self.bot.irc_JOIN = _irc_JOIN
+
+
+class TestRegister(Base):
+    def setUp(self):
+        Base.setUp(self)
+        self.disp = dispatcher.Dispatcher(self.bot)
         self.disp.init({})
 
     def test_method_exists(self):
@@ -109,7 +162,7 @@ class TestPush(EasyDeferredTests):
 
     def setUp(self):
         super(TestPush, self).setUp()
-        self.disp = dispatcher.Dispatcher(bot)
+        self.disp = dispatcher.Dispatcher(self.bot)
         self.disp.init({})
 
         class Helper(object):
@@ -158,7 +211,7 @@ class TestEvents(EasyDeferredTests):
 
     def setUp(self):
         super(TestEvents, self).setUp()
-        self.disp = dispatcher.Dispatcher(bot)
+        self.disp = dispatcher.Dispatcher(self.bot)
         self.disp.init({})
 
         class Helper(object):
@@ -476,7 +529,7 @@ class TestSay(EasyDeferredTests):
 
     def setUp(self):
         super(TestSay, self).setUp()
-        self._disp = disp = dispatcher.Dispatcher(bot)
+        self._disp = disp = dispatcher.Dispatcher(self.bot)
 
         # let's register what the dispatcher says that plugin said
         self.recorder = []
@@ -549,7 +602,7 @@ class TestFlowController(EasyDeferredTests):
     def setUp(self):
         super(TestFlowController, self).setUp()
         dispatcher.FLOW_TIMEOUT = 1
-        self.disp = disp = dispatcher.Dispatcher(bot)
+        self.disp = disp = dispatcher.Dispatcher(self.bot)
 
         # let's register what the dispatcher says that plugin said
         self.recorder = []
@@ -756,7 +809,7 @@ class TestPluginI18n(EasyDeferredTests):
 
     def setUp(self):
         super(TestPluginI18n, self).setUp()
-        self.disp = dispatcher.Dispatcher(bot)
+        self.disp = dispatcher.Dispatcher(self.bot)
         self.disp.init({})
 
         class Helper(Plugin):
@@ -774,16 +827,16 @@ class TestPluginI18n(EasyDeferredTests):
 
         self.helper = Helper({'nickname':'helper', 'encoding':'fake'}, 'DEBUG')
         self.disp.config['channels'] = {'channel-es':{'language':'es'}}
-        self.old_msg = bot.msg
+        self.old_msg = self.bot.msg
         self.answer = []
         def g(towhere, msg, _):
             self.answer.append((towhere, msg.decode("utf8")))
-        bot.msg = g
+        self.bot.msg = g
 
     def tearDown(self):
         self.disp.shutdown()
         super(TestPluginI18n, self).tearDown()
-        bot.msg = self.old_msg
+        self.bot.msg = self.old_msg
 
     def test_simple_message(self):
         self.disp.new_plugin(self.helper, "channel")
@@ -834,3 +887,103 @@ class TestPluginI18n(EasyDeferredTests):
             lambda _: self.assertEqual(self.answer[0][1],
                                        u'con args: command'))
         return self.deferred
+
+
+class TestTooMuchTalk(TwistedTestCase):
+    """Test situations where instances are in a lot of places."""
+
+    def setUp(self):
+        server = dict(
+            encoding = 'utf8',
+            host = "0.0.0.0",
+            port = 6667,
+            nickname = "test",
+            channels = {
+                '#chan1': dict(plugins = {
+                    'plug1': {},
+                    'plug2': {},
+                }),
+                '#chan2': dict(plugins = {
+                    'plug1': {},
+                    'plug2': {},
+                }),
+            },
+            plugins = {
+                'plug1': {},
+                'plug2': {},
+            },
+        )
+
+        ircbot_factory = ircbot.IRCBotFactory(server)
+        ircbot.logger.setLevel("error")
+        self.bot = ircbot.IrcBot()
+        self.bot.factory = ircbot_factory
+        self.bot.config = ircbot_factory.config
+        self.bot.msg = lambda *a:None
+
+    def test_basic(self):
+        """Test!."""
+        self.disp.register(events.ACTION, self.helper.f)
+        self.disp.push(events.ACTION, "user", "channel", "msg")
+
+
+class TestTooMuchTalk(Base):
+    """Test situations where instances are in a lot of places."""
+
+    class Helper(object):
+        """Plugin that says what we tell to say."""
+        def f(self, *_):
+            """Answers."""
+            self.say(*self.what)
+
+    def setUp(self):
+        super(TestTooMuchTalk, self).setUp()
+        self.disp = disp = dispatcher.Dispatcher(self.bot)
+
+        # let's register what the dispatcher says that plugin said
+        self.recorder = []
+        disp._msg = lambda *a: self.recorder.append(a)
+        disp.init({})
+
+    def tearDown(self):
+        self.disp.shutdown()
+
+    @defer.inlineCallbacks
+    def test_repeated_public(self):
+        """Repeated in the public."""
+        helper = self.Helper()
+        self.disp.new_plugin(helper, "#channel")
+        self.disp.register(events.PUBLIC_MESSAGE, helper.f)
+        helper.what = ("#channel", "resp")
+
+        helper = self.Helper()
+        self.disp.new_plugin(helper, None)
+        self.disp.register(events.PUBLIC_MESSAGE, helper.f)
+        helper.what = ("#channel", "resp")
+
+        def check():
+            """Check all is ok."""
+            self.assertEqual(self.recorder, [("#channel", "resp")])
+
+        yield self.disp.push(events.PUBLIC_MESSAGE, "usr", "#channel", "bu")
+        yield check()
+
+    @defer.inlineCallbacks
+    def test_repeated_private(self):
+        """Repeated in the private."""
+        helper = self.Helper()
+        self.disp.new_plugin(helper, "#channel")
+        self.disp.register(events.PRIVATE_MESSAGE, helper.f)
+        helper.what = ("usr", "resp")
+
+        helper = self.Helper()
+        self.disp.new_plugin(helper, None)
+        self.disp.register(events.PRIVATE_MESSAGE, helper.f)
+        helper.what = ("usr", "resp")
+
+        def check():
+            """Check all is ok."""
+            self.assertEqual(self.recorder, [("usr", "resp")])
+
+        yield self.disp.push(events.PRIVATE_MESSAGE, "usr", "bu")
+        yield check()

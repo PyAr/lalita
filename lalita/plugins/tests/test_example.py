@@ -19,7 +19,7 @@ class TestMethods(PluginTest):
 
     def setUp(self):
         '''Just init your module.Class.'''
-        self.init("lalita.plugins.example.Example")
+        self.init(client_plugin=("lalita.plugins.example.Example", {}, "chnl"))
 
     def test_private(self):
         '''Check 'private' functionality.'''
