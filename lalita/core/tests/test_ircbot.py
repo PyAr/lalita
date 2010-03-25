@@ -116,7 +116,7 @@ class TestConfiguration(unittest.TestCase):
     def test_set_global_configuration(self):
         _COMMAND_CHAR = ircbot.COMMAND_CHAR
 
-        config = type('config', (object,), {'command_char': '!'})
+        config = {'command_char': '!'}
         ircbot.set_global_configuration(config)
         self.assertEqual(ircbot.COMMAND_CHAR, '!')
 

@@ -297,7 +297,7 @@ def main(to_use, plugin_loglvl, manhole_opts=None):
 
 def set_global_configuration(config):
     global COMMAND_CHAR
-    COMMAND_CHAR = config.command_char
+    COMMAND_CHAR = config.get('command_char', COMMAND_CHAR)
 
 
 if __name__ == '__main__':
