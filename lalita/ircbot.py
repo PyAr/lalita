@@ -191,7 +191,7 @@ class IrcBot (irc.IRCClient):
         self.dispatcher.push(events.KICK, kickee, channel, kicker, message)
 
 
-class IRCBotFactory(protocol.ClientFactory):
+class IRCBotFactory(protocol.ReconnectingClientFactory):
     """
     A factory for PyAr Bots.
     A new protocol instance will be created each time we connect to the server.
@@ -209,7 +209,7 @@ class IRCBotFactory(protocol.ClientFactory):
         If we get disconnected, reconnect to server.
         """
         logger.debug("We got disconnected because of %s", reason)
-        connector.connect()
+        protocol.ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
 
     def clientConnectionFailed(self, connector, reason):
         """
@@ -217,11 +217,13 @@ class IRCBotFactory(protocol.ClientFactory):
         only when no client remains connected
         """
         logger.debug("Connection failed because of %s", reason)
-        # reactor.stop()
+        protocol.ReconnectingClientFactory.clientConnectionFailed(self, connector, reason)
 
     def buildProtocol(self, addr):
         """Setup the protocol."""
-        p = protocol.ClientFactory.buildProtocol(self, addr)
+        logger.debug('Connected!, resetting reconnection delay.')
+        self.resetDelay()
+        p = protocol.ReconnectingClientFactory.buildProtocol(self, addr)
         self.bot = p
         return p
 
