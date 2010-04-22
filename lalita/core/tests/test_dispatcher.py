@@ -2,7 +2,6 @@
 # License: GPL v3
 # For further info, see LICENSE file
 
-import unittest
 import re
 
 from collections import defaultdict
@@ -459,6 +458,18 @@ class TestEvents(EasyDeferredTests):
         self.disp.push(events.COMMAND,
                        "user", "channel", "command", "foo", "bar")
         return self.deferred
+
+    def test_no_such_command(self):
+        d = defer.Deferred()
+        def test(*args):
+            self.assertEquals(3, len(args))
+            self.assertEquals('user', args[2])
+            self.assertEquals(u'%s: No existe esa orden!', args[1])
+            d.callback(True)
+        self.disp.register(events.COMMAND, self.helper.f, 'foo')
+        self.disp.msg = test
+        self.disp.push(events.COMMAND, 'user', 'channel', '@notthecommand')
+        return d
 
     def test_action(self):
         '''Test ACTION.'''
