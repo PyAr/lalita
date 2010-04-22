@@ -158,7 +158,7 @@ class TestMessages(TestBase):
         _COMMAND_CHAR = ircbot.COMMAND_CHAR
 
         # set custom command char
-        config = type('config', (object,), {'command_char': '!'})
+        config = {'command_char': '!'}
         ircbot.set_global_configuration(config)
 
         # call command and test
