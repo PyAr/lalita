@@ -204,7 +204,13 @@ class Dispatcher(object):
         if args and len(args) == 1 and \
            (type(args[0]) == types.DictType) and args[0]:
             args = args[0]
-        finalmsg = trans % args
+        try:
+            finalmsg = trans % args
+        except TypeError, e:
+            # log the error and raise the same exception with a better
+            # error message!
+            logger.exception('Unable to format message.')
+            raise TypeError('%s: %s %% %s' % (e.args[0], trans, args))
 
         return  finalmsg
 
