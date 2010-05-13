@@ -888,6 +888,33 @@ class TestPluginI18n(EasyDeferredTests):
                                        u'con args: command'))
         return self.deferred
 
+    def test_message_with_empty_args(self):
+        """Test that string formating errors raise a better error message."""
+        self.disp.new_plugin(self.helper, "channel")
+        self.helper.init({})
+        def withemptyargs(user, channel, command, *args):
+            """Break self.helper.say"""
+            try:
+                self.helper.say(channel, 'with empty args: %s', *args)
+            except Exception, e:
+                self.helper.test(e)
+            else:
+                self.helper.test(True)
+        # lie to the dispatcher about this function
+        withemptyargs.im_self = self.helper
+        withemptyargs.im_func = withemptyargs
+        self.helper.withemptyargs = withemptyargs
+        def test(result):
+            """Check that we get a TypeError."""
+            if isinstance(result, TypeError):
+                self.deferred.callback(True)
+            else:
+                self.deferred.errback(result)
+        self.helper.test = test
+        self.disp.register(events.COMMAND, self.helper.withemptyargs)
+        self.disp.push(events.COMMAND, 'user', 'channel', 'command')
+        return self.deferred
+
 
 class TestTooMuchTalk(TwistedTestCase):
     """Test situations where instances are in a lot of places."""
