@@ -83,7 +83,7 @@ USER_POS = {
 }
 
 
-TRANSLATION_TABLE = {u"%s: No existe esa orden!":{'en': u"%s: command not found!"},
+TRANSLATION_TABLE = {u"%s: No existe esa orden!":{'en': u"%s: No such command!"},
                      u'"list" para ver las órdenes; "help cmd" para cada uno':
                         {'en': u'"list" To see the available commands ; "help cmd" for specific command help'},
                      u"No hay ninguna orden registrada...":{'en': u"PANIC! I have no commands!!!"},
@@ -244,7 +244,7 @@ class Dispatcher(object):
             # all of them)
             cmds = [x[2] for x in self._callbacks[events.COMMAND]]
             if cmds != [None] and command not in itertools.chain(*cmds):
-                self.msg(channel, u"%s: No existe esa orden!" % user)
+                self.msg(channel, u"%s: No existe esa orden!", user)
                 return
 
         # as it's not a meta command, the queue is reset for the user
