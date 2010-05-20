@@ -58,6 +58,7 @@ class TestInit(unittest.TestCase):
         self.assertRaises(ValueError, flowcontrol.FlowController, f, 1, "a")
         self.assertRaises(ValueError, flowcontrol.FlowController, f, 1, 0)
         self.assertRaises(ValueError, flowcontrol.FlowController, f, 1, -5)
+        self.assertRaises(ValueError, flowcontrol.FlowController, f, 1, '-5')
         flowcontrol.FlowController(f, 1, None)
         flowcontrol.FlowController(f, 1, 1)
 

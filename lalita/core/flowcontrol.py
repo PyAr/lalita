@@ -34,7 +34,7 @@ class FlowController(object):
             self.timeout = None
         else:
             self.timeout = float(timeout)
-            if timeout <= 0:
+            if self.timeout <= 0:
                 raise ValueError("The timeout if present should be > 0, "
                                  "received: %r" % timeout)
 
