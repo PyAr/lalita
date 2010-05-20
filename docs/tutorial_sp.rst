@@ -513,12 +513,10 @@ implementa esto, pero básicamente el proceso es: en lugar de hacer
 terminar una promesa a futuro.
 
 Esta promesa a futuro es el *deferred*, que se consumirá cuando el
-plugin esté listo para contestar, y esto se aprovecha del lado de
-Lalita para cumplir con las funcionalidades prometidas sin perder eficiencia.
-
-*FIXME: quizás en el futuro resulte que el deferred se devuelve sólo para
-loguear; si es así este párrafo debería cambiar y explicar que estamos en
-Twisted, que se pueden usar deferreds, pero que no hace falta devolverlo.*
+plugin esté listo para contestar.  Realmente el plugin puede devolver o
+no el deferred, ya que el funcionamiento será el mismo, pero si al usar
+un deferred el plugin lo devuelve, Lalita lo usará para loguear la
+finalización exitosa o por error del mismo.
 
 
 Hablando sin contestar
