@@ -606,6 +606,68 @@ class TestSay(EasyDeferredTests):
         self.deferred.callback(True)
         return self.deferred
 
+    def test_problem_alert_message(self):
+        """A problem with the message is reported to the ircmaster."""
+        disp = dispatcher.Dispatcher(self.bot)
+        recorder = []
+        disp._msg = lambda *a: recorder.append(a)
+        disp.init({'ircmaster':'ircmaster'})
+
+        class Helper(object):
+            """Plugin that says what we tell to say."""
+            def f(self, *args):
+                """Say something bad."""
+                self.say("usr", "foo %d", "no int")
+
+        helper = Helper()
+        disp.new_plugin(helper, "#channel")
+        disp.register(events.PUBLIC_MESSAGE, helper.f)
+
+        d = defer.Deferred()
+        d.addCallback(lambda _: disp.push(events.PUBLIC_MESSAGE,
+                                          "usr", "#channel", "bu"))
+
+        def check(_):
+            """Check what's reported."""
+            m = "Unable to format message! Msg: 'foo %d'  Args: ('no int',)"
+            self.assertEqual(recorder[0], ("ircmaster", m))
+
+        d.addCallback(check)
+        d.callback(True)
+        return d
+
+    def test_problem_alert_executing(self):
+        """A problem with the execution is reported to the ircmaster."""
+        disp = dispatcher.Dispatcher(self.bot)
+        recorder = []
+        disp._msg = lambda *a: recorder.append(a)
+        disp.init({'ircmaster':'ircmaster'})
+
+        class Helper(object):
+            """Plugin that says what we tell to say."""
+            def f(self, *args):
+                """Have a problem."""
+                raise ValueError("problem!")
+
+        helper = Helper()
+        disp.new_plugin(helper, "#channel")
+        disp.register(events.PUBLIC_MESSAGE, helper.f)
+
+        d = defer.Deferred()
+        d.addCallback(lambda _: disp.push(events.PUBLIC_MESSAGE,
+                                          "usr", "#channel", "bu"))
+
+        def check(_):
+            """Check what's reported."""
+            m = "Error calling the plugin 'lalita.core.tests."\
+                "test_dispatcher.Helper': ValueError('problem!',)"
+            self.assertEqual(recorder[0], ("ircmaster", m))
+
+        d.addCallback(check)
+        d.callback(True)
+        return d
+
+
 
 class TestFlowController(EasyDeferredTests):
     '''Plugins say stuff, the dispatcher transmit that.'''
@@ -925,44 +987,6 @@ class TestPluginI18n(EasyDeferredTests):
         self.disp.register(events.COMMAND, self.helper.withemptyargs)
         self.disp.push(events.COMMAND, 'user', 'channel', 'command')
         return self.deferred
-
-
-class TestTooMuchTalk(TwistedTestCase):
-    """Test situations where instances are in a lot of places."""
-
-    def setUp(self):
-        server = dict(
-            encoding = 'utf8',
-            host = "0.0.0.0",
-            port = 6667,
-            nickname = "test",
-            channels = {
-                '#chan1': dict(plugins = {
-                    'plug1': {},
-                    'plug2': {},
-                }),
-                '#chan2': dict(plugins = {
-                    'plug1': {},
-                    'plug2': {},
-                }),
-            },
-            plugins = {
-                'plug1': {},
-                'plug2': {},
-            },
-        )
-
-        ircbot_factory = ircbot.IRCBotFactory(server)
-        ircbot.logger.setLevel("error")
-        self.bot = ircbot.IrcBot()
-        self.bot.factory = ircbot_factory
-        self.bot.config = ircbot_factory.config
-        self.bot.msg = lambda *a:None
-
-    def test_basic(self):
-        """Test!."""
-        self.disp.register(events.ACTION, self.helper.f)
-        self.disp.push(events.ACTION, "user", "channel", "msg")
 
 
 class TestTooMuchTalk(Base):
