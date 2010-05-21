@@ -107,11 +107,13 @@ class Dispatcher(object):
         self.register_translation(self, TRANSLATION_TABLE)
 
     def init(self, config):
+        """Gets all the config at server level and init."""
         self.config = config
         self.length_msg = int(config.get('length_msg', LENGTH_MSG))
         maxq = int(config.get('flow_maxq', DEFAULT_MAXQ))
         self.flowcontroller = flowcontrol.FlowController(self._msg_unpacker,
                                                          maxq, FLOW_TIMEOUT)
+        self.ircmaster = config.get('ircmaster')
 
     def shutdown(self):
         '''Takes the dispatcher down.'''
@@ -207,15 +209,22 @@ class Dispatcher(object):
         try:
             finalmsg = trans % args
         except TypeError, e:
-            # log the error and raise the same exception with a better
-            # error message!
-            logger.exception('Unable to format message.')
-            raise TypeError('%s: %s %% %s' % (e.args[0], trans, args))
+            # log the error with all the info and raise the same exception
+            logger.error('Unable to format message! Msg: %r   Args: %s',
+                         trans, args)
+            if self.ircmaster is not None:
+                m = 'Unable to format message! Msg: %r  Args: %s' % (trans, args)
+                self._msg(self.ircmaster, m)
+            raise
 
-        return  finalmsg
+        return finalmsg
 
     def _error(self, error, instance):
         logger.error("ERROR in instance %s: %s", instance, error)
+        if self.ircmaster is not None:
+            cls = instance.__class__
+            m = "Error calling the plugin '%s.%s': %r" % (cls.__module__, cls.__name__, error.value)
+            self._msg(self.ircmaster, m)
         if instance in self._channel_filter:
             del self._channel_filter[instance]
 
@@ -268,7 +277,7 @@ class Dispatcher(object):
             allowed_channel = self._plugins[instance]
             # server messages go everywhere, or it's a channel message and
             # we're allowed
-            if channel is None or \
+            if allowed_channel is None or channel is None or \
                channel == allowed_channel:
                 useful[regist.im_func] = (instance, regist, extra)
 
