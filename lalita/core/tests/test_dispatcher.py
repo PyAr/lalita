@@ -550,8 +550,8 @@ class TestSay(EasyDeferredTests):
         class Helper(object):
             '''Plugin that says what we tell to say.'''
             def f(self, *args):
-                for to, msg in self.what:
-                    self.say(to, msg)
+                for what in self.what:
+                    self.say(*what)
 
         self.helper = Helper()
         disp.new_plugin(self.helper, "#channel")
@@ -666,6 +666,51 @@ class TestSay(EasyDeferredTests):
         d.addCallback(check)
         d.callback(True)
         return d
+
+    def test_args_replac_one(self):
+        '''Say something to be replaced with one item.'''
+        self.helper.what = [("touser", "text %d", 5)]
+
+        def check(_):
+            self.assertEqual(self.recorder, [("touser", "text 5")])
+
+        self.deferred.addCallback(check)
+        self.deferred.callback(True)
+        return self.deferred
+
+    def test_args_replac_two(self):
+        '''Say something to be replaced with two items.'''
+        self.helper.what = [("touser", "text %d %s", 5, "foo")]
+
+        def check(_):
+            self.assertEqual(self.recorder, [("touser", "text 5 foo")])
+
+        self.deferred.addCallback(check)
+        self.deferred.callback(True)
+        return self.deferred
+
+    def test_args_replac_dict(self):
+        '''Say something to be replaced with info from dict.'''
+        d = dict(a=4, b='foo')
+        self.helper.what = [("touser", "text %(a)d %(b)s", d)]
+
+        def check(_):
+            self.assertEqual(self.recorder, [("touser", "text 4 foo")])
+
+        self.deferred.addCallback(check)
+        self.deferred.callback(True)
+        return self.deferred
+
+    def test_args_replac_nothing(self):
+        '''Nothing to be replaced but using %.'''
+        self.helper.what = [("touser", "Rate is 4%")]
+
+        def check(_):
+            self.assertEqual(self.recorder, [("touser", "Rate is 4%")])
+
+        self.deferred.addCallback(check)
+        self.deferred.callback(True)
+        return self.deferred
 
 
 
@@ -966,9 +1011,9 @@ class TestPluginI18n(EasyDeferredTests):
         self.disp.new_plugin(self.helper, "channel")
         self.helper.init({})
         def withemptyargs(user, channel, command, *args):
-            """Break self.helper.say"""
+            """Break self.helper.say not having enough args."""
             try:
-                self.helper.say(channel, 'with empty args: %s', *args)
+                self.helper.say(channel, 'with empty args: %s %d', 5)
             except Exception, e:
                 self.helper.test(e)
             else:
