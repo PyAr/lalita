@@ -202,20 +202,22 @@ class Dispatcher(object):
         lang = channel_config.get('language', self.config.get('language', None))
         trans =  self._translations.get(instance, {}).get(message, {}).get(lang, message)
 
-        # fill it
-        if args and len(args) == 1 and \
-           (type(args[0]) == types.DictType) and args[0]:
-            args = args[0]
-        try:
-            finalmsg = trans % args
-        except TypeError, e:
-            # log the error with all the info and raise the same exception
-            logger.error('Unable to format message! Msg: %r   Args: %s',
-                         trans, args)
-            if self.ircmaster is not None:
-                m = 'Unable to format message! Msg: %r  Args: %s' % (trans, args)
-                self._msg(self.ircmaster, m)
-            raise
+        # fill it if have args
+        if args:
+            if len(args) == 1 and type(args[0]) == types.DictType:
+                args = args[0]
+            try:
+                finalmsg = trans % args
+            except TypeError, e:
+                # log the error with all the info and raise the same exception
+                logger.error('Unable to format message! Msg: %r   Args: %s',
+                             trans, args)
+                if self.ircmaster is not None:
+                    m = 'Unable to format message! Msg: %r  Args: %s' % (trans, args)
+                    self._msg(self.ircmaster, m)
+                raise
+        else:
+            finalmsg = trans
 
         return finalmsg
 
