@@ -16,4 +16,4 @@ class Ping(Plugin):
     def ping(self, user, channel, command):
         u'''Sólo contesto.'''
         self.logger.debug("let's play ping pong with %s!" % user)
-        self.say(channel, u"%s: pong" % user)
+        self.say(channel, u"%s: pong", user)
