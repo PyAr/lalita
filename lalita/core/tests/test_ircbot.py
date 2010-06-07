@@ -2,6 +2,7 @@
 # License: GPL v3
 # For further info, see LICENSE file
 
+import copy
 import unittest
 
 from lalita import ircbot
@@ -113,12 +114,23 @@ class TestConfiguration(unittest.TestCase):
         self.bot.load_channel_plugins("#testchn3")
         self.assertEqual(self.results, [])
 
-    def test_set_global_configuration(self):
-        _COMMAND_CHAR = ircbot.COMMAND_CHAR
+    def test_command_char(self):
+        from twisted.words.protocols import irc
+        # setup
+        _config = copy.copy(self.bot.config)
+        self.bot.config.update({'command_char': '!'})
 
-        config = {'command_char': '!'}
-        ircbot.set_global_configuration(config)
-        self.assertEqual(ircbot.COMMAND_CHAR, '!')
+        def mock_connectionMade(self):
+            pass
+        _connectionMade = irc.IRCClient.connectionMade
+        irc.IRCClient.connectionMade = mock_connectionMade
 
-        ircbot.COMMAND_CHAR = _COMMAND_CHAR
+        # reconfigure bot
+        self.bot.connectionMade()
+        # test value
+        self.assertEqual(self.bot.command_char, '!')
+
+        # cleanup
+        self.bot.config = _config
+        irc.IRCClient.connectionMade = _connectionMade
 

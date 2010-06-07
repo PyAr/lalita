@@ -70,10 +70,10 @@ How to run lalita without installing
 
 From the top-level directory run::
 
-    python lalita/ircbot.py
+    PYTHONPATH=. python lalita/ircbot.py
 
 For example, setting logs in debug mode, pointing to the sample 
 configuration, and choosing a server in localhost::
 
-    python lalita/ircbot.py -o DEBUG lalita.cfg.sample localhost
+    PYTHONPATH=. python lalita/ircbot.py -o DEBUG lalita.cfg.sample localhost
 
