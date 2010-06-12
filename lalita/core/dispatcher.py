@@ -34,13 +34,6 @@ MAP_EVENTS = {
     events.COMMAND: "command",
 }
 
-# these events don't return any message
-SILENTS = set((
-    events.CONNECTION_MADE,
-    events.CONNECTION_LOST,
-    events.SIGNED_ON,
-))
-
 # these are the meta commands
 META_COMMANDS = {
     "help": "meta_help",
@@ -102,7 +95,7 @@ class Dispatcher(object):
         self._callbacks = {}
         self.bot = ircclient
         self._plugins = {}
-        self._channel_filter = {}
+        self._to_whom = {}
         self._translations = {}
         self.register_translation(self, TRANSLATION_TABLE)
 
@@ -153,22 +146,7 @@ class Dispatcher(object):
 
     def _msg_from_plugin(self, plugin, to_where, message, *args):
         """Message from the plugin."""
-        if plugin not in self._channel_filter:
-            # don't allow to say anything out of order
-            return
-
-        from_channel, user = self._channel_filter[plugin]
-
-        # from_channel can be None if msg() was used from here (not channel
-        # passed), or if was a response from a plugin, but the original
-        # message came from the server, outside a channel.
-        if from_channel is not None and to_where.startswith("#"):
-            # came from a channel, and it's going to a channel
-            if from_channel != to_where:
-                logger.debug("WARNING: the plugin is trying to answer in a "
-                             "different channel! (from: %s  to: %s)",
-                             from_channel, to_where)
-                return
+        user = self._to_whom.get(plugin)
 
         # translate it!
         message = self.get_translation(plugin, to_where, message, args)
@@ -227,13 +205,9 @@ class Dispatcher(object):
             cls = instance.__class__
             m = "Error calling the plugin '%s.%s': %r" % (cls.__module__, cls.__name__, error.value)
             self._msg(self.ircmaster, m)
-        if instance in self._channel_filter:
-            del self._channel_filter[instance]
 
     def _done(self, _, instance):
         logger.debug("Done! instance: %s", instance)
-        if instance in self._channel_filter:
-            del self._channel_filter[instance]
 
     def push(self, event, *args):
         '''Pushes the received event to the registered method(s).'''
@@ -292,13 +266,12 @@ class Dispatcher(object):
                     continue
 
             # dispatch!
-            if event not in SILENTS:
-                self._channel_filter[instance] = (channel, user)
-
+            self._to_whom[instance] = user
             logger.debug("Dispatching event to %s", regist)
             d = defer.maybeDeferred(regist, *args)
             d.addCallback(self._done, instance)
             d.addErrback(self._error, instance)
+            d.addBoth(lambda _: self._to_whom.pop(instance))
 
     def handle_private_message(self, extra, user, msg):
         '''The extra is a regexp that says if the msg is useful or not.'''

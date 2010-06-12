@@ -595,17 +595,6 @@ class TestSay(EasyDeferredTests):
         self.deferred.callback(True)
         return self.deferred
 
-    def test_other_channel(self):
-        '''Answers should be in the same channel.'''
-        self.helper.what = [("touser", "text1"), ("#other", "text2")]
-
-        def check(_):
-            self.assertEqual(self.recorder, [("touser", "text1")])
-
-        self.deferred.addCallback(check)
-        self.deferred.callback(True)
-        return self.deferred
-
     def test_problem_alert_message(self):
         """A problem with the message is reported to the ircmaster."""
         disp = dispatcher.Dispatcher(self.bot)
