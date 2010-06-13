@@ -90,6 +90,20 @@ TRANSLATION_TABLE = {u"%s: No existe esa orden!":{'en': u"%s: No such command!"}
                     }
 
 
+class ProxyBot(object):
+    def __init__(self, plugin, bot):
+        self.plugin = plugin
+        self._bot = bot
+
+    def __getattr__(self, name):
+        # log call attempt
+        msg = "Plugin %s calling method %s on ircbot." % (self.plugin, name)
+        self.plugin.logger.info(msg)
+
+        # proxy the call
+        return getattr(self._bot, name)
+
+
 class Dispatcher(object):
     def __init__(self, ircclient):
         self._callbacks = {}
@@ -117,6 +131,7 @@ class Dispatcher(object):
         plugin.register_translation = self.register_translation
         plugin.add_irc_callback = self.add_irc_callback
         plugin.say = functools.partial(self._msg_from_plugin, plugin)
+        plugin.bot = ProxyBot(plugin, self.bot)
         logger.debug('plugin %s is in channel %s', plugin, channel)
         self._plugins[plugin] = channel
 

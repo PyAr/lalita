@@ -6,6 +6,7 @@ import copy
 import unittest
 
 from lalita import ircbot
+from lalita.core.dispatcher import ProxyBot
 
 server = dict(
     encoding = 'utf8',
@@ -74,6 +75,41 @@ class TestLoadPlugin(unittest.TestCase):
                          [("__init__", "params", None),
                           ("init", "config"),
                          ])
+
+    def test_plugin_bot_is_proxy(self):
+        self.bot.load_plugin('lalita.plugins.example.Example', 'config',
+            {'nickname': 'nickname', 'encoding': 'utf-8'}, 'channel')
+        plugins = self.bot.dispatcher._plugins.keys()
+        self.assertEqual(len(plugins), 1)
+        plugin = plugins[0]
+        self.assertTrue(isinstance(plugin.bot, ProxyBot))
+        self.assertEqual(plugin.bot.plugin, plugin)
+
+    def test_plugin_bot_method(self):
+        def mock_join(channel, key=None):
+            self.results.append(('join', channel, key))
+            self.join_called = True
+        old_join = self.bot.join
+        self.bot.join = mock_join
+        class MockLogger(object):
+            def info(_, msg):
+                self.results.append((msg,))
+
+        self.bot.load_plugin('lalita.plugins.example.Example', 'config',
+            {'nickname': 'nickname', 'encoding': 'utf-8'}, 'channel')
+        plugins = self.bot.dispatcher._plugins.keys()
+        self.assertEqual(len(plugins), 1)
+        plugin = plugins[0]
+        plugin.logger = MockLogger()
+
+        self.join_called = False
+        plugin.bot.join('channel1')
+        self.assertTrue(self.join_called)
+        expected = [("Plugin %s calling method join on ircbot." % plugin,),
+                    ('join', 'channel1', None)]
+        self.assertEqual(self.results, expected)
+
+        self.bot.join = old_join
 
 
 class TestConfiguration(unittest.TestCase):
