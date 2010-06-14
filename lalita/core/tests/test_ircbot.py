@@ -6,6 +6,9 @@ import copy
 import unittest
 
 from lalita import ircbot
+from lalita.core.events import *
+
+from twisted.words.protocols import irc
 
 server = dict(
     encoding = 'utf8',
@@ -114,16 +117,35 @@ class TestConfiguration(unittest.TestCase):
         self.bot.load_channel_plugins("#testchn3")
         self.assertEqual(self.results, [])
 
+
+class PrivateMessageTests(unittest.TestCase):
+    """All private message processing."""
+
+    def setUp(self):
+        ircbot_factory = ircbot.IRCBotFactory(server.copy())
+        ircbot.logger.setLevel("error")
+        self.bot = bot = ircbot.IrcBot()
+        bot.factory = ircbot_factory
+        bot.config = ircbot_factory.config
+        bot.encoding_server = server['encoding']
+        bot.encoding_channels = {}
+        bot.command_char = '@'
+
+        # don't load plugins
+        bot.load_plugin = lambda *a: None
+
+        # record what is pushed
+        self.pushed = []
+        bot.dispatcher.push = lambda *a: self.pushed.append(a)
+
     def test_command_char(self):
-        from twisted.words.protocols import irc
+        """Test that the attribute is set during connection."""
         # setup
         _config = copy.copy(self.bot.config)
         self.bot.config.update({'command_char': '!'})
 
-        def mock_connectionMade(self):
-            pass
         _connectionMade = irc.IRCClient.connectionMade
-        irc.IRCClient.connectionMade = mock_connectionMade
+        irc.IRCClient.connectionMade = lambda s: None
 
         # reconfigure bot
         self.bot.connectionMade()
@@ -134,3 +156,76 @@ class TestConfiguration(unittest.TestCase):
         self.bot.config = _config
         irc.IRCClient.connectionMade = _connectionMade
 
+    def test_privmsg_private_message(self):
+        """Test private message."""
+        self.bot.privmsg('john!~jdoe@127.0.0.1', self.bot.nickname, u'blah')
+        self.assertEqual(self.pushed, [(PRIVATE_MESSAGE, 'john', u'blah')])
+
+    def test_talked_to_me_space(self):
+        """Test talked to bot, separating with space."""
+        self.bot.privmsg('john!~jdoe@127.0.0.1', "#channel",
+                         u'%s foo bar' % self.bot.nickname)
+        self.assertEqual(self.pushed,
+                         [(TALKED_TO_ME, 'john', '#channel', u'foo bar')])
+
+    def test_talked_to_me_comma(self):
+        """Test talked to bot, separating with comma."""
+        self.bot.privmsg('john!~jdoe@127.0.0.1', "#channel",
+                         u'%s: foo bar' % self.bot.nickname)
+        self.assertEqual(self.pushed,
+                         [(TALKED_TO_ME, 'john', '#channel', u'foo bar')])
+
+    def test_talked_to_me_twopoints(self):
+        """Test talked to bot, separating with two points."""
+        self.bot.privmsg('john!~jdoe@127.0.0.1', "#channel",
+                         u'%s, foo bar' % self.bot.nickname)
+        self.assertEqual(self.pushed,
+                         [(TALKED_TO_ME, 'john', '#channel', u'foo bar')])
+
+    def test_command_at(self):
+        """Test command, using at."""
+        self.bot.privmsg('john!~jdoe@127.0.0.1', "#channel", u'@foo bar')
+        self.assertEqual(self.pushed,
+                         [(COMMAND, 'john', '#channel', u'foo', 'bar')])
+
+    def test_command_more_params(self):
+        """Test command, using at."""
+        self.bot.privmsg('john!~jdoe@127.0.0.1', "#channel", u'@foo bar baz 6')
+        self.assertEqual(self.pushed, [(COMMAND, 'john', '#channel', u'foo',
+                                        'bar', 'baz', '6')])
+
+    def test_command_other_char(self):
+        """Test command, using other char."""
+        self.bot.command_char = '%'
+        self.bot.privmsg('john!~jdoe@127.0.0.1', "#channel", u'%foo bar')
+        self.assertEqual(self.pushed,
+                         [(COMMAND, 'john', '#channel', u'foo', 'bar')])
+
+    def test_command_indirect_server(self):
+        """Test command that was talking to the bot, server config."""
+        self.bot.config['indirect_command'] = True
+        self.bot.privmsg('john!~jdoe@127.0.0.1', "#channel",
+                         u'%s, foo bar baz' % self.bot.nickname)
+        self.assertEqual(self.pushed,
+                         [(COMMAND, 'john', '#channel', 'foo', 'bar', 'baz')])
+
+    def test_command_indirect_channels(self):
+        """Test command that was talking to the bot, channels config."""
+        self.bot.config['channels']['#chan1'] = dict(indirect_command=True)
+        name = self.bot.nickname
+        self.bot.privmsg('j!~jdoe@127.0.0.1', "#chan1", u'%s, foo 1' % name)
+        self.bot.privmsg('j!~jdoe@127.0.0.1', "#chan2", u'%s, foo 2' % name)
+        self.assertEqual(self.pushed, [(COMMAND, 'j', '#chan1', 'foo', '1'),
+                                       (TALKED_TO_ME, 'j', '#chan2', 'foo 2')])
+
+    def test_public_message_standard(self):
+        """Test public message."""
+        self.bot.privmsg('john!~jdoe@127.0.0.1', "#channel", u'foo bar')
+        self.assertEqual(self.pushed,
+                         [(PUBLIC_MESSAGE, 'john', '#channel', u'foo bar')])
+
+    def test_public_message_botname(self):
+        """Test weird public message that starts with the bot name."""
+        msg = u'%sfoobar baz' % self.bot.nickname  # no separation after name
+        self.bot.privmsg('john!~jdoe@127.0.0.1', "#chan", msg)
+        self.assertEqual(self.pushed, [(PUBLIC_MESSAGE, 'john', '#chan', msg)])
