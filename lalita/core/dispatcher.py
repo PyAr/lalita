@@ -94,14 +94,20 @@ class ProxyBot(object):
     def __init__(self, plugin, bot):
         self.plugin = plugin
         self._bot = bot
+        self.logger = logging.getLogger('ircbot.ProxyBot')
 
     def __getattr__(self, name):
-        # log call attempt
-        msg = "Plugin %s calling method %s on ircbot." % (self.plugin, name)
-        self.plugin.logger.info(msg)
+        """Return a logging wrapper around ircbot."""
 
-        # proxy the call
-        return getattr(self._bot, name)
+        def wrapper(*args, **kwargs):
+            # log call attempt
+            msg = "Plugin %s calling method %s on ircbot with args %s %s."
+            self.logger.info(msg, self.plugin, name, args, kwargs)
+            # proxy the call
+            method = getattr(self._bot, name)
+            return method(*args, **kwargs)
+
+        return wrapper
 
 
 class Dispatcher(object):
