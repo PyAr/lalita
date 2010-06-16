@@ -3,9 +3,12 @@
 # For further info, see LICENSE file
 
 import copy
+import logging
 import unittest
+from cStringIO import StringIO
 
 from lalita import ircbot
+from lalita.core.dispatcher import ProxyBot
 from lalita.core.events import *
 
 from twisted.words.protocols import irc
@@ -77,6 +80,48 @@ class TestLoadPlugin(unittest.TestCase):
                          [("__init__", "params", None),
                           ("init", "config"),
                          ])
+
+    def test_plugin_bot_is_proxy(self):
+        self.bot.load_plugin('lalita.plugins.example.Example', 'config',
+            {'nickname': 'nickname', 'encoding': 'utf-8'}, 'channel')
+        plugins = self.bot.dispatcher._plugins.keys()
+        self.assertEqual(len(plugins), 1)
+        plugin = plugins[0]
+        self.assertTrue(isinstance(plugin.bot, ProxyBot))
+        self.assertEqual(plugin.bot.plugin, plugin)
+
+    def test_plugin_bot_method(self):
+        def mock_join(channel, key=None):
+            self.results.append(('join', channel, key))
+            self.join_called = True
+        old_join = self.bot.join
+        self.bot.join = mock_join
+
+        self.bot.load_plugin('lalita.plugins.example.Example', 'config',
+            {'nickname': 'nickname', 'encoding': 'utf-8'}, 'channel')
+        plugins = self.bot.dispatcher._plugins.keys()
+        self.assertEqual(len(plugins), 1)
+        plugin = plugins[0]
+
+        # enable logging
+        logger = logging.getLogger('ircbot.ProxyBot')
+        logger.setLevel(logging.INFO)
+        output = StringIO()
+        handler = logging.StreamHandler(output)
+        logger.addHandler(handler)
+
+        self.join_called = False
+        # test method
+        plugin.bot.join('channel1')
+        self.assertTrue(self.join_called)
+        expected = [('join', 'channel1', None)]
+        self.assertEqual(self.results, expected)
+        # test logged output
+        output.seek(0)
+        msg = "Plugin %s calling method join on ircbot with args %s %s.\n"
+        self.assertEqual(msg % (plugin, ('channel1',), {}), output.read())
+
+        self.bot.join = old_join
 
 
 class TestConfiguration(unittest.TestCase):
