@@ -135,6 +135,13 @@ class IrcBot (irc.IRCClient):
         self.load_channel_plugins (channel)
         self.dispatcher.push(events.JOINED, channel)
 
+    def get_config(self, channel, parameter):
+        """Get the configuration for the server, overwritten by channel."""
+        chancfg = self.config['channels']
+        if channel in chancfg and parameter in chancfg[channel]:
+            return self.config['channels'][channel][parameter]
+        return self.config.get(parameter)  # default to None
+
     def privmsg(self, user, channel, msg):
         """This will get called when the bot receives a message."""
         # decode according to channel (that can be an user), or server/default
@@ -143,16 +150,26 @@ class IrcBot (irc.IRCClient):
 
         logger.debug("[%s] %s: %s", channel, user, msg)
         user = user.split('!', 1)[0]
+        indirect = bool(self.get_config(channel, 'indirect_command'))
 
         # Check to see if they're sending me a private message
         if channel == self.nickname:
             self.dispatcher.push(events.PRIVATE_MESSAGE, user, msg)
         # Otherwise check to see if it is a message directed at me
-        elif msg.startswith (self.nickname):
-            msg = msg[len(self.nickname):]
-            if msg[0] in (":", " ", ","):
-                msg = msg[1:].strip()
-                self.dispatcher.push(events.TALKED_TO_ME, user, channel, msg)
+        elif msg.startswith(self.nickname):
+            rest = msg[len(self.nickname):]
+            if rest[0] in (":", " ", ","):
+                rest = rest[1:].strip()
+                if indirect:
+                    args = rest.split()
+                    command = args.pop(0)
+                    self.dispatcher.push(events.COMMAND, user, channel,
+                                         command, *args)
+                else:
+                    self.dispatcher.push(events.TALKED_TO_ME, user,
+                                         channel, rest)
+            else:
+                self.dispatcher.push(events.PUBLIC_MESSAGE, user, channel, msg)
         elif msg[0] == self.command_char:
             args = msg.split()
             command = args.pop(0)[1:]

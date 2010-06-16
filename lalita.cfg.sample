@@ -14,6 +14,7 @@ servers = {
             host='127.0.0.1', port=6667,
             nickname='examplia',
             ircmaster='facundobatista',
+            indirect_command=True,
             lang='es',
             channels= {
                 '#humites': dict (plugins={
