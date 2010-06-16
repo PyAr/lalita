@@ -171,14 +171,14 @@ class PrivateMessageTests(unittest.TestCase):
     def test_talked_to_me_comma(self):
         """Test talked to bot, separating with comma."""
         self.bot.privmsg('john!~jdoe@127.0.0.1', "#channel",
-                         u'%s: foo bar' % self.bot.nickname)
+                         u'%s, foo bar' % self.bot.nickname)
         self.assertEqual(self.pushed,
                          [(TALKED_TO_ME, 'john', '#channel', u'foo bar')])
 
     def test_talked_to_me_twopoints(self):
         """Test talked to bot, separating with two points."""
         self.bot.privmsg('john!~jdoe@127.0.0.1', "#channel",
-                         u'%s, foo bar' % self.bot.nickname)
+                         u'%s: foo bar' % self.bot.nickname)
         self.assertEqual(self.pushed,
                          [(TALKED_TO_ME, 'john', '#channel', u'foo bar')])
 
