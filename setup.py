@@ -4,13 +4,13 @@ from distutils.core import setup
 setup(
     # metadata
     name = 'lalita',
-    version = '0.1.1',
-    maintainer = 'laliputienses',
-    maintainer_email = '',
-    description = 'Yet another IRC bot, one where new functionality is simple ' \
-                  'to create just adding easy-to-write plugins.',
-    long_description = open('README.txt').read(),
-    license = 'GNU GPL v3',
+    version = '0.1.2',
+    maintainer = 'Facundo Batista',
+    maintainer_email = 'facundo@taniquetil.com.ar',
+    description = 'Yet another IRC bot.',
+    long_description = 'Yet another IRC bot, one where new functionality is '\
+                       'simple to create just adding easy-to-write plugins.',
+    license = 'GPL v3',
     keywords = ['irc', 'bot', 'twisted', 'plugin'],
     url = 'https://launchpad.net/lalita/',
     classifiers = [
