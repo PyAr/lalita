@@ -207,6 +207,11 @@ class IrcBot (irc.IRCClient):
                      kickee, channel, kicker, message)
         self.dispatcher.push(events.KICK, kickee, channel, kicker, message)
 
+    def userRenamed(self, oldname, newname):
+        """Called when I see another user to change their nick."""
+        logger.debug("%s changed its nick to %s", oldname, newname)
+        self.dispatcher.push(events.RENAME, oldname, newname)
+
 
 class IRCBotFactory(protocol.ReconnectingClientFactory):
     """
