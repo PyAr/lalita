@@ -204,6 +204,28 @@ class TestPush(EasyDeferredTests):
         self.disp.push(events.CONNECTION_MADE)
         return self.deferred
 
+    def test_events_supported(self):
+        def test(*args):
+            self.deferred.callback(True)
+        self.helper.test = test
+
+        supported_events = [getattr(events, name) for name in dir(events) \
+                            if name == name.upper()]
+        for event in supported_events:
+            self.disp.register(event, self.helper.f)
+            if (event in dispatcher.USER_POS and 
+                dispatcher.USER_POS[event] is not None):
+                self.disp.push(event, 'user', 'channel', 'msg')
+            elif (event in dispatcher.CHANNEL_POS and
+                  dispatcher.CHANNEL_POS[event] is not None):
+                if event == events.JOINED:
+                    self.disp.push(event, 'channel', 'user', 'msg')
+                else:
+                    self.disp.push(event, 'user', 'channel', 'msg')
+            else:
+                self.disp.push(event)
+        return self.deferred
+
 
 class TestEvents(EasyDeferredTests):
     '''Test all the events.'''

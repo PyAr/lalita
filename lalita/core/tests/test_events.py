@@ -203,3 +203,9 @@ class TestUserActions(TestBase):
         bot.userKicked("user", "chnl", "op", "bad behaviour")
         self.check_pushed(events.KICK, "user", "chnl", "op", "bad behaviour")
         return self.deferred
+
+    def test_userRenamed(self):
+        '''Calling bot.userRenamed'''
+        bot.userRenamed('oldname', 'newname')
+        self.check_pushed(events.RENAME, 'oldname', 'newname')
+        return self.deferred

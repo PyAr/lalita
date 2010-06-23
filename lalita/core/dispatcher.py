@@ -51,11 +51,12 @@ CHANNEL_POS = {
     events.TALKED_TO_ME: 1,
     events.COMMAND: 1,
     events.PUBLIC_MESSAGE: 1,
+    events.ACTION: 1,
     events.JOIN: 1,
     events.LEFT: 1,
     events.QUIT: None,
     events.KICK: 1,
-    events.ACTION: 1,
+    events.RENAME: None,
 }
 
 # the position of the user parameter in each event
@@ -68,11 +69,12 @@ USER_POS = {
     events.TALKED_TO_ME: 0,
     events.COMMAND: 0,
     events.PUBLIC_MESSAGE: 0,
+    events.ACTION: 0,
     events.JOIN: 0,
     events.LEFT: 0,
     events.QUIT: 0,
     events.KICK: 0,
-    events.ACTION: 0,
+    events.RENAME: 0,
 }
 
 
