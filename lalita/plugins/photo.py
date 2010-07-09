@@ -29,11 +29,11 @@ class Photo(Plugin):
         self.register(self.events.COMMAND, self.photo, ['foto'])
 
     def photo(self, user, channel, command, nick=None, url=None):
-        u"""Devuelve o configura la photo del usuario.
+        u"""Devuelve o configura la foto del usuario.
 
         Sintaxis:
 
-            photo <nick>: contesta con la photo de 'nick'
+            photo <nick>: contesta con la foto de 'nick'
             photo <nick> <url>: configura 'url' para ese 'nick'
             photo <nick> None: borrar la config de 'nick'
 
