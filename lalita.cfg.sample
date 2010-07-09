@@ -29,7 +29,7 @@ servers = {
             },
             plugins= {
                 # 'url.Url': { },
-                # 'seen.Seen': { },
+                'lalita.plugins.photo.Photo': { },
                 'lalita.plugins.misc.Ping': { },
             },
         ),
