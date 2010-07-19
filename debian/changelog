@@ -1,0 +1,11 @@
+lalita (0.1.3~maverick) maverick; urgency=low
+
+  * Nano release to build the PPA for Ubuntu Maverick.
+
+ -- Facundo Batista <facundo@taniquetil.com.ar>  Mon, 19 Jul 2010 17:07:01 -0300
+
+lalita (0.1.2) lucid; urgency=low
+
+  * Initial release.
+
+ -- Facundo Batista <facundo@taniquetil.com.ar>  Sat, 19 Jun 2010 14:03:19 -0300

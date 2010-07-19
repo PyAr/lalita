@@ -1,0 +1,94 @@
+.TH "Lalita" "1" "April 2010" "Facundo Batista" ""
+
+.SH NAME
+Lalita \- Yet another IRC bot.
+
+.SH SYNTAX
+.B lalita
+.RB [ "\-ta" ] 
+.RB [ "\-o\ output_loglvl" ]
+.RB [ "\-p\ plugins_loglvl" ]
+.RB [ "\-f\ fileloglvl" ]
+.RB [ "\-n\ logfname" ] 
+.I config_filename 
+[
+.I server1, 
+[
+.I ...
+]]
+
+.br
+  the config_filename is required
+  the servers are optional if -a is passed
+  the output_loglevel is the log level for the standard output
+  the file_loglevel is the log level for the output that goes to file
+  the pluginloglevel is a list of plugin_name:loglevel separated by commas
+  the logfname is the filename to write the logs to
+
+
+.SH OPTIONS
+.TP
+.B \-h \-\-help
+Show this help message and exit
+.TP
+.B \-t, \-\-test            
+runs two bots that talk to each other, tesing.
+.TP
+.B \-a, \-\-all             
+runs the bot to all the configured servers.
+.TP
+.B \-o OUTLOGLVL, \-\-output\-log\-level=OUTLOGLVL                        
+sets the output log level.
+.TP
+.B \-p PLUGLOGLVL, \-\-plugin\-log\-level=PLUGLOGLVL
+sets the plugin log level. format is plugin:level,...
+.TP
+.B \-f FILELOGLVL, \-\-file\-log\-level=FILELOGLVL
+sets the output log level.
+.TP
+.B \-n LOGFNAME, \-\-log\-filename=LOGFNAME
+specifies the name of the log file.
+
+.SH MANHOLE
+
+manhole is a lalita feature that allow the administrator to get into the 
+live bot and poke its internals (leting him even to answer messages).
+
+WARNING: Note that this will open up a serious security hole on your 
+computer as now anybody knowing this password may login to the Python 
+console and get full access to the system with the permissions of the 
+user running the script.
+
+.TP
+.B \-\-manhole           
+Enable manhole ssh server (listening on 127.0.0.1)
+.TP
+.B \-\-manhole\-port=PORT
+Use the specified port, default: 2222
+.TP
+.B \-\-manhole\-user=USER
+Use the specified user for manhole ssh, default: admin
+.TP
+.B \-\-manhole\-password=PASSWORD
+Use the specified password for manhole ssh, default: admin
+
+.SH DESCRIPTION
+Yet another IRC bot, one where new functionality is simple to create by just 
+adding easy-to-write plugins.
+
+lalita is written with some goals in mind:
+
+\- Twisted! (we don't like threads)
+
+\- Pluggable: easy to implement new functionalities
+
+\- Have fun: yes, it's Python
+.LP 
+It was created during the seven days of PyWeek 3, international competition 
+that this game won.
+.SH AUTHORS
+Elliot Murphy, Facundo Batista, Guillermo Gonzalez, Manuel Kaufmann, 
+Marcos Dione, Naty Bidart, Ricardo Kirkner, javimansilla, matiasb, 
+nueces, perrito666
+.SH SEE ALSO
+https://edge.launchpad.net/lalita

@@ -4,7 +4,7 @@ from distutils.core import setup
 setup(
     # metadata
     name = 'lalita',
-    version = '0.1.2',
+    version = '0.1.3',
     maintainer = 'Facundo Batista',
     maintainer_email = 'facundo@taniquetil.com.ar',
     description = 'Yet another IRC bot.',
