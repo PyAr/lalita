@@ -1,0 +1,7 @@
+# Run the "uscan" command to check for upstream updates and more.
+
+# Compulsory line, this is a version 3 file
+version=3
+
+# Launchpad url
+https://launchpad.net/lalita/+download http://launchpad.net/lalita/trunk/.*/\+download/lalita-(.*)\.tar\.gz

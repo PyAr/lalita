@@ -1,0 +1,22 @@
+Source: lalita
+Section: python
+Priority: extra
+Build-Depends: cdbs (>= 0.4.43),
+ debhelper (>= 6),
+ python,
+ python-support (>= 0.6.4),
+ python-distutils-extra (>= 2.10)
+Maintainer: Facundo Batista <facundo@taniquetil.com.ar>
+Standards-Version: 3.8.4
+XS-Python-Version: current
+
+Package: lalita
+Architecture: all
+XB-Python-Version: ${python:Versions}
+Depends: ${misc:Depends},
+ ${python:Depends},
+ python-chardet,
+ python-twisted-core
+Description: Yet another IRC bot.
+ Yet another IRC bot, one where new functionality is simple to create
+ just adding easy-to-write plugins.
