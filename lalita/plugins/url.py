@@ -239,7 +239,7 @@ class Url (Plugin):
 
                 # convert xhtml entities
                 title= BeautifulStoneSoup (title,
-                    convertEntities=BeautifulStoneSoup.XHTML_ENTITIES).contents[0]
+                    convertEntities=["xml", "html"]).contents[0]
 
                 # this takes out the \n\r\t's
                 titleParts= title.split ()
