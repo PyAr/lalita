@@ -100,6 +100,16 @@ servers = {
                 'lalita.plugins.misc.Ping': { },
             },
         ),
+        'example-freenode': dict (
+            encoding='utf8',
+            host='irc.freenode.net', port=6667,
+            nickname='lalita-example',
+            channels= {
+                '#lalita-example': dict (plugins={
+                    'lalita.plugins.ejemplodoc.Sum': { },
+                }),
+            },
+        ),
         'perrito':{
             'encoding': 'utf8',
             'host' : "10.100.0.156",

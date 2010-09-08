@@ -87,7 +87,7 @@ Luego de calcular el resultado que buscamos (la suma de los números pasados,
 calculado de forma simple para no complicar el ejemplo), contestamos al
 usuario utilizando otro método heredado: ``self.say``.  Al mismo le
 pasamos primero el destino de lo que estamos diciendo (en este caso el
-canal por dónde nos hablaron), luego el mensaje que queremos decir, y
+canal por donde nos hablaron), luego el mensaje que queremos decir, y
 finalmente valores para reemplazar en ese mensaje (veremos luego por qué
 es importante no reemplazarlos directamente).
 
@@ -107,73 +107,73 @@ Para probar Lalita no hace falta realizar ninguna instalación en particular.
 Se puede bajar y descomprimir un tarball, o incluso bajar todo el proyecto
 entero haciendo ``bzr branch lp:lalita``, y usarlo directamente.
 
-*FIXME: también se puede instalar con easy_install, mostrar cómo, ver si
-tenemos que cambiar algo del texto porque instalado así se usa distinto.*
+En los siguientes párrafos explicamos qué es cada cosa, pero para
+directamente probar lalita, entrar al directorio con el proyecto y hacer::
 
-*FIXME: re-redactar esto! tenemos que arrancar con los tres pasos para
-hacerlo funcionar, y luego explicamos qué es cada cosa, de manera que le
-sirva también a aquellos que no quieren leer.  Para hacerla más fácil
-daremos un ejemplo que se conecte a freenode.*
+    PYTHONPATH=. python lalita/ircbot.py lalita.cfg.sample example-freenode
 
-Entrando al directorio donde está el proyecto, hay tres archivos que tenemos
-que considerar para probar el ejemplo.
+Luego entrar con nuestro cliente preferido a Freenode, al canal
+``#lalita-example``, y probamos::
+
+    <usuario>        lalita-example, 2 3
+    <lalita-example> usuario, la suma es 5
+
+Usamos ``python`` para llamar al intérprete, ``ircbot.py`` para ejecutar
+Lalita, ``lalita.cfg.sample`` para indicarle qué archivo de configuración usar,
+y ``example-freenode`` para especificar cual de los servidores configurados
+vamos a utilizar (podemos tener muchos configurados y usar algunos de ellos).
+Se muestra solamente la forma de ejecución más simple, ver abajo distintas
+opciones que se pueden utilizar en cada caso.
+
+Ya que estamos contentos que funciona, veamos los distintos archivos que
+fuimos usando. Dentro del directorio donde está el proyecto, vemos los tres
+archivos que tenemos que considerar para probar el ejemplo.
 
 - El código arriba mostrado grabado en un archivo en el directorio
-  ``plugins/``; en nuestro caso lo guardaremos en un archivo llamado
+  ``plugins/``; en nuestro caso lo guardamos en un archivo llamado
   ``plugins/ejemplodoc.py``.
 
 - El programa principal, que es ``ircbot.py``, y que mostraremos abajo
   cómo ejecutar.
 
-- Un archivo de configuración, ``config.py``.  El proyecto trae un
-  ``config.py.example`` con múltiples configuraciones de muestra, pero
-  veremos aquí mismo cómo hacer uno básico que nos sirva para probar
-  el ejemplo.
+- Un archivo de configuración ``lalita.cfg.sample``, que es el ejemplo
+  con múltiples configuraciones de muestra, pero que podemos modificar a
+  discreción.
 
 La configuración no es más que un diccionario Python con toda la información
 necesaria.  Aquí mostramos una configuración muy sencilla. Pueden ver
-el ``config.py.example`` para otras configuraciones, y abajo en este
+el archivo de ejemplo para otras configuraciones, y abajo en este
 mismo documento para más explicaciones.
 
 En nuestro caso usaremos::
 
     servers = {
-       'example': dict(
-           encoding = 'utf8',
-           host = 'localhost', port = 6667,
-           nickname = 'examplia',
-           channels = {
-               '#humites': {},
-           },
-           plugins = {
-               'ejemplodoc.Sum': {},
-           },
-       ),
+        'example-freenode': dict (
+            encoding='utf8',
+            host='irc.freenode.net', port=6667,
+            nickname='lalita-example',
+            channels= {
+                '#lalita-example': dict (plugins={
+                    'lalita.plugins.ejemplodoc.Sum': { },
+                }),
+            },
+        ),
     }
 
-En este caso tenemos un sólo server configurado, llamado ``example``,
-apuntando a localhost en el puerto 6667 (lo más fácil para probar ejemplos
-y desarrollar nuestro propio plugin es instalar un servidor de IRC en la
-propia computadora. Por ejemplo, se puede utilizar ``dancer-ircd``,
-principalmente porque al instalarlo ya queda funcionando como queremos y
-no hay que realizar configuraciones adicionales).
+En este caso tenemos un sólo server configurado, llamado ``example-freenode``,
+apuntando a Freenode en el puerto 6667. Aunque arrancamos probando contra un
+servidor público, lo más fácil para probar ejemplos y desarrollar nuestro
+propio plugin es instalar un servidor de IRC en la propia computadora. Por
+ejemplo, se puede muy fácilmente utilizar ``dancer-ircd``, principalmente
+porque al instalarlo ya queda funcionando como queremos y no hay que
+realizar configuraciones adicionales).
 
-En la configuración decimos que el nick del bot será ``examplia``, y
-utilizará UTF-8 como encoding, y nos conectaremos al canal ``#humites``,
+En la configuración decimos que el nick del bot será ``lalita-example``,
+utilizará UTF-8 como encoding, y nos conectaremos al canal ``#lalita-example``,
 instanciando al plugin que acabamos de crear (notar que la forma de
 especificar al plugin es ``archivo.Clase`` (sin el ``.py``), lo que nos da la
 libertad de tener varios plugins en distintos archivos y sólo especificar
 el que queremos usar.
-
-Una vez grabado el config.py, probamos todo haciendo::
-
-  python ircbot.py example
-
-Usamos ``python`` para llamar al intérprete, ``ircbot.py`` para ejecutar
-Lalita, y ``example`` para indicarle cual de los servidores configurados
-vamos a utilizar (podemos tener muchos configurados y usar algunos
-solamente).  Se muestra solamente la forma de ejecución más simple, ver
-abajo distintas opciones que se pueden utilizar en cada caso.
 
 
 Usando ordenes
@@ -184,8 +184,8 @@ orden (o *comando*).
 
 Usar ordenes nos permite ejecutar determinadas funcionalidades del bot sin
 tener que hablarle directamente.  Los comandos se identifican porque comienzan
-con un ``@`` al principio; entonces, lo que buscamos es poder hacer lo
-siguiente::
+con un ``@`` al principio (ese caracter es configurable); entonces, lo que
+buscamos es poder hacer lo siguiente::
 
     <usuario>   @sumar 12 88
     <examplia>  usuario, la suma es 100
@@ -272,7 +272,7 @@ de nuestro código).  ¿Pero de dónde viene la ayuda que Lalita muestra para
 nuestros comandos?  Si prestaron la suficiente atención verán que para
 esto se utiliza el docstring del método implementado.
 
-Si prestaron atención, también habrán notado que nombré tres metacomandos
+Si estaban atentos, también habrán notado que nombré tres metacomandos
 arriba, pero expliqué solamente dos.  Nos queda el tercero: ``more``.  Esta
 es una orden utilizada sólo en casos muy específicos: cuando entra en acción
 una regulación de Lalita para comportarse decentemente en un canal.
@@ -287,13 +287,12 @@ servidores).  Entonces Lalita tiene un mecanismo para que el plugin no
 pueda caer en este error.
 
 Si el plugin contesta muchas lineas al mismo canal o usuario, sólo pasan
-las primeras 5 y el resto se encola y no se muestran a menos que el mismo
-usuario que generó el comando original diga ``@more``, haciendo que Lalita
+las primeras 5 (esto es configurable) y el resto se encola y no se
+muestran a menos que el mismo usuario que generó el
+comando original diga ``@more``, haciendo que Lalita
 muestre las próximas 5 lineas encoladas, y así hasta que se acabe lo
 encolado, el usuario diga otra cosa, o pase un determinado tiempo que hace
 caducar a la cola de respuestas.
-
-*FIXME: indicar cómo se configura ese "5" para que no sea mágico.*
 
 
 ¿Cuales son los eventos que podemos recibir?
@@ -357,8 +356,6 @@ Como decíamos, el mecanismo básico de registración es::
 La mayoría de los eventos permiten solamente eso.  Pero en algunos casos
 podemos especificar otros parámetros.
 
-*FIXME: explicar qué sucede si te registrás dos veces.*
-
 
 Múltiples comandos
 ------------------
@@ -372,8 +369,6 @@ siguientes lineas::
     self.register(self.events.COMMAND, self.sum, ("sumar", "sum"))
     self.register(self.events.COMMAND, self.multiply, ("mult", "multiply"))
     self.register(self.events.COMMAND, self.divide, ("div",))
-
-*FIXME: no hay ejemplo para "varios métodos para un determinado comando".*
 
 
 Filtrando los mensajes
@@ -421,12 +416,9 @@ el ejemplo anterior, podríamos tener el siguiente diálogo::
 Esto lo podríamos hacer a mano (recibiendo todos los eventos públicos y
 privados y filtrando), pero Lalita ya nos ofrece esta funcionalidad integrada.
 
-Para activarla, sólo tenemos que hacer::
+Para activarla, sólo tenemos que hacer, en la configuración del canal::
 
-        self.set_options(automatic_command=True)
-
-*FIXME: no vamos a tener set_options, todas las opciones serán manejadas
-desde la config.*
+    indirect_command=True
 
 De esta manera, todos los eventos ``TALKED_TO_ME`` y ``PRIVATE_MESSAGE``
 que tengan un mensaje que comiencen con un comando registrado, serán
@@ -446,9 +438,7 @@ La sintaxis de esta herramienta es sencilla::
 
 El destino es a quien va dirigido el mensaje.  Si es un usuario, el mensaje
 será privado.  Si es un canal (que empieza por ``#``), el mensaje será dicho
-en el canal público (aquí Lalita aplica una restricción: el plugin solo
-puede contestar algo por el mismo canal que se le preguntó o en
-privado, pero no puede cruzar respuestas de canales).
+en el canal público.
 
 El segundo parámetro es el texto del mensaje que queremos comunicar.  No hay
 a priori una restricción de longitud, pero los textos muy largos se
@@ -517,39 +507,6 @@ plugin esté listo para contestar.  Realmente el plugin puede devolver o
 no el deferred, ya que el funcionamiento será el mismo, pero si al usar
 un deferred el plugin lo devuelve, Lalita lo usará para loguear la
 finalización exitosa o por error del mismo.
-
-
-Hablando sin contestar
-----------------------
-
-*FIXME: quizás pongamos que el default es "hablar libre", y que se puede
-configurar para que te restrinja. Deberíamos re-redactar esto acá si fuese
-así*
-
-Como mencionamos antes, hay una regla básica que Lalita fuerza para todos
-los plugins: estos mismos sólo pueden contestar por el canal que se les
-habló (o a la persona en privado que originó el diálogo).  Esta es una
-regla de seguridad, que ha probado ser útil, pero al mismo tiempo
-restringe algunos comportamientos que desearíamos para un plugin
-específico (como poder decirle a un plugin que avise algo importante en
-todos los canales en donde está Lalita).
-
-Un efecto secundario de esta limitación es que Lalita no puede decir algo
-sin que le hablen primero, y también hay casos de uso en lo que esto sería
-deseable, como tener un plugin que informe de noticias nuevas que reciba
-por RSS, por ejemplo.
-
-Si necesitamos cualquiera de estas dos funcionalidades, debemos desactivar esta
-restricción, de la siguiente manera::
-
-        self.set_options(free_talk=True)
-
-*FIXME: no vamos a tener set_options, todas las opciones serán manejadas
-desde la config.*
-
-Luego de esa configuración, podremos generar los mensajes que deseemos
-desde el plugin, a cualquier destino, y sin importar si nos hablaron
-primero o no.
 
 
 Armando un plugin más profesional
@@ -721,27 +678,27 @@ estos servidores tiene una configuración que también es un diccionario.
 
 El diccionario de cada servidor puede tener las siguientes claves:
 
- - encoding: La codificación de Unicode que se hablará contra ese servidor
-   ("utf8", "latin1", etc.).
+- encoding: La codificación de Unicode que se hablará contra ese servidor
+  ("utf8", "latin1", etc.).
 
- - host: La dirección IP o el nombre del server.
+- host: La dirección IP o el nombre del server.
 
- - port: El puerto del servidor contra el que conectarse.
+- port: El puerto del servidor contra el que conectarse.
 
- - nickname: El nick que tendrá nuestro bot.
+- nickname: El nick que tendrá nuestro bot.
 
- - channels: Los canales a los que entrar en el servidor, más la respectiva
-   configuración (ver abajo).
+- channels: Los canales a los que entrar en el servidor, más la respectiva
+  configuración (ver abajo).
 
- - plugins: Los plugins (junto con posible configuración) que se ejecutarán a
-   nivel de servidor (ver abajo).
+- plugins: Los plugins (junto con posible configuración) que se ejecutarán a
+  nivel de servidor (ver abajo).
 
- - ssl: En True si debemos usar SSL para conectarnos contra el servidor.
+- ssl: En True si debemos usar SSL para conectarnos contra el servidor.
 
- - password: Una posible palabra clave para el servidor.
+- password: Una posible palabra clave para el servidor.
 
- - plugins_dir: El directorio del cual levantar los plugins (si no se
-   especifica se toman del directorio ``plugins/`` del proyecto.
+- plugins_dir: El directorio del cual levantar los plugins (si no se
+  especifica se toman del directorio ``plugins/`` del proyecto.
 
 El valor de la clave *channels* arriba es un diccionario, donde las claves
 son los distintos canales, y el valor correspondiente para cada clave es
@@ -760,7 +717,7 @@ un plugin a nivel de servidor cuando es necesario para conectarse
 por privado (ya que cuando dialogamos en privado con un bot estamos
 afuera de todo canal).
 
-Por último, cabe notar que es muy difíicil ejemplificar las distintas
+Por último, cabe notar que es muy difícil mostrar todas las distintas
 combinaciones aquí, pero siempre está el tan mencionado
 ``config.py.example`` para revisar y tomar de ejemplo.
 
