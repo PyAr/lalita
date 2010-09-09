@@ -30,18 +30,20 @@ servers = {
             # ircmaster to show him the traceback
             ircmaster='facundobatista',
 
-            # if True, when talking to the bot will be considered a command
-            indirect_command=True,
-
             # the lang to use in the translated plugin texts
             lang='es',
 
             # list and config of the channels, all server config can be 
             # overruled on each channel
             channels= {
-                '#humites': dict (plugins={
-                    'lalita.plugins.url.Url': { },
-                }),
+                '#humites': dict (
+                    plugins={
+                        'lalita.plugins.url.Url': { },
+                    }   
+                
+                    # if True, when talking to the bot will be considered a command
+                    indirect_command=True,
+                ),
                 '#perrites': dict (
                     lang='en',
                     plugins={
