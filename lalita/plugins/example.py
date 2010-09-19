@@ -62,7 +62,10 @@ class Example(Plugin):
         self.register(self.events.COMMAND, self.command_twisted, ("enroscau",))
 
     def private(self, user, text):
+        # debug using self.logger, very handy, all setup
         self.logger.debug("private message from %s: %s", user, text)
+
+        # say something back, using self.say
         self.say(user, u'Me dijiste "%s"', text)
 
     def talked_to_me(self, user, channel, msg):
@@ -86,6 +89,7 @@ class Example(Plugin):
         self.say(channel, u"    " + random.choice(zen))
 
     def _twisted_example(self, info):
+        # called in the future, when the deferred was triggered
         user, channel = info
         self.say(channel, u"%s: Hola! Estamos deferredeando como locas!", user)
 
@@ -93,7 +97,11 @@ class Example(Plugin):
         u"""enroscau: Ejemplo usando un Deferred."""
         self.logger.debug("command %s from %s (args: %s)", command, user, args)
         d = defer.Deferred()
+
+        # in the future, this method will be called
         d.addCallback(self._twisted_example)
+
+        # this will be sent rightaway
         self.say(user, u"Te prometo a futuro un saludo en el canal")
 
         # trigger the deferred: normally this will be done by other

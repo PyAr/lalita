@@ -146,7 +146,12 @@ class IrcBot (irc.IRCClient):
         """This will get called when the bot receives a message."""
         # decode according to channel (that can be an user), or server/default
         encoding = self.encoding_channels.get(channel, self.encoding_server)
-        msg = msg.decode(encoding)
+        try:
+            msg = msg.decode(encoding)
+        except UnicodeDecodeError:
+            logger.warning("Ignoring message that couldn't decode (%s): %r",
+                           encoding, msg)
+            return
 
         logger.debug("[%s] %s: %s", channel, user, msg)
         user = user.split('!', 1)[0]

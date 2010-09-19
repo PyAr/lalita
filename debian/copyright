@@ -1,0 +1,55 @@
+This work was packaged for Debian by:
+
+    Facundo Batista <facundo@taniquetil.com.ar> on Wed, 14 Apr 2010 15:51:48 -0300
+
+It was downloaded from https://edge.launchpad.net/lalita
+
+Upstream Author(s):
+
+    Elliot Murphy
+    Facundo Batista
+    Guillermo Gonzalez
+    Manuel Kaufmann
+    Marcos Dione
+    Naty Bidart
+    Ricardo Kirkner
+    javimansilla
+    matiasb
+    nueces
+    perrito666
+
+Copyright:
+
+    Copyright (c) 2010 Elliot Murphy
+    Copyright (c) 2010 Facundo Batista
+    Copyright (c) 2010 Guillermo Gonzalez
+    Copyright (c) 2010 Manuel Kaufmann
+    Copyright (c) 2010 Marcos Dione
+    Copyright (c) 2010 Naty Bidart
+    Copyright (c) 2010 Ricardo Kirkner
+    Copyright (c) 2010 javimansilla
+    Copyright (c) 2010 matiasb
+    Copyright (c) 2010 nueces
+    Copyright (c) 2010 perrito666
+
+License:
+
+    This program is free software; you can redistribute it and/or modify it under
+    the terms of the GNU General Public License as published by the Free Software
+    Foundation; either version 2 of the License, or (at your option) any later
+    version.
+
+    This program is distributed in the hope that it will be useful, but WITHOUT
+    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+    FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along with
+    this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
+
+The Debian packaging is:
+
+    Copyright (C) 2010 Facundo Batista <facundo@taniquetil.com.ar>
+
+and is licensed under the GPL version 3, 
+see `/usr/share/common-licenses/GPL-3'.

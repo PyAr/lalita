@@ -50,6 +50,11 @@ class Url (Plugin):
         self.register(self.events.COMMAND, self.dig, ['dig'])
         self.register(self.events.COMMAND, self.delete, ['del'])
 
+        self.urlsFound= 0
+        self.urlsFailed= 0
+        self.urlsInDb= 0
+        self.urlsOk= 0
+
         self.initDb ()
 
     ##### database handling #####
@@ -145,9 +150,9 @@ class Url (Plugin):
             self.cursor.execute ('''select * from url where url = ? ''', (url, ))
             result= self.cursor.fetchone ()
             if result is not None:
-                data= dict (zip (('id', 'url', 'date', 'time', 'poster', 'title'), result))
-                self.say (channel, self.config['found_format'] % data)
-                return defer.fail ((url, False, 'already in db'))
+                data = dict(zip(('id', 'url', 'date', 'time', 'poster', 'title'), result))
+                self.say(channel, self.config['found_format'] % data)
+                self.urlsInDb += 1
             else:
                 # go fetch it
                 self.logger.debug ('fetching %s' % url)
@@ -239,7 +244,7 @@ class Url (Plugin):
 
                 # convert xhtml entities
                 title= BeautifulStoneSoup (title,
-                    convertEntities=BeautifulStoneSoup.XHTML_ENTITIES).contents[0]
+                    convertEntities=["xml", "html"]).contents[0]
 
                 # this takes out the \n\r\t's
                 titleParts= title.split ()
@@ -254,9 +259,11 @@ class Url (Plugin):
         else:
             self.addUrl (channel, user, url, mimetype=mimetype, date=date, time=time)
             title= mimetype
+        self.urlsOk += 1
         return url, True, title
 
     def failed (self, failure, user, channel, url, date, time):
+        self.urlsFailed += 1
         self.logger.debug (failure)
         if str (failure.value).startswith ('206'):
             # this is not a failure, but a response to a '206 partial content'
@@ -342,11 +349,6 @@ class Url (Plugin):
         logfile= open(logfile)
         self.logfile_finished= False
 
-        self.urlsFound= 0
-        self.urlsFailed= 0
-        self.urlsInDb= 0
-        self.urlsOk= 0
-
         self.no_more_than= no_more_than
         self.batch= 0
 
@@ -375,16 +377,6 @@ class Url (Plugin):
 
         url, ok, reason= result
         print url,
-        if not ok:
-            if reason=='already in db':
-                self.urlsInDb+= 1
-                print reason
-            else:
-                self.urlsFailed+= 1
-                print 'failed:', reason
-        else:
-            self.urlsOk+= 1
-            print 'ok', reason
 
         if (self.urlsOk+self.urlsInDb+self.urlsFailed)%self.no_more_than==0:
             self.more ()

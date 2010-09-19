@@ -382,7 +382,7 @@ algo, el canal en el que se dijo, y el mensaje en cuestión.</p>
 calculado de forma simple para no complicar el ejemplo), contestamos al
 usuario utilizando otro método heredado: <tt class="docutils literal">self.say</tt>.  Al mismo le
 pasamos primero el destino de lo que estamos diciendo (en este caso el
-canal por dónde nos hablaron), luego el mensaje que queremos decir, y
+canal por donde nos hablaron), luego el mensaje que queremos decir, y
 finalmente valores para reemplazar en ese mensaje (veremos luego por qué
 es importante no reemplazarlos directamente).</p>
 <p>Las siguientes lineas muestran el diálogo con el bot (que llamamos
@@ -398,66 +398,68 @@ es importante no reemplazarlos directamente).</p>
 <p>Para probar Lalita no hace falta realizar ninguna instalación en particular.
 Se puede bajar y descomprimir un tarball, o incluso bajar todo el proyecto
 entero haciendo <tt class="docutils literal">bzr branch lp:lalita</tt>, y usarlo directamente.</p>
-<p><em>FIXME: también se puede instalar con easy_install, mostrar cómo, ver si
-tenemos que cambiar algo del texto porque instalado así se usa distinto.</em></p>
-<p><em>FIXME: re-redactar esto! tenemos que arrancar con los tres pasos para
-hacerlo funcionar, y luego explicamos qué es cada cosa, de manera que le
-sirva también a aquellos que no quieren leer.  Para hacerla más fácil
-daremos un ejemplo que se conecte a freenode.</em></p>
-<p>Entrando al directorio donde está el proyecto, hay tres archivos que tenemos
-que considerar para probar el ejemplo.</p>
+<p>En los siguientes párrafos explicamos qué es cada cosa, pero para
+directamente probar lalita, entrar al directorio con el proyecto y hacer:</p>
+<pre class="literal-block">
+PYTHONPATH=. python lalita/ircbot.py lalita.cfg.sample example-freenode
+</pre>
+<p>Luego entrar con nuestro cliente preferido a Freenode, al canal
+<tt class="docutils literal"><span class="pre">#lalita-example</span></tt>, y probamos:</p>
+<pre class="literal-block">
+&lt;usuario&gt;        lalita-example, 2 3
+&lt;lalita-example&gt; usuario, la suma es 5
+</pre>
+<p>Usamos <tt class="docutils literal">python</tt> para llamar al intérprete, <tt class="docutils literal">ircbot.py</tt> para ejecutar
+Lalita, <tt class="docutils literal">lalita.cfg.sample</tt> para indicarle qué archivo de configuración usar,
+y <tt class="docutils literal"><span class="pre">example-freenode</span></tt> para especificar cual de los servidores configurados
+vamos a utilizar (podemos tener muchos configurados y usar algunos de ellos).
+Se muestra solamente la forma de ejecución más simple, ver abajo distintas
+opciones que se pueden utilizar en cada caso.</p>
+<p>Ya que estamos contentos que funciona, veamos los distintos archivos que
+fuimos usando. Dentro del directorio donde está el proyecto, vemos los tres
+archivos que tenemos que considerar para probar el ejemplo.</p>
 <ul class="simple">
 <li>El código arriba mostrado grabado en un archivo en el directorio
-<tt class="docutils literal">plugins/</tt>; en nuestro caso lo guardaremos en un archivo llamado
+<tt class="docutils literal">plugins/</tt>; en nuestro caso lo guardamos en un archivo llamado
 <tt class="docutils literal">plugins/ejemplodoc.py</tt>.</li>
 <li>El programa principal, que es <tt class="docutils literal">ircbot.py</tt>, y que mostraremos abajo
 cómo ejecutar.</li>
-<li>Un archivo de configuración, <tt class="docutils literal">config.py</tt>.  El proyecto trae un
-<tt class="docutils literal">config.py.example</tt> con múltiples configuraciones de muestra, pero
-veremos aquí mismo cómo hacer uno básico que nos sirva para probar
-el ejemplo.</li>
+<li>Un archivo de configuración <tt class="docutils literal">lalita.cfg.sample</tt>, que es el ejemplo
+con múltiples configuraciones de muestra, pero que podemos modificar a
+discreción.</li>
 </ul>
 <p>La configuración no es más que un diccionario Python con toda la información
 necesaria.  Aquí mostramos una configuración muy sencilla. Pueden ver
-el <tt class="docutils literal">config.py.example</tt> para otras configuraciones, y abajo en este
+el archivo de ejemplo para otras configuraciones, y abajo en este
 mismo documento para más explicaciones.</p>
 <p>En nuestro caso usaremos:</p>
 <pre class="literal-block">
 servers = {
-   'example': dict(
-       encoding = 'utf8',
-       host = 'localhost', port = 6667,
-       nickname = 'examplia',
-       channels = {
-           '#humites': {},
-       },
-       plugins = {
-           'ejemplodoc.Sum': {},
-       },
-   ),
+    'example-freenode': dict (
+        encoding='utf8',
+        host='irc.freenode.net', port=6667,
+        nickname='lalita-example',
+        channels= {
+            '#lalita-example': dict (plugins={
+                'lalita.plugins.ejemplodoc.Sum': { },
+            }),
+        },
+    ),
 }
 </pre>
-<p>En este caso tenemos un sólo server configurado, llamado <tt class="docutils literal">example</tt>,
-apuntando a localhost en el puerto 6667 (lo más fácil para probar ejemplos
-y desarrollar nuestro propio plugin es instalar un servidor de IRC en la
-propia computadora. Por ejemplo, se puede utilizar <tt class="docutils literal"><span class="pre">dancer-ircd</span></tt>,
-principalmente porque al instalarlo ya queda funcionando como queremos y
-no hay que realizar configuraciones adicionales).</p>
-<p>En la configuración decimos que el nick del bot será <tt class="docutils literal">examplia</tt>, y
-utilizará UTF-8 como encoding, y nos conectaremos al canal <tt class="docutils literal">#humites</tt>,
+<p>En este caso tenemos un sólo server configurado, llamado <tt class="docutils literal"><span class="pre">example-freenode</span></tt>,
+apuntando a Freenode en el puerto 6667. Aunque arrancamos probando contra un
+servidor público, lo más fácil para probar ejemplos y desarrollar nuestro
+propio plugin es instalar un servidor de IRC en la propia computadora. Por
+ejemplo, se puede muy fácilmente utilizar <tt class="docutils literal"><span class="pre">dancer-ircd</span></tt>, principalmente
+porque al instalarlo ya queda funcionando como queremos y no hay que
+realizar configuraciones adicionales).</p>
+<p>En la configuración decimos que el nick del bot será <tt class="docutils literal"><span class="pre">lalita-example</span></tt>,
+utilizará UTF-8 como encoding, y nos conectaremos al canal <tt class="docutils literal"><span class="pre">#lalita-example</span></tt>,
 instanciando al plugin que acabamos de crear (notar que la forma de
 especificar al plugin es <tt class="docutils literal">archivo.Clase</tt> (sin el <tt class="docutils literal">.py</tt>), lo que nos da la
 libertad de tener varios plugins en distintos archivos y sólo especificar
 el que queremos usar.</p>
-<p>Una vez grabado el config.py, probamos todo haciendo:</p>
-<pre class="literal-block">
-python ircbot.py example
-</pre>
-<p>Usamos <tt class="docutils literal">python</tt> para llamar al intérprete, <tt class="docutils literal">ircbot.py</tt> para ejecutar
-Lalita, y <tt class="docutils literal">example</tt> para indicarle cual de los servidores configurados
-vamos a utilizar (podemos tener muchos configurados y usar algunos
-solamente).  Se muestra solamente la forma de ejecución más simple, ver
-abajo distintas opciones que se pueden utilizar en cada caso.</p>
 </div>
 </div>
 <div class="section" id="usando-ordenes">
@@ -466,8 +468,8 @@ abajo distintas opciones que se pueden utilizar en cada caso.</p>
 orden (o <em>comando</em>).</p>
 <p>Usar ordenes nos permite ejecutar determinadas funcionalidades del bot sin
 tener que hablarle directamente.  Los comandos se identifican porque comienzan
-con un <tt class="docutils literal">&#64;</tt> al principio; entonces, lo que buscamos es poder hacer lo
-siguiente:</p>
+con un <tt class="docutils literal">&#64;</tt> al principio (ese caracter es configurable); entonces, lo que
+buscamos es poder hacer lo siguiente:</p>
 <pre class="literal-block">
 &lt;usuario&gt;   &#64;sumar 12 88
 &lt;examplia&gt;  usuario, la suma es 100
@@ -545,7 +547,7 @@ comandos que nosotros registramos (incluso si apuntan al mismo método dentro
 de nuestro código).  ¿Pero de dónde viene la ayuda que Lalita muestra para
 nuestros comandos?  Si prestaron la suficiente atención verán que para
 esto se utiliza el docstring del método implementado.</p>
-<p>Si prestaron atención, también habrán notado que nombré tres metacomandos
+<p>Si estaban atentos, también habrán notado que nombré tres metacomandos
 arriba, pero expliqué solamente dos.  Nos queda el tercero: <tt class="docutils literal">more</tt>.  Esta
 es una orden utilizada sólo en casos muy específicos: cuando entra en acción
 una regulación de Lalita para comportarse decentemente en un canal.</p>
@@ -558,12 +560,12 @@ lineas; esta protección está implementada en la mayoría de los
 servidores).  Entonces Lalita tiene un mecanismo para que el plugin no
 pueda caer en este error.</p>
 <p>Si el plugin contesta muchas lineas al mismo canal o usuario, sólo pasan
-las primeras 5 y el resto se encola y no se muestran a menos que el mismo
-usuario que generó el comando original diga <tt class="docutils literal">&#64;more</tt>, haciendo que Lalita
+las primeras 5 (esto es configurable) y el resto se encola y no se
+muestran a menos que el mismo usuario que generó el
+comando original diga <tt class="docutils literal">&#64;more</tt>, haciendo que Lalita
 muestre las próximas 5 lineas encoladas, y así hasta que se acabe lo
 encolado, el usuario diga otra cosa, o pase un determinado tiempo que hace
 caducar a la cola de respuestas.</p>
-<p><em>FIXME: indicar cómo se configura ese &quot;5&quot; para que no sea mágico.</em></p>
 </div>
 </div>
 <div class="section" id="cuales-son-los-eventos-que-podemos-recibir">
@@ -612,7 +614,6 @@ self.register(&lt;evento&gt;, &lt;método&gt;)
 </pre>
 <p>La mayoría de los eventos permiten solamente eso.  Pero en algunos casos
 podemos especificar otros parámetros.</p>
-<p><em>FIXME: explicar qué sucede si te registrás dos veces.</em></p>
 <div class="section" id="multiples-comandos">
 <h2>Múltiples comandos</h2>
 <p>En el caso del evento COMMAND, se debe especificar una tupla con todos los
@@ -625,7 +626,6 @@ self.register(self.events.COMMAND, self.sum, (&quot;sumar&quot;, &quot;sum&quot;
 self.register(self.events.COMMAND, self.multiply, (&quot;mult&quot;, &quot;multiply&quot;))
 self.register(self.events.COMMAND, self.divide, (&quot;div&quot;,))
 </pre>
-<p><em>FIXME: no hay ejemplo para &quot;varios métodos para un determinado comando&quot;.</em></p>
 </div>
 <div class="section" id="filtrando-los-mensajes">
 <h2>Filtrando los mensajes</h2>
@@ -665,12 +665,10 @@ el ejemplo anterior, podríamos tener el siguiente diálogo:</p>
 </pre>
 <p>Esto lo podríamos hacer a mano (recibiendo todos los eventos públicos y
 privados y filtrando), pero Lalita ya nos ofrece esta funcionalidad integrada.</p>
-<p>Para activarla, sólo tenemos que hacer:</p>
+<p>Para activarla, sólo tenemos que hacer, en la configuración del canal:</p>
 <pre class="literal-block">
-self.set_options(automatic_command=True)
+indirect_command=True
 </pre>
-<p><em>FIXME: no vamos a tener set_options, todas las opciones serán manejadas
-desde la config.</em></p>
 <p>De esta manera, todos los eventos <tt class="docutils literal">TALKED_TO_ME</tt> y <tt class="docutils literal">PRIVATE_MESSAGE</tt>
 que tengan un mensaje que comiencen con un comando registrado, serán
 modificados y enviados al plugin como si hubiese sido justamente una
@@ -687,9 +685,7 @@ self.say(&lt;destino&gt;, &lt;texto&gt;, [&lt;arg1&gt;, ...])
 </pre>
 <p>El destino es a quien va dirigido el mensaje.  Si es un usuario, el mensaje
 será privado.  Si es un canal (que empieza por <tt class="docutils literal">#</tt>), el mensaje será dicho
-en el canal público (aquí Lalita aplica una restricción: el plugin solo
-puede contestar algo por el mismo canal que se le preguntó o en
-privado, pero no puede cruzar respuestas de canales).</p>
+en el canal público.</p>
 <p>El segundo parámetro es el texto del mensaje que queremos comunicar.  No hay
 a priori una restricción de longitud, pero los textos muy largos se
 transforman a varias lineas, por restricciones propias de IRC.  Se
@@ -746,33 +742,6 @@ plugin esté listo para contestar.  Realmente el plugin puede devolver o
 no el deferred, ya que el funcionamiento será el mismo, pero si al usar
 un deferred el plugin lo devuelve, Lalita lo usará para loguear la
 finalización exitosa o por error del mismo.</p>
-</div>
-<div class="section" id="hablando-sin-contestar">
-<h2>Hablando sin contestar</h2>
-<p><em>FIXME: quizás pongamos que el default es &quot;hablar libre&quot;, y que se puede
-configurar para que te restrinja. Deberíamos re-redactar esto acá si fuese
-así</em></p>
-<p>Como mencionamos antes, hay una regla básica que Lalita fuerza para todos
-los plugins: estos mismos sólo pueden contestar por el canal que se les
-habló (o a la persona en privado que originó el diálogo).  Esta es una
-regla de seguridad, que ha probado ser útil, pero al mismo tiempo
-restringe algunos comportamientos que desearíamos para un plugin
-específico (como poder decirle a un plugin que avise algo importante en
-todos los canales en donde está Lalita).</p>
-<p>Un efecto secundario de esta limitación es que Lalita no puede decir algo
-sin que le hablen primero, y también hay casos de uso en lo que esto sería
-deseable, como tener un plugin que informe de noticias nuevas que reciba
-por RSS, por ejemplo.</p>
-<p>Si necesitamos cualquiera de estas dos funcionalidades, debemos desactivar esta
-restricción, de la siguiente manera:</p>
-<pre class="literal-block">
-self.set_options(free_talk=True)
-</pre>
-<p><em>FIXME: no vamos a tener set_options, todas las opciones serán manejadas
-desde la config.</em></p>
-<p>Luego de esa configuración, podremos generar los mensajes que deseemos
-desde el plugin, a cualquier destino, y sin importar si nos hablaron
-primero o no.</p>
 </div>
 </div>
 <div class="section" id="armando-un-plugin-mas-profesional">
@@ -916,7 +885,6 @@ básicamente un gran diccionario de Python.</p>
 configurados, los que se especificarán al ejecutar Lalita.  Cada uno de
 estos servidores tiene una configuración que también es un diccionario.</p>
 <p>El diccionario de cada servidor puede tener las siguientes claves:</p>
-<blockquote>
 <ul class="simple">
 <li>encoding: La codificación de Unicode que se hablará contra ese servidor
 (&quot;utf8&quot;, &quot;latin1&quot;, etc.).</li>
@@ -932,7 +900,6 @@ nivel de servidor (ver abajo).</li>
 <li>plugins_dir: El directorio del cual levantar los plugins (si no se
 especifica se toman del directorio <tt class="docutils literal">plugins/</tt> del proyecto.</li>
 </ul>
-</blockquote>
 <p>El valor de la clave <em>channels</em> arriba es un diccionario, donde las claves
 son los distintos canales, y el valor correspondiente para cada clave es
 la configuración de ese canal, que puede tener dos claves: <tt class="docutils literal">plugins</tt>,
@@ -948,7 +915,7 @@ un plugin a nivel de servidor cuando es necesario para conectarse
 (como el que mencionamos de <em>freenode</em>), o lo queremos utilizar también
 por privado (ya que cuando dialogamos en privado con un bot estamos
 afuera de todo canal).</p>
-<p>Por último, cabe notar que es muy difíicil ejemplificar las distintas
+<p>Por último, cabe notar que es muy difícil mostrar todas las distintas
 combinaciones aquí, pero siempre está el tan mencionado
 <tt class="docutils literal">config.py.example</tt> para revisar y tomar de ejemplo.</p>
 </div>

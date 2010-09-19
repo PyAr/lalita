@@ -5,21 +5,45 @@
 # For further info, see LICENSE file
 
 # Global Configuration Settings
+
+# this is the character that will indicate that a command to lalita
+# is issued
 command_char = '@'
 
 # Servers Configuration Settings
+
+# the name of the server is the key of this dict, and the value 
+# for each key is the server configuration
 servers = {
         'localhost': dict (
+
+            # the encoding used to connect to the server
             encoding='utf8',
+
+            # host and port of the server
             host='127.0.0.1', port=6667,
+
+            # the nick name we'll be using to connect
             nickname='examplia',
+
+            # when there's a problem, a private will be opened to the
+            # ircmaster to show him the traceback
             ircmaster='facundobatista',
-            indirect_command=True,
+
+            # the lang to use in the translated plugin texts
             lang='es',
+
+            # list and config of the channels, all server config can be 
+            # overruled on each channel
             channels= {
-                '#humites': dict (plugins={
-                    'lalita.plugins.url.Url': { },
-                }),
+                '#humites': dict (
+                    plugins={
+                        'lalita.plugins.url.Url': { },
+                    }   
+                
+                    # if True, when talking to the bot will be considered a command
+                    indirect_command=True,
+                ),
                 '#perrites': dict (
                     lang='en',
                     plugins={
@@ -76,6 +100,16 @@ servers = {
                 'lalita.plugins.url.Url': { },
                 'lalita.plugins.seen.Seen': { },
                 'lalita.plugins.misc.Ping': { },
+            },
+        ),
+        'example-freenode': dict (
+            encoding='utf8',
+            host='irc.freenode.net', port=6667,
+            nickname='lalita-example',
+            channels= {
+                '#lalita-example': dict (plugins={
+                    'lalita.plugins.ejemplodoc.Sum': { },
+                }),
             },
         ),
         'perrito':{
