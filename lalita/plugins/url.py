@@ -55,6 +55,12 @@ class Url (Plugin):
         self.urlsInDb= 0
         self.urlsOk= 0
 
+        try:
+            self.entities= BeautifulStoneSoup.XHTML_ENTITIES
+        except AttributeError:
+            self.logger.warning ("BeautifulSoup seems to be old, using compatibility mode.")
+            self.entities= ["xml", "html"]
+
         self.initDb ()
 
     ##### database handling #####
@@ -244,7 +250,7 @@ class Url (Plugin):
 
                 # convert xhtml entities
                 title= BeautifulStoneSoup (title,
-                    convertEntities=["xml", "html"]).contents[0]
+                    convertEntities=self.entities).contents[0]
 
                 # this takes out the \n\r\t's
                 titleParts= title.split ()
