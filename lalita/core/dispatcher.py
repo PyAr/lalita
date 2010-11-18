@@ -294,7 +294,7 @@ class Dispatcher(object):
             d = defer.maybeDeferred(regist, *args)
             d.addCallback(self._done, instance)
             d.addErrback(self._error, instance)
-            d.addBoth(lambda _: self._to_whom.pop(instance))
+            d.addBoth(lambda _: self._to_whom.pop(instance, None))
 
     def handle_private_message(self, extra, user, msg):
         '''The extra is a regexp that says if the msg is useful or not.'''
