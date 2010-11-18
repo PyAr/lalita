@@ -16,7 +16,8 @@ XB-Python-Version: ${python:Versions}
 Depends: ${misc:Depends},
  ${python:Depends},
  python-chardet,
- python-twisted-core
+ python-twisted-core,
+ python-beautifulsoup (>= 3.1)
 Description: Yet another IRC bot.
  Yet another IRC bot, one where new functionality is simple to create
  just adding easy-to-write plugins.
