@@ -172,7 +172,7 @@ class Url (Plugin):
 
     def rename(self, user, channel, command, *what):
         u'''Renombra el título de una URL anterior'''
-        self.logger.debug(u'renaming %s' % what);
+        self.logger.debug(u'renaming %s', what)
 
         if not what or len(what) - 1 == 0:
             # no arguments or missing new title
@@ -198,7 +198,7 @@ class Url (Plugin):
 
         new_title = ' '.join(what[1:])
 
-        self.logger.debug('changing urlID %s from "%s" to "%s"', (url_id, result[0], new_title))
+        self.logger.debug('changing urlID %s from "%s" to "%s"', url_id, result[0], new_title)
         self.cursor.execute('''update url SET title = ? where id = ?''', (new_title, url_id))
         self.conn.commit()
         self.say(channel,
