@@ -38,7 +38,7 @@ class Url (Plugin):
         self.config= dict (
             block_size=4096,
             in_format=u'%(poster)s: [#%(id)d] %(title)s',
-            found_format=u'[#%(id)d] %(url)s: %(title)s [by %(poster)s, %(date)s, %(time)s]',
+            found_format=u'[#%(id)d] %(url)s : %(title)s [by %(poster)s, %(date)s, %(time)s]',
             guess_encoding=0.0,
             )
         self.config.update (config)
