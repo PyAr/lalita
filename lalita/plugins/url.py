@@ -174,17 +174,17 @@ class Url (Plugin):
         u'''Renombra el título de una URL anterior'''
         self.logger.debug(u'renaming %s', what)
 
-        if not what or len(what) - 1 == 0:
+        if len(what) < 2:
             # no arguments or missing new title
             self.say(channel,
-                     u"%s: necesito un ID y el nuevo título para poder renombrar" % user)
+                     u"%s: necesito un ID y el nuevo título para poder renombrar", user)
             return
         
         try:
             url_id = int(what[0])
         except ValueError:
             self.say(channel,
-                     u"%s: necesito un ID a renombrar válido" % user)
+                     u"%s: necesito un ID a renombrar válido", user)
             return
 
         self.cursor.execute('''select title, poster from url where id = ?''', (url_id, ))
@@ -193,7 +193,7 @@ class Url (Plugin):
         
         if not result:
             self.say(channel,
-                     '%s: 404 ID %s not found' % (user, url_id))
+                     '%s: 404 ID %s not found', user, url_id)
             return
 
         new_title = ' '.join(what[1:])
@@ -202,7 +202,7 @@ class Url (Plugin):
         self.cursor.execute('''update url SET title = ? where id = ?''', (new_title, url_id))
         self.conn.commit()
         self.say(channel,
-                 '%s: [%s] renamed to "%s"' % (user, url_id, new_title))
+                 '%s: [#%s] renamed to "%s"', user, url_id, new_title)
 
     ##### encoding detectors #####
     def pageContentType(self, page):
