@@ -38,7 +38,7 @@ class Url (Plugin):
         self.config= dict (
             block_size=4096,
             in_format=u'%(poster)s: [#%(id)d] %(title)s',
-            found_format=u'[#%(id)d] %(url)s: %(title)s [by %(poster)s, %(date)s, %(time)s]',
+            found_format=u'[#%(id)d] %(url)s : %(title)s [by %(poster)s, %(date)s, %(time)s]',
             guess_encoding=0.0,
             )
         self.config.update (config)
@@ -49,6 +49,7 @@ class Url (Plugin):
 
         self.register(self.events.COMMAND, self.dig, ['dig'])
         self.register(self.events.COMMAND, self.delete, ['del'])
+        self.register(self.events.COMMAND, self.rename, ['rename'])
 
         self.urlsFound= 0
         self.urlsFailed= 0
@@ -168,6 +169,40 @@ class Url (Plugin):
                 promise.addCallback (self.guessFile, user, channel, url, date, time)
                 promise.addErrback (self.failed, user, channel, url, date, time)
                 return promise
+
+    def rename(self, user, channel, command, *what):
+        u'''Renombra el título de una URL anterior'''
+        self.logger.debug(u'renaming %s', what)
+
+        if len(what) < 2:
+            # no arguments or missing new title
+            self.say(channel,
+                     u"%s: necesito un ID y el nuevo título para poder renombrar", user)
+            return
+        
+        try:
+            url_id = int(what[0])
+        except ValueError:
+            self.say(channel,
+                     u"%s: necesito un ID a renombrar válido", user)
+            return
+
+        self.cursor.execute('''select title, poster from url where id = ?''', (url_id, ))
+
+        result= list (self.cursor.fetchone ())
+        
+        if not result:
+            self.say(channel,
+                     '%s: 404 ID %s not found', user, url_id)
+            return
+
+        new_title = ' '.join(what[1:])
+
+        self.logger.debug('changing urlID %s from "%s" to "%s"', url_id, result[0], new_title)
+        self.cursor.execute('''update url SET title = ? where id = ?''', (new_title, url_id))
+        self.conn.commit()
+        self.say(channel,
+                 '%s: [#%s] renamed to "%s"', user, url_id, new_title)
 
     ##### encoding detectors #####
     def pageContentType(self, page):
