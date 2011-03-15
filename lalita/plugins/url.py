@@ -35,6 +35,7 @@ class Url (Plugin):
 
     def init(self, config):
         self.register (self.events.PUBLIC_MESSAGE, self.message)
+        self.register (self.events.ACTION, self.message)
         self.config= dict (
             block_size=4096,
             in_format=u'%(poster)s: [#%(id)d] %(title)s',
@@ -179,7 +180,7 @@ class Url (Plugin):
             self.say(channel,
                      u"%s: necesito un ID y el nuevo título para poder renombrar", user)
             return
-        
+
         try:
             url_id = int(what[0])
         except ValueError:
@@ -190,7 +191,7 @@ class Url (Plugin):
         self.cursor.execute('''select title, poster from url where id = ?''', (url_id, ))
 
         result= list (self.cursor.fetchone ())
-        
+
         if not result:
             self.say(channel,
                      '%s: 404 ID %s not found', user, url_id)
@@ -244,9 +245,11 @@ class Url (Plugin):
 
     def guessFile (self, page, user, channel, url, date, time):
         mimetype_enc= self.magic.buffer (page)
+        self.logger.debug (mimetype_enc)
         g = self.mimetype_re.search(mimetype_enc)
         if g is not None:
             mimetype= g.groups()[0]
+            # BUG? we throw away this detected encoding later!
             encoding= g.groups()[2]
         else:
             self.logger.warn ("initial mimetype detection failed: %s" % mimetype_enc)
@@ -276,7 +279,7 @@ class Url (Plugin):
                     if encoding is not None:
                         try:
                             data = title.decode(encoding)
-                        except UnicodeDecodeError:
+                        except (UnicodeDecodeError, LookupError):
                             self.logger.debug("failed!")
                         else:
                             self.logger.debug("suceeded!")
