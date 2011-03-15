@@ -61,7 +61,8 @@ class Url (Plugin):
             self.entities= BeautifulStoneSoup.XHTML_ENTITIES
         except AttributeError:
             self.logger.warning ("BeautifulSoup seems to be old, using compatibility mode.")
-            self.entities= ["xml", "html"]
+            # TODO: actually, just use both sequentially?
+            self.entities= "html"
 
         self.initDb ()
 
@@ -152,7 +153,9 @@ class Url (Plugin):
     def message (self, user, channel, message, date=None, time=None):
         g= self.url_re.search (message)
         if g is not None:
-            url= g.groups()[0]
+            # TODO: iterate over findings
+            # for url in g.groups():
+            url= g.groups ()[0]
 
             # see if we can find it in the db
             self.cursor.execute ('''select * from url where url = ? ''', (url, ))
