@@ -13,16 +13,20 @@ IRC a medida, de manera sencilla y rápida.  Como si eso fuera poco, además
 tenemos algunos plugins que vienen incluidos (ver abajo).
 
 
-¿Qué es un bot IRC?
--------------------
+¿Qué es un bot de IRC?
+----------------------
 
-Un bot IRC es un programa que entra en algún canal en algún servidor de
-IRC_ (o a muchos canales en un servidor, o a muchos servidores, etc.), y
-se comporta como un miembro más del canal.
+Por un lado, IRC (Internet Relay Chat), Significa Chat de Posteo en Internet,
+y es un sistema que permite a uno chatear en conversaciones grupales y
+personales.  Y bot es la abreviatura de robot, un sistema independiente
+automatizado.
 
-La idea de un bot IRC no es hacerse pasar por un ser humano conectado (la
-mayoría de las veces), sino prestar determinados servicios a los usuarios
-del canal (la palabra 'bot' es un diminutivo de 'robot').
+Un bot IRC es un programa que entra en algún canal de un servidor de IRC
+(o más), y se comporta como un miembro más del canal.
+
+La mayoría de las veces, la idea de un bot de IRC no es hacerse pasar por
+un ser humano conectado (aunque puede serlo), sino prestar determinados
+servicios a los usuarios del canal.
 
 La prestación de estos servicios involucra que el bot reciba de alguna manera
 lo que la gente dice, y que les conteste.  A lo largo de los siguientes
@@ -87,7 +91,7 @@ Luego de calcular el resultado que buscamos (la suma de los números pasados,
 calculado de forma simple para no complicar el ejemplo), contestamos al
 usuario utilizando otro método heredado: ``self.say``.  Al mismo le
 pasamos primero el destino de lo que estamos diciendo (en este caso el
-canal por donde nos hablaron), luego el mensaje que queremos decir, y
+canal por dónde nos hablaron), luego el mensaje que queremos decir, y
 finalmente valores para reemplazar en ese mensaje (veremos luego por qué
 es importante no reemplazarlos directamente).
 
@@ -130,50 +134,60 @@ fuimos usando. Dentro del directorio donde está el proyecto, vemos los tres
 archivos que tenemos que considerar para probar el ejemplo.
 
 - El código arriba mostrado grabado en un archivo en el directorio
-  ``plugins/``; en nuestro caso lo guardamos en un archivo llamado
+  ``plugins/``; en nuestro caso lo guardaremos en un archivo llamado
   ``plugins/ejemplodoc.py``.
 
 - El programa principal, que es ``ircbot.py``, y que mostraremos abajo
   cómo ejecutar.
 
-- Un archivo de configuración ``lalita.cfg.sample``, que es el ejemplo
-  con múltiples configuraciones de muestra, pero que podemos modificar a
-  discreción.
+- Un archivo de configuración ``lalita.cfg.sample`` con múltiples
+  configuraciones de muestra, pero veremos aquí mismo cómo hacer uno básico
+  que nos sirva para probar el ejemplo.
 
-La configuración no es más que un diccionario Python con toda la información
+La configuración no es más que un diccionario de Python con toda la información
 necesaria.  Aquí mostramos una configuración muy sencilla. Pueden ver
-el archivo de ejemplo para otras configuraciones, y abajo en este
+el ``lalita.cfg.sample`` para otras configuraciones, y abajo en este
 mismo documento para más explicaciones.
 
 En nuestro caso usaremos::
 
     servers = {
-        'example-freenode': dict (
-            encoding='utf8',
-            host='irc.freenode.net', port=6667,
-            nickname='lalita-example',
-            channels= {
-                '#lalita-example': dict (plugins={
-                    'lalita.plugins.ejemplodoc.Sum': { },
-                }),
+        'example': dict(
+            encoding = 'utf8',
+            host = 'localhost', port = 6667,
+            nickname = 'examplia',
+            channels = {
+                '#humites': {},
+            },
+            plugins = {
+                'ejemplodoc.Sum': {},
             },
         ),
     }
 
-En este caso tenemos un sólo server configurado, llamado ``example-freenode``,
-apuntando a Freenode en el puerto 6667. Aunque arrancamos probando contra un
-servidor público, lo más fácil para probar ejemplos y desarrollar nuestro
-propio plugin es instalar un servidor de IRC en la propia computadora. Por
-ejemplo, se puede muy fácilmente utilizar ``dancer-ircd``, principalmente
-porque al instalarlo ya queda funcionando como queremos y no hay que
-realizar configuraciones adicionales).
+En este caso tenemos un sólo server configurado, llamado ``example``,
+apuntando a localhost en el puerto 6667 (lo más fácil para probar ejemplos
+y desarrollar nuestro propio plugin es instalar un servidor de IRC en la
+propia computadora.  Por ejemplo, se puede utilizar ``dancer-ircd``,
+principalmente porque al instalarlo ya queda funcionando como queremos y
+no hay que realizar configuraciones adicionales).
 
-En la configuración decimos que el nick del bot será ``lalita-example``,
-utilizará UTF-8 como encoding, y nos conectaremos al canal ``#lalita-example``,
+En la configuración decimos que el nick del bot será ``examplia``,
+utilizará UTF-8 como encoding, y nos conectaremos al canal ``#humites``,
 instanciando al plugin que acabamos de crear (notar que la forma de
 especificar al plugin es ``archivo.Clase`` (sin el ``.py``), lo que nos da la
 libertad de tener varios plugins en distintos archivos y sólo especificar
 el que queremos usar.
+
+Una vez grabado el lalita.cfg, probamos todo haciendo::
+
+  python ircbot.py example
+
+Usamos ``python`` para llamar al intérprete, ``ircbot.py`` para ejecutar
+Lalita, y ``example`` para indicarle cual de los servidores configurados
+vamos a utilizar (podemos tener muchos configurados y usar algunos
+solamente).  Se muestra solamente la forma de ejecución más simple, ver
+abajo distintas opciones que se pueden utilizar en cada caso.
 
 
 Usando ordenes
@@ -272,7 +286,7 @@ de nuestro código).  ¿Pero de dónde viene la ayuda que Lalita muestra para
 nuestros comandos?  Si prestaron la suficiente atención verán que para
 esto se utiliza el docstring del método implementado.
 
-Si estaban atentos, también habrán notado que nombré tres metacomandos
+Si prestaron atención, también habrán notado que nombré tres metacomandos
 arriba, pero expliqué solamente dos.  Nos queda el tercero: ``more``.  Esta
 es una orden utilizada sólo en casos muy específicos: cuando entra en acción
 una regulación de Lalita para comportarse decentemente en un canal.
@@ -293,6 +307,8 @@ comando original diga ``@more``, haciendo que Lalita
 muestre las próximas 5 lineas encoladas, y así hasta que se acabe lo
 encolado, el usuario diga otra cosa, o pase un determinado tiempo que hace
 caducar a la cola de respuestas.
+
+*FIXME: indicar cómo se configura ese '5' para que no sea mágico.*
 
 
 ¿Cuales son los eventos que podemos recibir?
@@ -333,14 +349,13 @@ Eventos que representan acciones de los usuarios o hacia los usuarios.
 
 - ``JOIN [usuario, canal]``: El usuario se sumó al canal en cuestión.
 
-- ``LEFT [usuario, canal``: El usuario abandonó el canal en cuestión.
+- ``LEFT [usuario, canal]``: El usuario abandonó el canal en cuestión.
 
 - ``QUIT [usuario, mensaje]``: El usuario se desconectó del servidor
   completamente, indicando un determinado mensaje de salida.
 
 - ``KICK [pateado, canal, pateador, mensaje]``: El usuario fue pateado del
   canal, por una determinado operador ("pateador"), con un determinado mensaje.
-
 
 Registrando eventos
 ===================
@@ -678,7 +693,7 @@ estos servidores tiene una configuración que también es un diccionario.
 
 El diccionario de cada servidor puede tener las siguientes claves:
 
-- encoding: La codificación de Unicode que se hablará contra ese servidor
+- encoding: La codificación de texto que se hablará contra ese servidor
   ("utf8", "latin1", etc.).
 
 - host: La dirección IP o el nombre del server.
