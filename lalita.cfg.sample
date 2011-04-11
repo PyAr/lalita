@@ -39,7 +39,7 @@ servers = {
                 '#humites': dict (
                     plugins={
                         'lalita.plugins.url.Url': { },
-                    }   
+                    },
                 
                     # if True, when talking to the bot will be considered a command
                     indirect_command=True,

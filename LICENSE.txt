@@ -13,7 +13,7 @@ along with this program  (search for a file named gpl-3.0.txt).  If not,
 see <http://www.gnu.org/licenses/>.
 
 
-Copyright 2009-2010 for the "laliputienses" group in Launchpad.  Right now we
+Copyright 2009-2011 for the "laliputienses" group in Launchpad.  Right now we
 are...
 
     Facundo Batista
