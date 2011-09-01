@@ -29,7 +29,7 @@ LOG_LEVELS = {
 }
 
 log_stdout_handler = logging.StreamHandler(sys.stdout)
-formatter = logging.Formatter("%(asctime)s %(name)s:%(lineno)-4d "
+formatter = logging.Formatter("%(asctime)s %(name)30s:%(lineno)-4d "
                               "%(levelname)-8s %(message)s",
                               '%Y-%m-%d %H:%M:%S')
 log_stdout_handler.setFormatter(formatter)
@@ -102,6 +102,7 @@ class IrcBot (irc.IRCClient):
                                       if "encoding" in v)
         self.password = self.config.get('password', None)
         self.command_char = self.config.get('command_char', '@')
+        logger.debug (self.command_char)
         irc.IRCClient.connectionMade (self)
         logger.info("connected to %s:%d",
                     self.config['host'], self.config['port'])
@@ -156,12 +157,14 @@ class IrcBot (irc.IRCClient):
         logger.debug("[%s] %s: %s", channel, user, msg)
         user = user.split('!', 1)[0]
         indirect = bool(self.get_config(channel, 'indirect_command'))
+        logger.debug (indirect)
 
         # Check to see if they're sending me a private message
         if channel == self.nickname:
             self.dispatcher.push(events.PRIVATE_MESSAGE, user, msg)
         # Otherwise check to see if it is a message directed at me
         elif msg.startswith(self.nickname):
+            logger.debug("are you talking to me?!? [%s]" % msg)
             rest = msg[len(self.nickname):]
             if rest[0] in (":", " ", ","):
                 rest = rest[1:].strip()
@@ -176,6 +179,7 @@ class IrcBot (irc.IRCClient):
             else:
                 self.dispatcher.push(events.PUBLIC_MESSAGE, user, channel, msg)
         elif msg[0] == self.command_char:
+            logger.debug("sir, yessir! [%s]" % msg)
             args = msg.split()
             command = args.pop(0)[1:]
             self.dispatcher.push(events.COMMAND, user, channel, command, *args)
