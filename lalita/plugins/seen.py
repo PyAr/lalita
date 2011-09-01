@@ -18,6 +18,8 @@ TRANSLATION_TABLE = {u"%s: acástoi, papafrita!": { 'en': u"%s: I'm here!"},
                      u"%s: tenés que indicar un nick": { 'en': u"%s: you need to ask for a nick"},
                     }
 
+# BUG: the plugin must scan the list of current nicks to be able to answer to
+# seen commands (yes, he's right there, you mole!)
 
 class Seen(Plugin):
     '''Plugin that implements the "seen" and "last" commands.'''
@@ -43,6 +45,7 @@ class Seen(Plugin):
         self.register(self.events.TALKED_TO_ME, self.message)
         self.register(self.events.COMMAND, self.seen, ['seen'])
         self.register(self.events.COMMAND, self.last, ['last'])
+        self.logger.debug("seen.Seen init()'ed")
 
     def joined(self, nick, channel):
         '''Logs that the user has joined.'''
