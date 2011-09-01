@@ -58,11 +58,12 @@ class Url (Plugin):
         self.urlsOk= 0
 
         try:
-            self.entities= BeautifulStoneSoup.XHTML_ENTITIES
+            BeautifulStoneSoup.XHTML_ENTITIES
+            self.parseEntitiesSequentially= False
         except AttributeError:
             self.logger.warning ("BeautifulSoup seems to be old, using compatibility mode.")
             # TODO: actually, just use both sequentially?
-            self.entities= "html"
+            self.parseEntitiesSequentially= True
 
         self.initDb ()
 
@@ -289,9 +290,15 @@ class Url (Plugin):
                             title = data
                             break
 
-                # convert xhtml entities
-                title= BeautifulStoneSoup (title,
-                    convertEntities=self.entities).contents[0]
+                # convert entities
+                if self.parseEntitiesSequentially:
+                    title= BeautifulStoneSoup (title,
+                        convertEntities=BeautifulStoneSoup.XML_ENTITIES).contents[0]
+                    title= BeautifulStoneSoup (title,
+                        convertEntities=BeautifulStoneSoup.HTML_ENTITIES).contents[0]
+                else:
+                    title= BeautifulStoneSoup (title,
+                        convertEntities=BeautifulStoneSoup.XHTML_ENTITIES).contents[0]
 
                 # this takes out the \n\r\t's
                 titleParts= title.split ()
