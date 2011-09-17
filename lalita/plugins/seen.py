@@ -18,9 +18,6 @@ TRANSLATION_TABLE = {u"%s: acástoi, papafrita!": { 'en': u"%s: I'm here!"},
                      u"%s: tenés que indicar un nick": { 'en': u"%s: you need to ask for a nick"},
                     }
 
-# BUG: the plugin must scan the list of current nicks to be able to answer to
-# seen commands (yes, he's right there, you mole!)
-
 class Seen(Plugin):
     '''Plugin that implements the "seen" and "last" commands.'''
     def init(self, config):
