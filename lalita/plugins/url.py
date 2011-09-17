@@ -249,7 +249,7 @@ class Url (Plugin):
 
     def guessFile (self, page, user, channel, url, date, time):
         mimetype_enc= self.magic.buffer (page)
-        self.logger.debug (mimetype_enc)
+        self.logger.debug ('mime type found with magic:', mimetype_enc)
         g = self.mimetype_re.search(mimetype_enc)
         if g is not None:
             mimetype= g.groups()[0]
