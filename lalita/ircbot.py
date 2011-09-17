@@ -102,7 +102,7 @@ class IrcBot (irc.IRCClient):
                                       if "encoding" in v)
         self.password = self.config.get('password', None)
         self.command_char = self.config.get('command_char', '@')
-        logger.debug ('command_char:', self.command_char)
+        logger.debug ('command_char: %s' % self.command_char)
         irc.IRCClient.connectionMade (self)
         logger.info("connected to %s:%d",
                     self.config['host'], self.config['port'])
@@ -157,7 +157,7 @@ class IrcBot (irc.IRCClient):
         logger.debug("[%s] %s: %s", channel, user, msg)
         user = user.split('!', 1)[0]
         indirect = bool(self.get_config(channel, 'indirect_command'))
-        logger.debug ('indirect commands?', indirect)
+        logger.debug ('indirect commands? %s' % indirect)
 
         # Check to see if they're sending me a private message
         if channel == self.nickname:
