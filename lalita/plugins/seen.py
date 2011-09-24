@@ -42,7 +42,6 @@ class Seen(Plugin):
         self.register(self.events.TALKED_TO_ME, self.message)
         self.register(self.events.COMMAND, self.seen, ['seen'])
         self.register(self.events.COMMAND, self.last, ['last'])
-        self.logger.debug("seen.Seen init()'ed")
 
     def joined(self, nick, channel):
         '''Logs that the user has joined.'''
