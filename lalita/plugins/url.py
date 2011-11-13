@@ -223,7 +223,7 @@ class Url (Plugin):
                 mimetype = g.groups()[0]
                 encoding = g.groups()[2]
             else:
-                self.logger.warning ("further mimetype detection failed: %s" % mimetype_enc)
+                self.logger.warning ("further mimetype detection failed: %s", mimetype_enc)
         else:
             self.logger.warning ("no mimetype in the page")
 
@@ -235,7 +235,7 @@ class Url (Plugin):
 
         if detect['confidence']>self.config['guess_encoding']:
             encoding= detect['encoding']
-            self.logger.debug ("chardet says it's %s" % encoding)
+            self.logger.debug ("chardet says it's %s", encoding)
         else:
             self.logger.warning("chardet says it's %s, but with very "
                                 "low confidence: %f",
@@ -249,14 +249,14 @@ class Url (Plugin):
 
     def guessFile (self, page, user, channel, url, date, time):
         mimetype_enc= self.magic.buffer (page)
-        self.logger.debug ('mime type found with magic: %s' % mimetype_enc)
+        self.logger.debug ('mime type found with magic: %s',  mimetype_enc)
         g = self.mimetype_re.search(mimetype_enc)
         if g is not None:
             mimetype= g.groups()[0]
             # BUG? we throw away this detected encoding later!
             encoding= g.groups()[2]
         else:
-            self.logger.warn ("initial mimetype detection failed: %s" % mimetype_enc)
+            self.logger.warn ("initial mimetype detection failed: %s", mimetype_enc)
 
         # xhtml detection
         g= self.xhtml_re.search (page)
@@ -303,7 +303,7 @@ class Url (Plugin):
                 # this takes out the \n\r\t's
                 titleParts= title.split ()
                 title= ' '.join (titleParts)
-                self.logger.debug (u"[%s] >%s< %s" % (type (title), title, encoding))
+                self.logger.debug (u"[%s] >%s< %s", type (title), title, encoding)
 
                 self.addUrl (channel, user, url, title, date=date, time=time)
             else:
