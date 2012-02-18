@@ -2,6 +2,7 @@
 # License: GPL v3
 # For further info, see LICENSE file
 
+import logging
 
 from twisted.trial.unittest import TestCase as TwistedTestCase
 from twisted.internet import defer
@@ -21,7 +22,7 @@ class FakeTransport(object):
     def write(*a): pass
 
 ircbot_factory = ircbot.IRCBotFactory(server)
-ircbot.logger.setLevel("error")
+ircbot.logger.setLevel(logging.ERROR)
 bot = ircbot.IrcBot()
 bot.factory = ircbot_factory
 bot.msg = lambda *a:None

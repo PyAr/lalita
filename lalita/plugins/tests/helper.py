@@ -2,6 +2,7 @@
 # License: GPL v3
 # For further info, see LICENSE file
 
+import logging
 import unittest
 
 from lalita import ircbot
@@ -27,8 +28,8 @@ class PluginTest(unittest.TestCase):
             (plugin_name, config) = server_plugin
             self.test_server["plugins"] = { plugin_name: config }
 
-        self.test_server["log_config"] = { plugin_name: "error" }
-        ircbot.logger.setLevel("error")
+        self.test_server["log_config"] = { plugin_name: "ERROR" }
+        ircbot.logger.setLevel(logging.ERROR)
         ircbot_factory = ircbot.IRCBotFactory(self.test_server)
         self.bot = ircbot.IrcBot()
         self.bot.factory = ircbot_factory

@@ -47,7 +47,7 @@ class TestLoadPlugin(unittest.TestCase):
     def setUp(self):
         server["log_config"] = {}
         ircbot_factory = ircbot.IRCBotFactory(server)
-        ircbot.logger.setLevel("error")
+        ircbot.logger.setLevel(logging.ERROR)
         self.bot = bot = ircbot.IrcBot()
         bot.factory = ircbot_factory
         bot.config = ircbot_factory.config
@@ -129,7 +129,7 @@ class TestConfiguration(unittest.TestCase):
 
     def setUp(self):
         ircbot_factory = ircbot.IRCBotFactory(server)
-        ircbot.logger.setLevel("error")
+        ircbot.logger.setLevel(logging.ERROR)
         self.bot = bot = ircbot.IrcBot()
         bot.factory = ircbot_factory
         bot.config = ircbot_factory.config
@@ -168,7 +168,7 @@ class PrivateMessageTests(unittest.TestCase):
 
     def setUp(self):
         ircbot_factory = ircbot.IRCBotFactory(server.copy())
-        ircbot.logger.setLevel("error")
+        ircbot.logger.setLevel(logging.ERROR)
         self.bot = bot = ircbot.IrcBot()
         bot.factory = ircbot_factory
         bot.config = ircbot_factory.config
