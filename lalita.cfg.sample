@@ -55,6 +55,16 @@ servers = {
                 # 'url.Url': { },
                 'lalita.plugins.photo.Photo': { },
                 'lalita.plugins.misc.Ping': { },
+                'zmq_proxy.ZMQPlugin':{
+                    'pub_address':'tcp://127.0.0.1:9090',
+                    'cmd_address':'tcp://127.0.0.1:9091',
+                    'plugins':{
+                        'example':{'executable':'python', 
+                                   'arguments':['lalita/plugins/zmq_plugins/example.py'], 
+                                   'commands':['example']
+                        },
+                    }
+                },
             },
         ),
         'example': dict (
