@@ -2,14 +2,9 @@
 
 import json
 import logging
-import os
 import re
-import sys
 
 import zmq
-
-from twisted.internet import reactor, defer
-from twisted.internet.protocol import ProcessProtocol
 
 from txzmq.pubsub import ZmqSubConnection
 from txzmq import ZmqFactory, ZmqEndpoint
@@ -36,27 +31,8 @@ EVENT_MAP = {
 }
 
 
-class PluginProcess(ProcessProtocol):
-
-    def __init__(self, name):
-        self.name = name
-        self.deferred = defer.Deferred()
-
-    def processExited(self, status):
-        self.deferred.callback(status)
-
-    def processEnded(self, status):
-        if not self.deferred.called:
-            self.deferred.callback(status)
-
-    def outReceived(self, data):
-        sys.stdout.flush()
-
-    def errReceived(self, data):
-        sys.stdout.flush()
-
-
 class BotConnection(ZmqSubConnection):
+    """Bot zmq connection."""
 
     def __init__(self, plugin, factory, endpoint):
         ZmqSubConnection.__init__(self, factory, endpoint)
@@ -69,15 +45,19 @@ class BotConnection(ZmqSubConnection):
         info = json.loads(message)
         if info['action'] == "say":
             if isinstance(info['to_whom'], unicode):
-                self.plugin.say(info['to_whom'].encode('utf-8'), info['msg'], *info['args'])
+                self.plugin.say(info['to_whom'].encode('utf-8'),
+                                info['msg'], *info['args'])
             else:
                 self.plugin.say(info['to_whom'], info['msg'], *info['args'])
+        elif info["action"] == "register_command":
+            self.plugin.register_command(info['command'])
+        else:
+            self.plugin.log.error("Invalid Action %s", message)
 
-        if info["action"] == "restart":
-            self.plugin.restart_process(info['name'])
 
 
 class EventHandler(object):
+    """Bridge of lalita event's to zmq messages."""
 
     def __init__(self, plugin, event_name, channel_pos, user_pos):
         self.name = event_name
@@ -102,12 +82,14 @@ class EventHandler(object):
 
 
 class ZMQPlugin(Plugin):
+    """ZeroMQ plugin."""
 
     def init(self, config):
         self._plugins = {}
         self.config = config
-        pub_address = self.config['pub_address']
-        cmd_address = self.config['cmd_address']
+        pub_address = self.config['events_address']
+        cmd_address = self.config['bot_address']
+        self.commands = set() # hold all the commands
         self.ctx = zmq.Context.instance()
         self.pub_socket = self.ctx.socket(zmq.PUB)
         self.pub_socket.bind(pub_address)
@@ -116,11 +98,8 @@ class ZMQPlugin(Plugin):
         rpc_endpoint = ZmqEndpoint("bind", cmd_address)
         self.cmd_socket = BotConnection(self, zmq_factory, rpc_endpoint)
         self.cmd_socket.subscribe("")
-        self._start_plugins()
         for event, info in EVENT_MAP.items():
-            if event == events.COMMAND:
-                self.register(event, EventHandler(self, *info), None)
-            else:
+            if event != events.COMMAND:
                 self.register(event, EventHandler(self, *info), re.compile(".*"))
 
     def shutdown(self):
@@ -130,60 +109,51 @@ class ZMQPlugin(Plugin):
         for proc in self._plugins.values():
             proc.loseConnection()
 
+    def register_command(self, commands):
+        """Register a list of commands."""
+        if not self.commands.intersection(set(commands)):
+            for command in commands:
+                self.commands.add(command)
+            self.register(events.COMMAND,
+                          EventHandler(self, *EVENT_MAP[events.COMMAND]),
+                          commands)
+        # else, already registered.
+
     def publish(self, name, msg_args):
+        """Publish a message/event."""
         self.pub_socket.send(name, zmq.SNDMORE)
         self.pub_socket.send(json.dumps(msg_args))
 
-    def _start_plugins(self):
-        for name in self.config.get('plugins', {}):
-            self._start_process(name)
 
-    def _start_process(self, name):
-        plugin_cfg = self.config['plugins'][name]
-        executable = plugin_cfg['executable']
-        if executable == 'python':
-            executable = sys.executable
-        cmd_args = plugin_cfg.get('arguments', [])
-        env = plugin_cfg.get('env', {})
-        proto = PluginProcess(name)
-        args = [executable] + cmd_args
-        plugin_config = plugin_cfg.get('config', {})
-        plugin_config['sub_address'] = self.config['pub_address']
-        plugin_config['bot_address'] = self.config['cmd_address']
-        env['plugin_config'] = json.dumps(plugin_config)
-        env.update(os.environ)
-        process = reactor.spawnProcess(proto, executable, args, env)
-        self._plugins[name] = process
+class PluginProcess(object):
+    """Base class for ZeroMQ plugins."""
 
-    def restart_process(self, name):
-        old_proc = self._plugins.pop(name)
-        old_proc.loseConnection()
-        self._start_process(name)
-
-
-class SubProcessPlugin(object):
-
-    def __init__(self, config):
+    def __init__(self, events_address, bot_address, config):
         self.config = config
-        self.logger = logging.getLogger("lalita.zmq_plugin.%s" %
+        self.logger = logging.getLogger("zmq_plugin.%s" %
                                         (self.__class__.__name__,))
         self.ctx = zmq.Context()
         self.sub_socket = self.ctx.socket(zmq.SUB)
-        self.sub_socket.connect(self.config['sub_address'])
+        self.sub_socket.connect(events_address)
         self.sub_socket.setsockopt(zmq.SUBSCRIBE, "irc")
         # create the bot socket
         self.bot_socket = self.ctx.socket(zmq.PUB)
-        self.bot_socket.connect(self.config['bot_address'])
+        self.bot_socket.connect(bot_address)
         # setup the event handler
         self._events = {}
 
     def register_command(self, function, command_name):
-        self._events['irc.command'] = (function, command_name)
+        """Register a command."""
+        self._events['irc.command'] = (function, lambda a: command_name in a)
+        new_msg = {'action':'register_command', 'command':[command_name]}
+        self.bot_socket.send(json.dumps(new_msg))
 
     def register(self, event, function, matcher=None):
+        """Register a event handler."""
         self._events[event] = (function, matcher)
 
     def say(self, to_whom, msg, *args):
+        """Say something."""
         new_msg = {'action':'say', 'to_whom':to_whom, "msg":msg, "args":args}
         self.bot_socket.send(json.dumps(new_msg))
 

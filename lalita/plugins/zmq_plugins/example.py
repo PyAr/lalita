@@ -13,7 +13,7 @@ class Example(SubProcessPlugin):
         super(Example, self).__init__(config)
         self.logger.info("Configuring Example Plugin!")
         # register the commands
-        self.register_command(self.cmd_example, lambda a: "example" in a)
+        self.register_command(self.cmd_example, "example")
         self.register("irc.private_message", self.example_priv)
         self.register("irc.talked_to_me", self.cmd_example)
 
@@ -31,6 +31,7 @@ if __name__ == "__main__":
     config = json.loads(os.environ.get('plugin_config', '{}'))
     import logging
     logging.basicConfig()
+    logging.getLogger().setLevel(logging.DEBUG)
 
     try:
         Example(config).run()
