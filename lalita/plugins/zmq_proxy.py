@@ -55,7 +55,6 @@ class BotConnection(ZmqSubConnection):
             self.plugin.log.error("Invalid Action %s", message)
 
 
-
 class EventHandler(object):
     """Bridge of lalita event's to zmq messages."""
 
@@ -103,8 +102,10 @@ class ZMQPlugin(Plugin):
                 self.register(event, EventHandler(self, *info), re.compile(".*"))
 
     def shutdown(self):
-        self.cmd_socket.shutdown()
-        self.pub_socket.close()
+        if hasattr(self, 'cmd_socket'):
+            self.cmd_socket.shutdown()
+        if hasattr(self, 'pub_socket'):
+            self.pub_socket.close()
         self.ctx.term()
         for proc in self._plugins.values():
             proc.loseConnection()
@@ -128,25 +129,40 @@ class ZMQPlugin(Plugin):
 class PluginProcess(object):
     """Base class for ZeroMQ plugins."""
 
-    def __init__(self, events_address, bot_address, config):
-        self.config = config
+    def __init__(self, events_address, bot_address, config=None):
+        self.ctx = None
+        self.sub_socket = None
+        self.cmd_socket = None
+        self.config = config or {}
         self.logger = logging.getLogger("zmq_plugin.%s" %
                                         (self.__class__.__name__,))
-        self.ctx = zmq.Context()
+        self._connect(events_address, bot_address)
+        # setup the event handler
+        self._events = {}
+        self.init(config)
+
+    def _connect(self, events_address, bot_address):
+        self.ctx = zmq.Context.instance()
         self.sub_socket = self.ctx.socket(zmq.SUB)
         self.sub_socket.connect(events_address)
         self.sub_socket.setsockopt(zmq.SUBSCRIBE, "irc")
         # create the bot socket
         self.bot_socket = self.ctx.socket(zmq.PUB)
         self.bot_socket.connect(bot_address)
-        # setup the event handler
-        self._events = {}
+
+    def init(self, config):
+        """Subclass responsability."""
+        pass
+
+    def _send(self, info):
+        self.bot_socket.send(json.dumps(info))
 
     def register_command(self, function, command_name):
         """Register a command."""
-        self._events['irc.command'] = (function, lambda a: command_name in a)
+        self._events.setdefault('irc.command', [])\
+                .append((function, lambda a: command_name in a))
         new_msg = {'action':'register_command', 'command':[command_name]}
-        self.bot_socket.send(json.dumps(new_msg))
+        self._send(new_msg)
 
     def register(self, event, function, matcher=None):
         """Register a event handler."""
@@ -155,29 +171,35 @@ class PluginProcess(object):
     def say(self, to_whom, msg, *args):
         """Say something."""
         new_msg = {'action':'say', 'to_whom':to_whom, "msg":msg, "args":args}
-        self.bot_socket.send(json.dumps(new_msg))
+        self._send(new_msg)
 
     def run(self):
         """Main loop"""
         while True:
             # block waiting for a message
+            match = False
             event = self.sub_socket.recv()
             payload = json.loads(self.sub_socket.recv())
-            try:
-                handler, matcher = self._events[event]
-            except KeyError:
-                self.logger.error("No handler for %s", event)
+            if event == "irc.command":
+                commands = self._events[event]
+                for handler, matcher in commands:
+                    if matcher(payload['args']):
+                        match = True
+                        break
             else:
-                if event == "irc.command" or matcher is not None:
-                    match = matcher(payload['args'])
-                else:
-                    match = True
-                if match:
-                    user = payload.get('user')
-                    channel = payload.get('channel')
-                    args = [a for a in [user, channel] + payload['args'] \
-                            if a is not None]
-                    handler(*args)
-                else:
-                    self.logger.debug("No match for %s", payload)
+                match = True
+                try:
+                    handler, matcher = self._events[event]
+
+                except KeyError:
+                    self.logger.error("No handler for %s", event)
+                    continue
+            if match:
+                user = payload.get('user')
+                channel = payload.get('channel')
+                args = [a for a in [user, channel] + payload['args'] \
+                        if a is not None]
+                handler(*args)
+            else:
+                self.logger.debug("No match for %s", payload)
 

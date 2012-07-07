@@ -30,8 +30,8 @@ class TestZMQPlugin(TwistedTestCase, PluginTest):
     def setUp(self):
         super(TestZMQPlugin, self).setUp()
         self.init(server_plugin=("lalita.plugins.zmq_proxy.ZMQPlugin",
-                                 {"pub_address":"inproc://pub_addr",
-                                  "cmd_address":"inproc://sub_addr"}))
+                                 {"events_address":"inproc://pub_addr",
+                                  "bot_address":"inproc://sub_addr"}))
         self.ctx = zmq.Context.instance()
         self.sub = self.ctx.socket(zmq.SUB)
         while True:
@@ -70,18 +70,6 @@ class TestZMQPlugin(TwistedTestCase, PluginTest):
         yield d
         self.assertEqual(called[0], (msg['to_whom'].encode('utf-8'), msg['msg'].decode("utf-8")))
 
-    @defer.inlineCallbacks
-    def test_restart_action(self):
-        """Restart a plugin."""
-        called = []
-        self.patch(self.plugin, 'restart_process', called.append)
-        msg = {'action':'restart', 'name':"foo"}
-        self.cmd.send(json.dumps(msg))
-        d = defer.Deferred()
-        reactor.callLater(0.2, lambda: d.callback(None))
-        yield d
-        self.assertEqual(called[0], 'foo')
-
     def test_event_handler(self):
         """Handle all events."""
         called = []
@@ -93,7 +81,6 @@ class TestZMQPlugin(TwistedTestCase, PluginTest):
             events.JOINED:("channel",),
             events.PRIVATE_MESSAGE:("channel",),
             events.TALKED_TO_ME:("channel", "user"),
-            events.COMMAND:("channel", "user"),
             events.PUBLIC_MESSAGE:("channel", "user"),
             events.ACTION:("channel", "user"),
             events.JOIN:("channel", "user"),
@@ -114,46 +101,104 @@ class TestZMQPlugin(TwistedTestCase, PluginTest):
             kwargs['args'] = [msg]
             self.assertIn((EVENT_MAP[event][0], kwargs), called)
 
-    @defer.inlineCallbacks
-    def test_start_process(self):
-        """Handle all events."""
-        plugin = self.disp._plugins.keys()[0]
-        cmd_args = ("-c \"import zmq; c=zmq.Context(); s=c.socket(zmq.SUB); "
-                    "s.setsockopt(zmq.SUBSCRIBE, 'irc'); s.recv()\"")
-        plugin.config["plugins"] = {
-            'test_process':{
-                'executable':'python',
-                'arguments':[cmd_args],
-                'config':{}
-            }
-        }
-        plugin._start_process("test_process")
-        proc = plugin._plugins["test_process"]
-        self.assertTrue(proc.pid > 0)
-        self.assertEqual(proc.status, -1)
-        proto = proc.proto
-        self.assertIsInstance(proto, PluginProcess)
-        proc.loseConnection()
+
+class TestPluginProcess(TwistedTestCase, PluginTest):
+    """Tests for PluginProcess."""
+
+    class TestPlugin(PluginProcess):
+        def __init__(self, addr1, addr2, called, config=None):
+            self.called = called
+            super(TestPluginProcess.TestPlugin, self).__init__(addr1, addr2,
+                                                               config=config)
+
+        def init(self, config):
+            self.config = config
+            self.called.append(("init", config))
+
+        def _connect(self, events_address, bot_address):
+            self.ctx = zmq.Context.instance()
+            self.sub_socket = self.ctx.socket(zmq.SUB)
+            while True:
+                try:
+                    self.sub_socket.connect(events_address)
+                except zmq.ZMQError:
+                    time.sleep(0.1)
+                    continue
+                else:
+                    break
+            self.sub_socket.setsockopt(zmq.SUBSCRIBE, "")
+            self.bot_socket = self.ctx.socket(zmq.PUB)
+            while True:
+                try:
+                    self.bot_socket.connect(bot_address)
+                except zmq.ZMQError:
+                    time.sleep(0.1)
+                    continue
+                else:
+                    break
+
+    def setUp(self):
+        super(TestPluginProcess, self).setUp()
+        events_address = "inproc://pub_addr"
+        bot_address = "inproc://sub_addr"
+        self.init(server_plugin=("lalita.plugins.zmq_proxy.ZMQPlugin",
+                                 {"events_address":events_address,
+                                  "bot_address":bot_address}))
+        self.called = []
         try:
-            yield proto.deferred
-        except error.ProcessTerminated:
-            self.assertEqual(proc.pid, None)
-            self.assertEqual(proc.status, 256)
-            pass
-        else:
-            self.fail("Should get ProcessTerminated")
+            self.zmq_plugin = TestPluginProcess.TestPlugin(events_address,
+                                                           bot_address,
+                                                           self.called)
+        except Exception, e:
+            import traceback;
+            traceback.print_exc()
 
-
-class TestSubProcessPlugin(TwistedTestCase):
+    def tearDown(self):
+        self.zmq_plugin.bot_socket.close()
+        self.zmq_plugin.sub_socket.close()
+        self.plugin.shutdown()
+        return super(TestPluginProcess, self).tearDown()
 
     def test_init(self):
-        self.fail()
+        """Test init is called."""
+        self.assertEquals(self.called, [("init", None)])
 
     def test_register(self):
-        self.fail()
+        """Register to en event."""
+        matcher = lambda a: True
+        func = lambda *a: True
+        self.zmq_plugin.register(events.JOINED, func, matcher)
+        self.assertIn(events.JOINED, self.zmq_plugin._events)
+        self.assertEquals(self.zmq_plugin._events[events.JOINED], (func, matcher))
 
     def test_register_command(self):
-        self.fail()
+        func = lambda a: None
+        self.patch(self.zmq_plugin, '_send', self.called.append)
+        self.zmq_plugin.register_command(func, "command")
+        self.assertIn("irc.command", self.zmq_plugin._events)
+        self.assertEquals(self.zmq_plugin._events["irc.command"][0][0], func)
+        self.assertIn({'action':'register_command',
+                       'command':["command"]}, self.called)
+
+    def test_register_commands(self):
+        func = lambda a: None
+        self.patch(self.zmq_plugin, '_send', self.called.append)
+        self.zmq_plugin.register_command(func, "command")
+        self.assertIn("irc.command", self.zmq_plugin._events)
+        self.assertEquals(self.zmq_plugin._events["irc.command"][0][0], func)
+        self.assertIn({'action':'register_command',
+                       'command':["command"]}, self.called)
+        func1 = lambda a: None
+        self.zmq_plugin.register_command(func1, "command1")
+        self.assertEqual(len(self.zmq_plugin._events["irc.command"]), 2)
+        self.assertEquals(self.zmq_plugin._events["irc.command"][1][0], func1)
+        self.assertIn({'action':'register_command',
+                       'command':["command1"]}, self.called)
+
+
 
     def test_say(self):
-        self.fail()
+        self.patch(self.zmq_plugin, '_send', self.called.append)
+        self.zmq_plugin.say("me", "message")
+        self.assertIn({'action':'say', 'to_whom':'me', 'msg':"message",
+                                  'args':()}, self.called)
