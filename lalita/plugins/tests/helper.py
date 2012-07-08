@@ -62,6 +62,11 @@ class PluginTest(unittest.TestCase):
         else:
             raise ValueError("The searched plugin does not exist!")
 
+    def tearDown(self):
+        if hasattr(self, 'bot') and hasattr(self.bot, 'dispatcher'):
+            self.bot.dispatcher.shutdown()
+
+
     def assertMessageInAnswer(self, message_idx, expected):
         """assert the content of message with index: message_idx in self.answer
         and handle unexpected errors properly."""
