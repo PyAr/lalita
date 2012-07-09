@@ -1,7 +1,7 @@
 # -*- coding: utf8 -*-
-# Copyright (C) 2011 Guillermo Gonzalez
-import os
-import json
+# Copyright 2009-2012 laliputienses
+# License: GPL v3
+# For further info, see LICENSE file
 
 from lalita.plugins.zmq_proxy import PluginProcess
 

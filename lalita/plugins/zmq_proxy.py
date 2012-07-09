@@ -1,3 +1,8 @@
+#
+# Copyright 2009-2012 laliputienses
+# License: GPL v3
+# For further info, see LICENSE file
+#
 """ZeroMQ proxy plugin."""
 
 import json
