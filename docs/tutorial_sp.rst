@@ -671,7 +671,7 @@ ni siquiera tienen docstrings...
   distintos canales, y luego nos permite buscar en las mismas.
 
 - zmq_proxy.py: Es un proxy/bridge entre IRC y ZeroMQ <http://www.zeromq.org/>
-  el publica todos los eventos de lalita en un socket pub/sub de ZeroMQ y 
+  que publica todos los eventos de lalita en un socket pub/sub de ZeroMQ y 
   escucha 'comandos' en otro socket (en formato json). 
   Ver zmq_plugins/example.py para un ejemplo de plugin en otro proceso.
 
