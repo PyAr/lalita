@@ -2,6 +2,7 @@
 # License: GPL v3
 # For further info, see LICENSE file
 
+import logging
 import re
 
 from collections import defaultdict
@@ -26,7 +27,7 @@ class Base(TwistedTestCase):
         )
 
         ircbot_factory = ircbot.IRCBotFactory(server)
-        ircbot.logger.setLevel("error")
+        ircbot.logger.setLevel(logging.ERROR)
         self.bot = ircbot.IrcBot()
         self.bot.factory = ircbot_factory
         self.bot.config = ircbot_factory.config
@@ -213,7 +214,7 @@ class TestPush(EasyDeferredTests):
                             if name == name.upper()]
         for event in supported_events:
             self.disp.register(event, self.helper.f)
-            if (event in dispatcher.USER_POS and 
+            if (event in dispatcher.USER_POS and
                 dispatcher.USER_POS[event] is not None):
                 self.disp.push(event, 'user', 'channel', 'msg')
             elif (event in dispatcher.CHANNEL_POS and

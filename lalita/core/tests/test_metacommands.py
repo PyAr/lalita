@@ -4,6 +4,7 @@
 # License: GPL v3
 # For further info, see LICENSE file
 
+import logging
 import unittest
 
 from collections import defaultdict
@@ -11,7 +12,7 @@ from collections import defaultdict
 from lalita import dispatcher, events, ircbot
 
 ircbot_factory = ircbot.IRCBotFactory(dict(log_config="error", channels=defaultdict(lambda: {})))
-ircbot.logger.setLevel("error")
+ircbot.logger.setLevel(logging.ERROR)
 bot = ircbot.IrcBot()
 bot.factory = ircbot_factory
 bot.config = ircbot_factory.config

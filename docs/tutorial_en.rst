@@ -633,6 +633,11 @@ docstrings...
 - url.py: Recollects all the URLs that are mentioned on the different channels,
   and you can search them afterwards.
 
+- zmq_proxy.py: It's a IRC-ZeroMQ <http://www.zeromq.org/> proxy/bridge, that 
+  publish all lalita events to a PUB/SUB ZeroMQ socket and listen for commands
+  in other socket (in json format). See zmq_plugins/example.py for an example 
+  plugin using this.
+
 
 Advanced configuration
 ======================
