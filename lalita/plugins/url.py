@@ -6,6 +6,7 @@
 
 import os
 import re
+import urlparse
 
 from twisted.web import client
 from twisted.internet import defer, reactor
@@ -22,6 +23,21 @@ import datetime
 import random
 
 from lalita import Plugin
+
+# list of allowed ports for the plugin to hit in
+ALLOWED_PORTS = set([80, 443, 8080, 8000])
+
+def _sanitize(url):
+    """Return a sanitized URL (or None if it shouldn't be hit)."""
+    netloc = urlparse.urlparse(url).netloc
+    netlocparts = netloc.split(":")
+    if len(netlocparts) > 1 and netlocparts[-1].isdigit():
+        port = int(netlocparts[-1])
+        if port not in ALLOWED_PORTS:
+            # can't hit in this URL
+            return
+    return url
+
 
 class Url (Plugin):
     url_re= re.compile ('((https?|ftp)://[^ ]+)', re.IGNORECASE|re.DOTALL)
@@ -162,7 +178,10 @@ class Url (Plugin):
                 self.urlsInDb += 1
             else:
                 # go fetch it
-                self.logger.debug ('fetching %s' % url)
+                self.logger.debug ('fetching %r' % url)
+                url = _sanitize(url)
+                if url is None:
+                    return
                 promise= client.getPage (str (url), headers=dict (
                     Range='bytes=1-%d' % self.config['block_size'])
                     )
@@ -179,7 +198,7 @@ class Url (Plugin):
             self.say(channel,
                      u"%s: necesito un ID y el nuevo título para poder renombrar", user)
             return
-        
+
         try:
             url_id = int(what[0])
         except ValueError:
@@ -190,7 +209,7 @@ class Url (Plugin):
         self.cursor.execute('''select title, poster from url where id = ?''', (url_id, ))
 
         result= list (self.cursor.fetchone ())
-        
+
         if not result:
             self.say(channel,
                      '%s: 404 ID %s not found', user, url_id)
