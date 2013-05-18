@@ -2,6 +2,7 @@
 # License: GPL v3
 # For further info, see LICENSE file
 
+import logging
 import unittest
 
 from lalita import ircbot
@@ -27,8 +28,8 @@ class PluginTest(unittest.TestCase):
             (plugin_name, config) = server_plugin
             self.test_server["plugins"] = { plugin_name: config }
 
-        self.test_server["log_config"] = { plugin_name: "error" }
-        ircbot.logger.setLevel("error")
+        self.test_server["log_config"] = { plugin_name: "ERROR" }
+        ircbot.logger.setLevel(logging.ERROR)
         ircbot_factory = ircbot.IRCBotFactory(self.test_server)
         self.bot = ircbot.IrcBot()
         self.bot.factory = ircbot_factory
@@ -60,6 +61,11 @@ class PluginTest(unittest.TestCase):
                 break
         else:
             raise ValueError("The searched plugin does not exist!")
+
+    def tearDown(self):
+        if hasattr(self, 'bot') and hasattr(self.bot, 'dispatcher'):
+            self.bot.dispatcher.shutdown()
+
 
     def assertMessageInAnswer(self, message_idx, expected):
         """assert the content of message with index: message_idx in self.answer
