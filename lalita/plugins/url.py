@@ -42,7 +42,7 @@ def _sanitize(url):
 
 
 class Url (Plugin):
-    url_re= re.compile ('((https?|ftp)://[^ ]+)', re.IGNORECASE|re.DOTALL)
+    url_re= re.compile ('((https?|ftp)://[^ \#]+)', re.IGNORECASE|re.DOTALL)
     title_re= re.compile (
         '< *title *>([^<]+)< */ *title *>', re.IGNORECASE|re.DOTALL)
     content_type_re = re.compile(
