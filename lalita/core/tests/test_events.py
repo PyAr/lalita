@@ -1,4 +1,4 @@
-# Copyright 2009 laliputienses
+# Copyright 2009-2013 laliputienses
 # License: GPL v3
 # For further info, see LICENSE file
 
@@ -7,7 +7,7 @@ import logging
 from twisted.trial.unittest import TestCase as TwistedTestCase
 from twisted.internet import defer
 
-from lalita import dispatcher, events, ircbot
+from lalita import events, ircbot
 
 server = dict(
     encoding='utf8',
@@ -27,6 +27,7 @@ bot = ircbot.IrcBot()
 bot.factory = ircbot_factory
 bot.msg = lambda *a:None
 bot.transport = FakeTransport()
+bot.config = dict(host="localhost", port=6666)
 
 MY_NICKNAME = server['nickname']
 
@@ -87,6 +88,7 @@ class TestConnection(TestBase):
 
     def test_signed_on(self):
         '''Calling bot.signedOn'''
+        ircbot.DEFERRED_REGISTRATION = False
         bot.signedOn()
         self.check_pushed(events.SIGNED_ON)
         return self.deferred

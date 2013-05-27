@@ -8,18 +8,20 @@ from lalita import Plugin
 
 class Register(Plugin):
     def init(self, config):
-        self.register(self.events.PRIVATE_MESSAGE, self.freenode_register)
         self.config = config
-        # print config
+        self.register(self.events.PRIVATE_MESSAGE, self.freenode_register)
+        self.register(self.events.CONNECTION_MADE, self._register)
+
+    def _register(self, *a):
+        self.logger.info("Identifying with NickServ: %s", a)
+        self.say("NickServ", u"identify %s" % self.config['password'])
 
     def freenode_register(self, user, msg):
-        self.logger.debug("%s: %s", user, msg)
+        self.logger.info("%s: %s", user, msg)
         if user == 'NickServ':
-            if '/msg NickServ identify' in msg:
-                self.say(user, u"identify %s" % self.config['password'])
-            elif 'Invalid password' in msg:
-                self.logger.warn('invalid password!?!')
+            if 'Invalid password' in msg:
+                self.logger.warning('invalid password!?!')
             elif 'You are now identified' in msg:
                 self.logger.info('successfuly identified')
-
-# end
+            else:
+                self.logger.warning("Unknown NickServ message: %r", msg)

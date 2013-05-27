@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2009 laliputienses
+# Copyright 2009-2013 laliputienses
 # License: GPL v3
 # For further info, see LICENSE file
 
@@ -36,6 +36,12 @@ log_stdout_handler.setFormatter(formatter)
 logger = logging.getLogger('ircbot')
 logger.addHandler(log_stdout_handler)
 logger.setLevel(logging.DEBUG)
+
+
+# To effectively get cloaking properties, delay the registration
+# into the channels some amount of time. For more details, see:
+#     https://bugs.launchpad.net/lalita/+bug/1184667
+DEFERRED_REGISTRATION = True
 
 
 class IrcBot (irc.IRCClient):
@@ -120,10 +126,19 @@ class IrcBot (irc.IRCClient):
         logger.debug("signed on %s:%d",
                      self.config['host'], self.config['port'])
         self.dispatcher.push(events.SIGNED_ON)
-        for channel in self.config.get ('channels', []):
+        if DEFERRED_REGISTRATION:
+            logger.warning("Waiting 30s to join channels (in the hope we're "
+                           "cloaked by then, see bug #1184667 in LP)")
+            later = 30
+        else:
+            later = 0
+        reactor.callLater(later, self._register)
+
+    def _register(self):
+        for channel in self.config.get('channels', []):
             logger.debug("joining %s on %s:%d",
                          channel, self.config['host'], self.config['port'])
-            self.join (channel)
+            self.join(channel)
 
     def receivedMOTD(self, motd):
         logger.debug("motd from %s:%d",
