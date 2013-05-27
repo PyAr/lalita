@@ -16,6 +16,7 @@ server = dict(
     nickname="test",
     channels={"channel":{}},
     plugins={},
+    deferred_registration=False,
 )
 
 class FakeTransport(object):
@@ -88,7 +89,6 @@ class TestConnection(TestBase):
 
     def test_signed_on(self):
         '''Calling bot.signedOn'''
-        ircbot.DEFERRED_REGISTRATION = False
         bot.signedOn()
         self.check_pushed(events.SIGNED_ON)
         return self.deferred

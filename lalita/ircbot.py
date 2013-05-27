@@ -38,12 +38,6 @@ logger.addHandler(log_stdout_handler)
 logger.setLevel(logging.DEBUG)
 
 
-# To effectively get cloaking properties, delay the registration
-# into the channels some amount of time. For more details, see:
-#     https://bugs.launchpad.net/lalita/+bug/1184667
-DEFERRED_REGISTRATION = True
-
-
 class IrcBot (irc.IRCClient):
     """A IRC bot."""
     def __init__ (self, *more):
@@ -126,7 +120,7 @@ class IrcBot (irc.IRCClient):
         logger.debug("signed on %s:%d",
                      self.config['host'], self.config['port'])
         self.dispatcher.push(events.SIGNED_ON)
-        if DEFERRED_REGISTRATION:
+        if self.config.get("deferred_registration", False):
             logger.warning("Waiting 30s to join channels (in the hope we're "
                            "cloaked by then, see bug #1184667 in LP)")
             later = 30

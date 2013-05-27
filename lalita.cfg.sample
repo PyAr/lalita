@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
 
-# Copyright 2009 laliputienses
+# Copyright 2009-2013 laliputienses
 # License: GPL v3
 # For further info, see LICENSE file
 
@@ -86,6 +86,10 @@ servers = {
             },
         ),
         'freenode': dict (
+            # To effectively get cloaking properties, delay the registration
+            # into the channels some amount of time. For more details, see:
+            #     https://bugs.launchpad.net/lalita/+bug/1184667
+            deferred_registration=True,
             encoding='utf8',
             host='irc.freenode.net', port=6667,
             nickname='lalita',
