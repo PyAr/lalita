@@ -164,7 +164,7 @@ class IrcBot (irc.IRCClient):
             self.dispatcher.push(events.PRIVATE_MESSAGE, user, msg)
         # Otherwise check to see if it is a message directed at me
         elif msg.startswith(self.nickname):
-            logger.debug("found he's talking to me [%s]", msg)
+            logger.debug("found he's talking to me")
             rest = msg[len(self.nickname):]
             if rest[0] in (":", " ", ","):
                 rest = rest[1:].strip()
@@ -179,7 +179,7 @@ class IrcBot (irc.IRCClient):
             else:
                 self.dispatcher.push(events.PUBLIC_MESSAGE, user, channel, msg)
         elif msg[0] == self.command_char:
-            logger.debug("command char found [%s]", msg)
+            logger.debug("command char found")
             args = msg.split()
             command = args.pop(0)[1:]
             self.dispatcher.push(events.COMMAND, user, channel, command, *args)
