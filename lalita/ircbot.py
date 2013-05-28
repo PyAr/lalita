@@ -99,10 +99,10 @@ class IrcBot (irc.IRCClient):
         self.encoding_server = self.config.get('encoding', 'utf8')
         self.encoding_channels = dict((k, v["encoding"])
                                     for k,v in self.config["channels"].items()
-                                      if "encoding" in v)
+                                        if "encoding" in v)
         self.password = self.config.get('password', None)
         self.command_char = self.config.get('command_char', '@')
-        logger.debug ('command_char: %s', self.command_char)
+        logger.debug('command_char: %s', self.command_char)
         irc.IRCClient.connectionMade (self)
         logger.info("connected to %s:%d",
                     self.config['host'], self.config['port'])
@@ -157,7 +157,7 @@ class IrcBot (irc.IRCClient):
         logger.debug("[%s] %s: %s", channel, user, msg)
         user = user.split('!', 1)[0]
         indirect = bool(self.get_config(channel, 'indirect_command'))
-        logger.debug ('indirect commands? %s', indirect)
+        logger.debug('indirect commands? %s', indirect)
 
         # Check to see if they're sending me a private message
         if channel == self.nickname:
@@ -240,7 +240,8 @@ class IRCBotFactory(protocol.ReconnectingClientFactory):
         If we get disconnected, reconnect to server.
         """
         logger.debug("We got disconnected because of %s", reason)
-        protocol.ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
+        protocol.ReconnectingClientFactory.clientConnectionLost(self,
+            connector, reason)
 
     def clientConnectionFailed(self, connector, reason):
         """
@@ -248,7 +249,8 @@ class IRCBotFactory(protocol.ReconnectingClientFactory):
         only when no client remains connected
         """
         logger.debug("Connection failed because of %s", reason)
-        protocol.ReconnectingClientFactory.clientConnectionFailed(self, connector, reason)
+        protocol.ReconnectingClientFactory.clientConnectionFailed(self,
+            connector, reason)
 
     def buildProtocol(self, addr):
         """Setup the protocol."""

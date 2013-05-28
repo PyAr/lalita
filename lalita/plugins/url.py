@@ -30,7 +30,7 @@ ALLOWED_PORTS = set([80, 443, 8080, 8000])
 
 def _sanitize(url):
     """Return a sanitized URL (or None if it shouldn't be hit)."""
-    if ALLOWED_PORTS is not None and len (ALLOWED_PORTS)>0:
+    if ALLOWED_PORTS is not None and len(ALLOWED_PORTS)>0:
         netloc = urlparse.urlparse(url).netloc
         netlocparts = netloc.split(":")
         if len(netlocparts) > 1 and netlocparts[-1].isdigit():
@@ -42,9 +42,9 @@ def _sanitize(url):
 
 
 class Url (Plugin):
-    url_re= re.compile ('((https?|ftp)://[^ \#]+)', re.IGNORECASE|re.DOTALL)
-    title_re= re.compile (
-        '< *title *>([^<]+)< */ *title *>', re.IGNORECASE|re.DOTALL)
+    url_re= re.compile('((https?|ftp)://[^ \#]+)', re.IGNORECASE|re.DOTALL)
+    title_re= re.compile('< *title *>([^<]+)< */ *title *>',
+        re.IGNORECASE|re.DOTALL)
     content_type_re = re.compile(
         '<meta http-equiv="Content-Type" content="([^"]+)" .*?>',
         re.IGNORECASE|re.DOTALL)
@@ -52,8 +52,8 @@ class Url (Plugin):
     mimetype_re = re.compile('([a-z-/]+);?( *charset=(.*))?')
 
     def init(self, config):
-        self.register (self.events.PUBLIC_MESSAGE, self.message)
-        self.register (self.events.ACTION, self.message)
+        self.register(self.events.PUBLIC_MESSAGE, self.message)
+        self.register(self.events.ACTION, self.message)
         self.config= dict (
             block_size=4096,
             in_format=u'%(poster)s: [#%(id)d] %(title)s',
@@ -77,11 +77,11 @@ class Url (Plugin):
 
         try:
             BeautifulStoneSoup.XHTML_ENTITIES
-            self.parseEntitiesSequentially= False
+            self.parseEntitiesSequentially = False
         except AttributeError:
-            self.logger.warning ("BeautifulSoup seems to be old, using compatibility mode.")
+            self.logger.warning("BeautifulSoup seems to be old, using compatibility mode.")
             # TODO: actually, just use both sequentially?
-            self.parseEntitiesSequentially= True
+            self.parseEntitiesSequentially = True
 
         self.initDb ()
 
@@ -174,7 +174,7 @@ class Url (Plugin):
         if g is not None:
             # TODO: iterate over findings
             # for url in g.groups():
-            url= g.groups ()[0]
+            url = g.groups()[0]
 
             # see if we can find it in the db
             self.cursor.execute ('''select * from url where url = ? ''', (url, ))
@@ -244,9 +244,9 @@ class Url (Plugin):
                 mimetype = g.groups()[0]
                 encoding = g.groups()[2]
             else:
-                self.logger.warning ("further mimetype detection failed: %s", mimetype_enc)
+                self.logger.warning("further mimetype detection failed: %s", mimetype_enc)
         else:
-            self.logger.warning ("no mimetype in the page")
+            self.logger.warning("no mimetype in the page")
 
         return encoding
 
@@ -256,7 +256,7 @@ class Url (Plugin):
 
         if detect['confidence']>self.config['guess_encoding']:
             encoding= detect['encoding']
-            self.logger.debug ("chardet says it's %s", encoding)
+            self.logger.debug("chardet says it's %s", encoding)
         else:
             self.logger.warning("chardet says it's %s, but with very "
                                 "low confidence: %f",
@@ -265,12 +265,12 @@ class Url (Plugin):
         return encoding
 
     def hardCoded (self, page):
-        '''good as any'''
+        '''as good as any'''
         return 'utf-8'
 
     def guessFile (self, page, user, channel, url, date, time):
         mimetype_enc= self.magic.buffer (page)
-        self.logger.debug ('mime type found with magic: %s',  mimetype_enc)
+        self.logger.debug('mime type found with magic: %s',  mimetype_enc)
         g = self.mimetype_re.search(mimetype_enc)
         if g is not None:
             mimetype= g.groups()[0]
@@ -281,6 +281,8 @@ class Url (Plugin):
 
         # xhtml detection
         g= self.xhtml_re.search (page)
+
+        # TODO: handle application/gzip, application/x-gzip, text/x-asm
 
         # text/plain? yes, text/plain too...
         # see http://blog.nixternal.com/2009.03.30/where-is-ctrlaltbackspace/
@@ -313,18 +315,18 @@ class Url (Plugin):
 
                 # convert entities
                 if self.parseEntitiesSequentially:
-                    title= BeautifulStoneSoup (title,
+                    title = BeautifulStoneSoup(title,
                         convertEntities=BeautifulStoneSoup.XML_ENTITIES).contents[0]
-                    title= BeautifulStoneSoup (title,
+                    title = BeautifulStoneSoup(title,
                         convertEntities=BeautifulStoneSoup.HTML_ENTITIES).contents[0]
                 else:
-                    title= BeautifulStoneSoup (title,
+                    title = BeautifulStoneSoup(title,
                         convertEntities=BeautifulStoneSoup.XHTML_ENTITIES).contents[0]
 
                 # this takes out the \n\r\t's
                 titleParts= title.split ()
                 title= ' '.join (titleParts)
-                self.logger.debug (u"[%s] >%s< %s", type (title), title, encoding)
+                self.logger.debug(u"[%s] >%s< %s", type (title), title, encoding)
 
                 self.addUrl (channel, user, url, title, date=date, time=time)
             else:
