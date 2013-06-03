@@ -411,7 +411,7 @@ if __name__ == '__main__':
             for pair in options.plugloglvl.split(","):
                 plugin, loglvl = pair.split(":")
                 loglvl = loglvl.lower()
-                logger.debug("plugin %s, loglevel %s", (plugin, loglvl))
+                logger.debug("plugin %s, loglevel %s", plugin, loglvl)
                 if loglvl not in LOG_LEVELS:
                     print "The log level can be only:", LOG_LEVELS.keys()
                     exit(1)
