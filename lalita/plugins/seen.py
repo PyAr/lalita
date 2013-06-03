@@ -18,7 +18,7 @@ TRANSLATION_TABLE = {u"%s: acástoi, papafrita!": { 'en': u"%s: I'm here!"},
                      u"%s: tenés que indicar un nick": { 'en': u"%s: you need to ask for a nick"},
                     }
 
-                    
+
 class Seen(Plugin):
     '''Plugin that implements the "seen" and "last" commands.'''
     def init(self, config):
