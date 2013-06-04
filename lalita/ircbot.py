@@ -29,7 +29,7 @@ LOG_LEVELS = {
 }
 
 log_stdout_handler = logging.StreamHandler(sys.stdout)
-formatter = logging.Formatter("%(asctime)s %(name)s:%(lineno)-4d "
+formatter = logging.Formatter("%(asctime)s %(name)30s:%(lineno)-4d "
                               "%(levelname)-8s %(message)s",
                               '%Y-%m-%d %H:%M:%S')
 log_stdout_handler.setFormatter(formatter)
@@ -99,9 +99,10 @@ class IrcBot (irc.IRCClient):
         self.encoding_server = self.config.get('encoding', 'utf8')
         self.encoding_channels = dict((k, v["encoding"])
                                     for k,v in self.config["channels"].items()
-                                      if "encoding" in v)
+                                        if "encoding" in v)
         self.password = self.config.get('password', None)
         self.command_char = self.config.get('command_char', '@')
+        logger.debug('command_char: %s', self.command_char)
         irc.IRCClient.connectionMade (self)
         logger.info("connected to %s:%d",
                     self.config['host'], self.config['port'])
@@ -165,12 +166,14 @@ class IrcBot (irc.IRCClient):
         logger.debug("[%s] %s: %s", channel, user, msg)
         user = user.split('!', 1)[0]
         indirect = bool(self.get_config(channel, 'indirect_command'))
+        logger.debug('indirect commands? %s', indirect)
 
         # Check to see if they're sending me a private message
         if channel == self.nickname:
             self.dispatcher.push(events.PRIVATE_MESSAGE, user, msg)
         # Otherwise check to see if it is a message directed at me
         elif msg.startswith(self.nickname):
+            logger.debug("found he's talking to me")
             rest = msg[len(self.nickname):]
             if rest[0] in (":", " ", ","):
                 rest = rest[1:].strip()
@@ -185,6 +188,7 @@ class IrcBot (irc.IRCClient):
             else:
                 self.dispatcher.push(events.PUBLIC_MESSAGE, user, channel, msg)
         elif msg[0] == self.command_char:
+            logger.debug("command char found")
             args = msg.split()
             command = args.pop(0)[1:]
             self.dispatcher.push(events.COMMAND, user, channel, command, *args)
@@ -245,7 +249,8 @@ class IRCBotFactory(protocol.ReconnectingClientFactory):
         If we get disconnected, reconnect to server.
         """
         logger.debug("We got disconnected because of %s", reason)
-        protocol.ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
+        protocol.ReconnectingClientFactory.clientConnectionLost(self,
+            connector, reason)
 
     def clientConnectionFailed(self, connector, reason):
         """
@@ -253,7 +258,8 @@ class IRCBotFactory(protocol.ReconnectingClientFactory):
         only when no client remains connected
         """
         logger.debug("Connection failed because of %s", reason)
-        protocol.ReconnectingClientFactory.clientConnectionFailed(self, connector, reason)
+        protocol.ReconnectingClientFactory.clientConnectionFailed(self,
+            connector, reason)
 
     def buildProtocol(self, addr):
         """Setup the protocol."""
@@ -414,7 +420,7 @@ if __name__ == '__main__':
             for pair in options.plugloglvl.split(","):
                 plugin, loglvl = pair.split(":")
                 loglvl = loglvl.lower()
-                logger.debug("plugin %s, loglevel %s" % (plugin, loglvl))
+                logger.debug("plugin %s, loglevel %s", plugin, loglvl)
                 if loglvl not in LOG_LEVELS:
                     print "The log level can be only:", LOG_LEVELS.keys()
                     exit(1)
