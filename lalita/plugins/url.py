@@ -286,11 +286,11 @@ class Url (Plugin):
         w_encoding= None
 
         # if compressed, uncompress before any further tests
-        if mimetype in ('application/gzip'):
-            self.logger.debug ('compressed blob found, checking inside...')
+        if mimetype in ('application/gzip', 'application/x-gzip'):
+            self.logger.debug ('possible compressed blob found, checking inside...')
             try:
                 page= gzip.GzipFile (fileobj=StringIO.StringIO (page)).read ()
-            except zlib.error, e:
+            except IOError, e:
                 # f= open ('page.gz', 'w+')
                 self.logger.info ("couldn't decompress page, %s", e)
                 # f.write (page)
@@ -299,13 +299,13 @@ class Url (Plugin):
                 w_mimetype= mimetype
                 w_encoding= encoding
                 mimetype_enc= self.magic.buffer (page)
-                self.logger.debug ('M-enc: %s' % mimetype_enc)
+                self.logger.debug ('mime type found inside compressed blob: %s' % mimetype_enc)
                 mimetype, encoding= self.mimetype_enc (mimetype_enc)
 
         # xhtml detection
         g= self.xhtml_re.search (page)
 
-        # TODO: handle application/gzip, application/x-gzip, text/x-asm
+        # TODO: handle text/x-asm
 
         # text/plain? yes, text/plain too...
         # see http://blog.nixternal.com/2009.03.30/where-is-ctrlaltbackspace/
