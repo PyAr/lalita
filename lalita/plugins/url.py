@@ -286,12 +286,12 @@ class Url (Plugin):
         w_encoding= None
 
         # if compressed, uncompress before any further tests
-        if mimetype in ('application/gzip', 'application/x-gzip'):
+        if mimetype in ('application/gzip', 'application/x-gzip', 'application/octet-stream'):
             self.logger.debug ('possible compressed blob found, checking inside...')
             try:
                 page= gzip.GzipFile (fileobj=StringIO.StringIO (page)).read ()
             except IOError, e:
-                # f= open ('page.gz', 'w+')
+                # f= open ('page.dump', 'w+')
                 self.logger.info ("couldn't decompress page, %s", e)
                 # f.write (page)
                 # f.close ()
@@ -312,8 +312,11 @@ class Url (Plugin):
         # text/x-c should be some kind of xml,
         # but of course not everybody says the correct things
         # see http://www.cadena3.com.ar/contenido/2009/06/13/32131.asp
+        # and magic does not seem to correctly detect 'HTML document, UTF-8 Unicode text, with very long lines'
+        # see http://www.youtube.com/watch?v=oDPCmmZifE8&list=UU3XTzVzaHQEd30rQbuvCtTQ
         if (mimetype in ('text/html', 'text/plain', 'text/x-c') or
-                mimetype in ('text/xml', 'application/xml') and g is not None):
+            mimetype in ('text/xml', 'application/xml', 'application/octet-stream') and
+            g is not None):
 
             g= self.title_re.search (page)
             if g is not None:
