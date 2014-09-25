@@ -16,6 +16,8 @@ from BeautifulSoup import BeautifulStoneSoup
 
 import magic
 import chardet
+import gzip
+import StringIO
 
 import sqlite3
 import datetime
@@ -237,16 +239,11 @@ class Url (Plugin):
         g = self.content_type_re.search(page)
         if g is not None:
             mimetype_enc = g.groups()[0]
-            self.logger.debug(mimetype_enc)
+            self.logger.debug('m-enc found in <meta content-type=...>: %s' % mimetype_enc)
             # text/html; charset=utf-8
-            g = self.mimetype_re.search(mimetype_enc)
-            if g is not None:
-                mimetype = g.groups()[0]
-                encoding = g.groups()[2]
-            else:
-                self.logger.warning("further mimetype detection failed: %s", mimetype_enc)
+            mimetype, encoding= self.mimetype_enc (mimetype_enc)
         else:
-            self.logger.warning("no mimetype in the page")
+            self.logger.warning ("no <meta content-type=...> in the page")
 
         return encoding
 
@@ -268,29 +265,58 @@ class Url (Plugin):
         '''as good as any'''
         return 'utf-8'
 
+    def mimetype_enc (self, mimetype_enc):
+        mimetype, encoding= None, None
+
+        g= self.mimetype_re.search (mimetype_enc)
+        if g is not None:
+            mimetype= g.groups ()[0]
+            encoding= g.groups ()[2]
+        else:
+            self.logger.warn ("mimetype detection failed: %s" % mimetype_enc)
+
+        return mimetype, encoding
+
     def guessFile (self, page, user, channel, url, date, time):
         mimetype_enc= self.magic.buffer (page)
         self.logger.debug('mime type found with magic: %s',  mimetype_enc)
-        g = self.mimetype_re.search(mimetype_enc)
-        if g is not None:
-            mimetype= g.groups()[0]
-            # BUG? we throw away this detected encoding later!
-            encoding= g.groups()[2]
-        else:
-            self.logger.warn ("initial mimetype detection failed: %s", mimetype_enc)
+
+        mimetype, encoding= self.mimetype_enc (mimetype_enc)
+        w_mimetype= None
+        w_encoding= None
+
+        # if compressed, uncompress before any further tests
+        if mimetype in ('application/gzip', 'application/x-gzip', 'application/octet-stream'):
+            self.logger.debug ('possible compressed blob found, checking inside...')
+            try:
+                page= gzip.GzipFile (fileobj=StringIO.StringIO (page)).read ()
+            except IOError, e:
+                # f= open ('page.dump', 'w+')
+                self.logger.info ("couldn't decompress page, %s", e)
+                # f.write (page)
+                # f.close ()
+            else:
+                w_mimetype= mimetype
+                w_encoding= encoding
+                mimetype_enc= self.magic.buffer (page)
+                self.logger.debug ('mime type found inside compressed blob: %s' % mimetype_enc)
+                mimetype, encoding= self.mimetype_enc (mimetype_enc)
 
         # xhtml detection
         g= self.xhtml_re.search (page)
 
-        # TODO: handle application/gzip, application/x-gzip, text/x-asm
+        # TODO: handle text/x-asm
 
         # text/plain? yes, text/plain too...
         # see http://blog.nixternal.com/2009.03.30/where-is-ctrlaltbackspace/
         # text/x-c should be some kind of xml,
         # but of course not everybody says the correct things
         # see http://www.cadena3.com.ar/contenido/2009/06/13/32131.asp
+        # and magic does not seem to correctly detect 'HTML document, UTF-8 Unicode text, with very long lines'
+        # see http://www.youtube.com/watch?v=oDPCmmZifE8&list=UU3XTzVzaHQEd30rQbuvCtTQ
         if (mimetype in ('text/html', 'text/plain', 'text/x-c') or
-                mimetype in ('text/xml', 'application/xml') and g is not None):
+            mimetype in ('text/xml', 'application/xml', 'application/octet-stream') and
+            g is not None):
 
             g= self.title_re.search (page)
             if g is not None:
@@ -334,8 +360,13 @@ class Url (Plugin):
                 self.addUrl (channel, user, url, mimetype=mimetype, date=date, time=time)
                 title= mimetype
         else:
+            if w_mimetype is not None:
+                # we tried to see inside a compressed blob, restore to the mimetype of that wrapper
+                mimetype= w_mimetype
+
             self.addUrl (channel, user, url, mimetype=mimetype, date=date, time=time)
             title= mimetype
+
         self.urlsOk += 1
         return url, True, title
 
