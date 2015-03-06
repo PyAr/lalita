@@ -16,7 +16,7 @@ class WelcomeTest(PluginTest):
 
     def setUp(self):
         '''Just init your module.Class.'''
-        config = {'message': u'%s: Bienvenido a %s!'}
+        config = {'message': u'$user: Bienvenido a $channel!'}
         self.init(client_plugin=('lalita.plugins.welcome.Welcome', config, 'chnl'))
 
     def test_user_joined(self):
@@ -24,3 +24,9 @@ class WelcomeTest(PluginTest):
         self.disp.push(events.JOIN, 'testuser', 'chnl')
         self.assertMessageInAnswer(0, u'testuser: Bienvenido a chnl!')
 
+    def test_user_joined_safe_string_formatting(self):
+        '''Configured message can define any number of placeholders'''
+        config = {'message': u'$user: Bienvenido!'}
+        self.init(client_plugin=('lalita.plugins.welcome.Welcome', config, 'chnl'))
+        self.disp.push(events.JOIN, 'testuser', 'chnl')
+        self.assertMessageInAnswer(0, u'testuser: Bienvenido!')

@@ -5,6 +5,7 @@
 # For further info, see LICENSE file
 
 
+import string
 from lalita import Plugin
 
 
@@ -13,9 +14,12 @@ class Welcome(Plugin):
 
     def init(self, config):
         self.logger.info('Welcome plugin init! config: %s', config)
-        self.welcome_message = config.get('message', u'%s: Bienvenido a %s!')
+        default_message = u'$user: Bienvenido a $channel!'
+        welcome_message = config.get('message', default_message)
+        self.template = string.Template(welcome_message)
         self.register(self.events.JOIN, self.user_joined)
 
     def user_joined(self, user, channel):
         self.logger.debug("%s joined %s", user, channel)
-        self.say(channel, self.welcome_message, user, channel)
+        message = self.template.safe_substitute(user=user, channel=channel)
+        self.say(channel, message)
