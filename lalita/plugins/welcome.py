@@ -20,6 +20,7 @@ class Welcome(Plugin):
         self.register(self.events.JOIN, self.user_joined)
 
     def user_joined(self, user, channel):
-        self.logger.debug("%s joined %s", user, channel)
-        message = self.template.safe_substitute(user=user, channel=channel)
-        self.say(channel, message)
+        if user.startswith(u'pythonista'):
+            self.logger.debug("%s joined %s", user, channel)
+            message = self.template.safe_substitute(user=user, channel=channel)
+            self.say(channel, message)
