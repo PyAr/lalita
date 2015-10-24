@@ -29,24 +29,19 @@ class Welcome(Plugin):
             self.known_users = {}
 
         self.register(self.events.JOIN, self.user_joined)
-        self.logged_users = []
-
-    @property
-    def default_message(self):
-        return u'$user: Bienvenido a $channel!'
 
     def new_user(self, user):
-        return user not in self.logged_users
+        return user not in self.known_users
 
-    def add_user(self, user):
-        self.logged_users.append(user)
+    def add_user(self, channel, user):
+        self.known_users[user] = channel
 
     def user_joined(self, user, channel):
-        if user.startswith(u'pyarense_ij'):
+        if user.startswith(u'pyarense'):
             self.logger.debug("%s joined %s", user, channel)
             self.say(channel, self.welcome_message, user, channel)
             self.say(user, self.instructions_message)
         elif self.new_user(user):
-            self.add_user(user)
+            self.add_user(channel, user)
             self.logger.debug("%s joined %s", user, channel)
-            self.say(user, self.instructions_message)
+            self.say(channel, self.welcome_message, user, channel)
