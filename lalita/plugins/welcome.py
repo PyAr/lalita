@@ -14,13 +14,25 @@ class Welcome(Plugin):
 
     def init(self, config):
         self.logger.info('Welcome plugin init! config: %s', config)
-        default_message = u'$user: Bienvenido a $channel!'
-        welcome_message = config.get('message', default_message)
-        self.template = string.Template(welcome_message)
         self.register(self.events.JOIN, self.user_joined)
+        self.logged_users = []
+
+    @property
+    def default_message(self):
+        return u'$user: Bienvenido a $channel!'
+
+    def new_user(self, user):
+        return user in self.logged_users
+
+    def add_user(self, user):
+        self.logged_users.append(user)
 
     def user_joined(self, user, channel):
-        if user.startswith(u'pythonista'):
+        if user.startswith(u'pyarense_ij'):
             self.logger.debug("%s joined %s", user, channel)
-            message = self.template.safe_substitute(user=user, channel=channel)
-            self.say(channel, message)
+            self.say(channel, self.default_message, user, channel)
+        else:
+            if self.new_user(user):
+                self.add_user(user)
+                self.logger.debug("%s joined %s", user, channel)
+                self.say(channel, self.default_message, user, channel)
