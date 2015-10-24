@@ -37,7 +37,10 @@ class SeDice(Plugin):
         pass
 
     def sanitize_question(self, question):
-        pass
+        """ pongo question en minuscula y reemplazo caracteres raros
+        """
+        question = question.lower().strip().replace("#", " ").replace('"', " ")..replace("'", " ")
+        return question
 
     def se_dice(self, user, channel, commands, *args):
         u"@se_dice: le enseña a lalita qué responder"
