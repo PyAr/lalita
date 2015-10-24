@@ -11,7 +11,7 @@ from lalita import ircbot
 class PluginTest(unittest.TestCase):
 
     test_server = dict(
-        encoding = 'utf8',
+        encoding='utf8',
         host='0.0.0.0', port=6667,
         nickname='test',
         channels={},
@@ -21,19 +21,18 @@ class PluginTest(unittest.TestCase):
     def init(self, client_plugin=None, server_plugin=None):
         if client_plugin is not None:
             (plugin_name, config, channel) = client_plugin
-            self.test_server["channels"] = { channel : { 'plugins' :
-                                                    { plugin_name: config }}}
+            self.test_server["channels"] = {channel: {'plugins': {plugin_name: config}}}
 
         if server_plugin is not None:
             (plugin_name, config) = server_plugin
-            self.test_server["plugins"] = { plugin_name: config }
+            self.test_server["plugins"] = {plugin_name: config}
 
-        self.test_server["log_config"] = { plugin_name: "ERROR" }
+        self.test_server["log_config"] = {plugin_name: "ERROR"}
         ircbot.logger.setLevel(logging.ERROR)
         ircbot_factory = ircbot.IRCBotFactory(self.test_server)
         self.bot = ircbot.IrcBot()
         self.bot.factory = ircbot_factory
-        self.bot.config = self.test_server
+        self.bot.server_config = self.test_server
         self.bot.nickname = "TestBot"
         self.bot.encoding_server = "utf-8"
         self.bot.encoding_channels = {}
@@ -46,9 +45,10 @@ class PluginTest(unittest.TestCase):
             self.bot.load_server_plugins()
 
         # configure the dispatcher
-        self.bot.dispatcher.init(self.bot.config)
+        self.bot.dispatcher.init(self.bot.server_config)
 
         self.answer = []
+
         def g(towhere, msg, _):
             self.answer.append((towhere, msg.decode("utf8")))
         self.bot.msg = g
@@ -66,11 +66,10 @@ class PluginTest(unittest.TestCase):
         if hasattr(self, 'bot') and hasattr(self.bot, 'dispatcher'):
             self.bot.dispatcher.shutdown()
 
-
     def assertMessageInAnswer(self, message_idx, expected):
         """assert the content of message with index: message_idx in self.answer
         and handle unexpected errors properly."""
         try:
             self.assertEqual(self.answer[message_idx][1], expected, self.answer)
-        except Exception, e:
+        except Exception as e:
             self.fail('Error: %s\nexpected: %r, but was: %r' % (e, expected, self.answer))

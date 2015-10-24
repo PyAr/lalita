@@ -50,7 +50,7 @@ class TestLoadPlugin(unittest.TestCase):
         ircbot.logger.setLevel(logging.ERROR)
         self.bot = bot = ircbot.IrcBot()
         bot.factory = ircbot_factory
-        bot.config = ircbot_factory.config
+        bot.server_config = ircbot_factory.config
         bot.encoding_server = server['encoding']
         bot.encoding_channels = {}
 
@@ -132,7 +132,7 @@ class TestConfiguration(unittest.TestCase):
         ircbot.logger.setLevel(logging.ERROR)
         self.bot = bot = ircbot.IrcBot()
         bot.factory = ircbot_factory
-        bot.config = ircbot_factory.config
+        bot.server_config = ircbot_factory.config
         bot.encoding_server = server['encoding']
         bot.encoding_channels = {}
 
@@ -171,7 +171,7 @@ class PrivateMessageTests(unittest.TestCase):
         ircbot.logger.setLevel(logging.ERROR)
         self.bot = bot = ircbot.IrcBot()
         bot.factory = ircbot_factory
-        bot.config = ircbot_factory.config
+        bot.server_config = ircbot_factory.config
         bot.encoding_server = server['encoding']
         bot.encoding_channels = {}
         bot.command_char = '@'
@@ -186,8 +186,8 @@ class PrivateMessageTests(unittest.TestCase):
     def test_command_char(self):
         """Test that the attribute is set during connection."""
         # setup
-        _config = copy.copy(self.bot.config)
-        self.bot.config.update({'command_char': '!'})
+        _config = copy.copy(self.bot.server_config)
+        self.bot.server_config.update({'command_char': '!'})
 
         _connectionMade = irc.IRCClient.connectionMade
         irc.IRCClient.connectionMade = lambda s: None
@@ -198,7 +198,7 @@ class PrivateMessageTests(unittest.TestCase):
         self.assertEqual(self.bot.command_char, '!')
 
         # cleanup
-        self.bot.config = _config
+        self.bot.server_config = _config
         irc.IRCClient.connectionMade = _connectionMade
 
     def test_privmsg_private_message(self):
@@ -248,7 +248,7 @@ class PrivateMessageTests(unittest.TestCase):
 
     def test_command_indirect_server(self):
         """Test command that was talking to the bot, server config."""
-        self.bot.config['indirect_command'] = True
+        self.bot.server_config['indirect_command'] = True
         self.bot.privmsg('john!~jdoe@127.0.0.1', "#channel",
                          u'%s, foo bar baz' % self.bot.nickname)
         self.assertEqual(self.pushed,
@@ -256,7 +256,7 @@ class PrivateMessageTests(unittest.TestCase):
 
     def test_command_indirect_channels(self):
         """Test command that was talking to the bot, channels config."""
-        self.bot.config['channels']['#chan1'] = dict(indirect_command=True)
+        self.bot.server_config['channels']['#chan1'] = dict(indirect_command=True)
         name = self.bot.nickname
         self.bot.privmsg('j!~jdoe@127.0.0.1', "#chan1", u'%s, foo 1' % name)
         self.bot.privmsg('j!~jdoe@127.0.0.1', "#chan2", u'%s, foo 2' % name)

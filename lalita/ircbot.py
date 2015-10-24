@@ -40,35 +40,35 @@ logger.setLevel(logging.DEBUG)
 
 class IrcBot (irc.IRCClient):
     """A IRC bot."""
-    def __init__ (self, *more):
+    def __init__(self, *more):
         self.dispatcher = dispatcher.Dispatcher(self)
         self._plugins = {}
         logger.info("We're in(ited)!")
 
-    def load_plugin (self, plugin_name, config, params, channel=None):
-        if "plugins_dir" in self.config:
-            path = self.config["plugins_dir"]
+    def load_plugin(self, plugin_name, plugin_config, params, channel=None):
+        if "plugins_dir" in self.server_config:
+            path = self.server_config["plugins_dir"]
         else:
             path = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),
                                 'plugins')
         logger.debug("Adding plugin's path %r", path)
         sys.path.append(path)
 
-        modname, klassname= plugin_name.rsplit ('.', 1)
-        loglvl = self.config["log_config"].get(plugin_name)
+        modname, klassname = plugin_name.rsplit('.', 1)
+        loglvl = self.server_config["log_config"].get(plugin_name)
         try:
             module = __import__(modname, globals(), locals(), [''])
             klass = getattr(module, klassname)
             instance = klass(params, loglvl)
             self.dispatcher.new_plugin(instance, channel)
-            instance.init(config)
-        except ImportError, e:
+            instance.init(plugin_config)
+        except ImportError as e:
             logger.error('%s not instanced: %s', plugin_name, e)
-        except AttributeError, e:
+        except AttributeError as e:
             logger.error('%s not instanced: %s', plugin_name, e)
-        except Exception, e:
+        except Exception as e:
             logger.error('%s not instanced: %s', plugin_name, e)
-            print_exc (e)
+            print_exc(e)
         else:
             logger.info('%s instanced for %s', plugin_name,
                         (channel is not None) and channel or 'server')
@@ -77,51 +77,50 @@ class IrcBot (irc.IRCClient):
         params = {'nickname': self.nickname,
                   'encoding': self.encoding_server}
 
-        plugins = self.config.get('plugins', {})
+        plugins = self.server_config.get('plugins', {})
         logger.debug("server plugins: %s", plugins)
         for plugin, config in plugins.items():
             self.load_plugin(plugin, config, params)
 
     def load_channel_plugins(self, channel):
         params = {'nickname': self.nickname,
-                  'encoding': self.encoding_channels.get('channel',
-                                       self.encoding_server)}
+                  'encoding': self.encoding_channels.get('channel', self.encoding_server)}
 
-        plugins = self.config['channels'][channel].get('plugins', {})
+        plugins = self.server_config['channels'][channel].get('plugins', {})
         logger.debug("channel plugins: %s", plugins)
-        for plugin, config in plugins.items ():
+        for plugin, config in plugins.items():
             self.load_plugin(plugin, config, params, channel)
 
     def connectionMade(self):
         # configure the bot
-        self.config = self.factory.config
-        self.nickname = self.config.get('nickname', 'lalita')
-        self.encoding_server = self.config.get('encoding', 'utf8')
+        self.server_config = self.factory.config
+        self.nickname = self.server_config.get('nickname', 'lalita')
+        self.encoding_server = self.server_config.get('encoding', 'utf8')
         self.encoding_channels = dict((k, v["encoding"])
-                                    for k,v in self.config["channels"].items()
-                                        if "encoding" in v)
-        self.password = self.config.get('password', None)
-        self.command_char = self.config.get('command_char', '@')
+                                      for k, v in self.server_config["channels"].items()
+                                      if "encoding" in v)
+        self.password = self.server_config.get('password', None)
+        self.command_char = self.server_config.get('command_char', '@')
         logger.debug('command_char: %s', self.command_char)
-        irc.IRCClient.connectionMade (self)
+        irc.IRCClient.connectionMade(self)
         logger.info("connected to %s:%d",
-                    self.config['host'], self.config['port'])
+                    self.server_config['host'], self.server_config['port'])
         self.load_server_plugins()
         # configure the dispatcher
-        self.dispatcher.init(self.config)
+        self.dispatcher.init(self.server_config)
         self.dispatcher.push(events.CONNECTION_MADE)
 
     def connectionLost(self, reason):
         irc.IRCClient.connectionLost(self, reason)
         logger.info("disconnected from %s:%d",
-                    self.config.get('host'), self.config.get('port'))
+                    self.server_config.get('host'), self.server_config.get('port'))
         self.dispatcher.push(events.CONNECTION_LOST)
 
     def signedOn(self):
         logger.debug("signed on %s:%d",
-                     self.config['host'], self.config['port'])
+                     self.server_config['host'], self.server_config['port'])
         self.dispatcher.push(events.SIGNED_ON)
-        if self.config.get("deferred_registration", False):
+        if self.server_config.get("deferred_registration", False):
             logger.warning("Waiting 30s to join channels (in the hope we're "
                            "cloaked by then, see bug #1184667 in LP)")
             later = 30
@@ -130,27 +129,27 @@ class IrcBot (irc.IRCClient):
         reactor.callLater(later, self._register)
 
     def _register(self):
-        for channel in self.config.get('channels', []):
+        for channel in self.server_config.get('channels', []):
             logger.debug("joining %s on %s:%d",
-                         channel, self.config['host'], self.config['port'])
+                         channel, self.server_config['host'], self.server_config['port'])
             self.join(channel)
 
     def receivedMOTD(self, motd):
         logger.debug("motd from %s:%d",
-                     self.config['host'], self.config['port'])
+                     self.server_config['host'], self.server_config['port'])
 
     def joined(self, channel):
         """This will get called when the bot joins the channel."""
         logger.info("joined to %s", channel)
-        self.load_channel_plugins (channel)
+        self.load_channel_plugins(channel)
         self.dispatcher.push(events.JOINED, channel)
 
     def get_config(self, channel, parameter):
         """Get the configuration for the server, overwritten by channel."""
-        chancfg = self.config['channels']
+        chancfg = self.server_config['channels']
         if channel in chancfg and parameter in chancfg[channel]:
-            return self.config['channels'][channel][parameter]
-        return self.config.get(parameter)  # default to None
+            return self.server_config['channels'][channel][parameter]
+        return self.server_config.get(parameter)  # default to None
 
     def privmsg(self, user, channel, msg):
         """This will get called when the bot receives a message."""
@@ -240,8 +239,8 @@ class IRCBotFactory(protocol.ReconnectingClientFactory):
     # the class of the protocol to build when new connection is made
     protocol = IrcBot
 
-    def __init__(self, server_config):
-        self.config = server_config
+    def __init__(self, config):
+        self.config = config
         self.bot = None
 
     def clientConnectionLost(self, connector, reason):
@@ -249,8 +248,7 @@ class IRCBotFactory(protocol.ReconnectingClientFactory):
         If we get disconnected, reconnect to server.
         """
         logger.debug("We got disconnected because of %s", reason)
-        protocol.ReconnectingClientFactory.clientConnectionLost(self,
-            connector, reason)
+        protocol.ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
 
     def clientConnectionFailed(self, connector, reason):
         """
@@ -258,8 +256,7 @@ class IRCBotFactory(protocol.ReconnectingClientFactory):
         only when no client remains connected
         """
         logger.debug("Connection failed because of %s", reason)
-        protocol.ReconnectingClientFactory.clientConnectionFailed(self,
-            connector, reason)
+        protocol.ReconnectingClientFactory.clientConnectionFailed(self, connector, reason)
 
     def buildProtocol(self, addr):
         """Setup the protocol."""
@@ -269,26 +266,27 @@ class IRCBotFactory(protocol.ReconnectingClientFactory):
         self.bot = p
         return p
 
+
 def start_manhole(servers, port, user, password):
     """Starts manhole with the specified options, if it's available."""
     try:
         from twisted.conch import manhole, manhole_ssh
         from twisted.cred import portal, checkers
-    except ImportError, e:
+    except ImportError as e:
         logger.warning('Manhole not available: %s', e)
         return
 
     def getManholeFactory(namespace, **passwords):
         realm = manhole_ssh.TerminalRealm()
+
         def getManhole(_):
             return manhole.Manhole(namespace)
         realm.chainedProtocolFactory.protocolFactory = getManhole
         p = portal.Portal(realm)
-        p.registerChecker(
-        checkers.InMemoryUsernamePasswordDatabaseDontUse(**passwords))
+        p.registerChecker(checkers.InMemoryUsernamePasswordDatabaseDontUse(**passwords))
         f = manhole_ssh.ConchFactory(p)
         return f
-    manhole_factory = getManholeFactory({'servers':servers}, **{user:password})
+    manhole_factory = getManholeFactory({'servers': servers}, **{user: password})
     reactor.listenTCP(port, manhole_factory, interface='127.0.0.1')
 
 
@@ -370,11 +368,11 @@ if __name__ == '__main__':
     # manhole option group
     manhole = parser.add_option_group('manhole')
     manhole.add_option("--manhole", dest="manhole", action="store_true",
-                       help="Enable manhole ssh server (listening on 127.0.0.1)" + \
-                       "\n*WARNING*: Note that this will open up a serious " + \
-                       "security hole on your computer as now anybody knowing " + \
-                       "this password may login to the Python console and get " + \
-                       "full access to the system with the permissions of the user " + \
+                       help="Enable manhole ssh server (listening on 127.0.0.1)"
+                       "\n*WARNING*: Note that this will open up a serious "
+                       "security hole on your computer as now anybody knowing "
+                       "this password may login to the Python console and get "
+                       "full access to the system with the permissions of the user "
                        "running the script.")
     manhole.add_option("--manhole-port", dest="manhole_port", type='int',
                        metavar='PORT', default=2222,
@@ -462,7 +460,7 @@ if __name__ == '__main__':
     # get all servers or the indicated ones
     servers = config.get('servers', {})
     if all_servers:
-        to_use = [v for k,v in servers.items() if not k.startswith("testbot")]
+        to_use = [v for k, v in servers.items() if not k.startswith("testbot")]
     elif test:
         to_use = [servers[x] for x in ("testbot-a", "testbot-b")]
     else:

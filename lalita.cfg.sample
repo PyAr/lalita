@@ -4,18 +4,16 @@
 # License: GPL v3
 # For further info, see LICENSE file
 
-# Global Configuration Settings
-
-# this is the character that will indicate that a command to lalita
-# is issued
-command_char = '@'
-
 # Servers Configuration Settings
 
 # the name of the server is the key of this dict, and the value 
 # for each key is the server configuration
 servers = {
         'localhost': dict (
+
+            # this is the character that will indicate that a command to lalita
+            # is issued
+            command_char = '@'
 
             # the encoding used to connect to the server
             encoding='utf8',
