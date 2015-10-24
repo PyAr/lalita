@@ -154,6 +154,26 @@ class Dispatcher(object):
         instance = func.im_self
         self._callbacks.setdefault(event, []).append((instance, func, extra))
 
+    def all_commands(self, channel):
+        """Returns a list of all commands on a channel"""
+        try:
+            all_cmds = []
+            for (inst, meth, cmds) in self._callbacks[events.COMMAND]:
+                chan = self._plugins[inst]
+                if chan is not None and chan != channel:
+                    # if it's a channel plugin, it should be here
+                    continue
+                all_cmds.append(cmds)
+        except KeyError:
+            onlys = []
+        else:
+            onlys = list(set(itertools.chain(*all_cmds)))
+        return onlys.extend(META_COMMANDS.keys())
+
+    def has_command(self, channel, command):
+        """Check if a command exits on a channel"""
+        return command in self.all_commands(channel)
+
     def add_irc_callback(self, callback, func):
         '''Register a callback for an irc event.
 
@@ -369,19 +389,7 @@ class Dispatcher(object):
 
     def handle_meta_list(self, user, channel, command, *args):
         u"""Lista las órdenes disponibles."""
-        try:
-            all_cmds = []
-            for (inst, meth, cmds) in self._callbacks[events.COMMAND]:
-                chan = self._plugins[inst]
-                if chan is not None and chan != channel:
-                    # if it's a channel plugin, it should be here
-                    continue
-                all_cmds.append(cmds)
-        except KeyError:
-            onlys = []
-        else:
-            onlys = list(set(itertools.chain(*all_cmds)))
-        cmds = onlys + META_COMMANDS.keys()
+        cmds = self.all_commands(self, channel)
         self.msg(channel, u"Las órdenes son: %s", list(sorted(cmds)))
 
     def handle_meta_more(self, user, channel, command, *args):

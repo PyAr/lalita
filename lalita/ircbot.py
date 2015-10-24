@@ -177,9 +177,9 @@ class IrcBot (irc.IRCClient):
             rest = msg[len(self.nickname):]
             if rest[0] in (":", " ", ","):
                 rest = rest[1:].strip()
-                if indirect:
-                    args = rest.split()
-                    command = args.pop(0)
+                args = rest.split()
+                command = args.pop(0)
+                if indirect and self.dispatcher.has_command(channel, command):
                     self.dispatcher.push(events.COMMAND, user, channel,
                                          command, *args)
                 else:
