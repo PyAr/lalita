@@ -28,11 +28,15 @@ class Welcome(Plugin):
             self.known_users = {}
         self.register(self.events.JOIN, self.user_joined)
 
+    @staticmethod
+    def serialize(channel, user):
+        return channel + '#' + user
+
     def new_user(self, channel, user):
-        return user not in self.known_users or channel not in self.known_users[user]
+        return self.serialize(channel, user) not in self.known_users
 
     def add_user(self, channel, user):
-        self.known_users[user][channel] = user
+        self.known_users[self.serialize(channel, user)] = True
 
     def user_joined(self, user, channel):
         self.logger.debug("%s joined %s", user, channel)
