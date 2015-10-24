@@ -16,23 +16,27 @@ class WelcomeTest(PluginTest):
 
     def setUp(self):
         '''Just init your module.Class.'''
-        config = {'message': u'$user: Bienvenido a $channel!'}
-        self.init(client_plugin=('lalita.plugins.welcome.Welcome', config, 'chnl'))
+        self.config = {}
+        self.init(client_plugin=('lalita.plugins.welcome.Welcome', self.config, 'chnl'))
 
-    def test_pythonista_joined(self):
-        '''Lalita welcomes user after she joined if her nick starts with
-        "pythonista"
-        '''
-        self.disp.push(events.JOIN, 'pythonista1', 'chnl')
+    def test_not_pythonista_user_joined(self):
+        '''Lalita send public message to regular users'''
+        self.disp.push(events.JOIN, 'saraza', 'chnl')
+        self.assertMessageInAnswer(0, u'saraza: Bienvenido a chnl!')
 
-    def test_user_joined(self):
-        '''Lalita ignores regular users'''
-        self.disp.push(events.JOIN, 'cyncyncyn', 'chnl')
-        self.assertEqual(len(self.answer), 0)
+    def test_not_pythonista_user_rejoined(self):
+        '''Lalita send public message to regular users'''
+        self.disp.push(events.JOIN, 'saraza', 'chnl')
+        self.assertMessageInAnswer(0, u'saraza: Bienvenido a chnl!')
+        self.disp.push(events.JOIN, 'saraza', 'chnl')
+        self.assertEqual(len(self.answer), 1)
 
-    def test_user_joined_safe_string_formatting(self):
-        '''Configured message can define any number of placeholders'''
-        config = {'message': u'$user: Bienvenido!'}
-        self.init(client_plugin=('lalita.plugins.welcome.Welcome', config, 'chnl'))
-        self.disp.push(events.JOIN, 'pythonista1', 'chnl')
-        self.assertMessageInAnswer(0, u'pythonista1: Bienvenido!')
+    def test_public_message_to_pythonista_joined(self):
+        '''Lalita send public message to pythonista users'''
+        self.disp.push(events.JOIN, 'pyarense_1234', 'chnl')
+        self.assertMessageInAnswer(0, u'pyarense_1234: Bienvenido a chnl!')
+
+    def test_private_message_to_pythonista_joined(self):
+        '''Lalita send private message to pythonista users'''
+        self.disp.push(events.JOIN, 'pyarense_1234', 'chnl')
+        self.assertMessageInAnswer(1, u'Aqui van algunas instrucciones')
