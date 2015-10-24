@@ -31,16 +31,17 @@ class SeDice(Plugin):
             self.store_question(question)
 
     def get_answer(self, question):
-        pass
+        return False
 
     def store_question(self, question):
         pass
 
     def sanitize_question(self, question):
-        """ pongo question en minuscula y reemplazo caracteres raros
-        """
-        question = question.lower().strip().replace("#", " ").replace('"', " ")..replace("'", " ")
-        return question
+        chars_to_replace = ['\'', '"', '#', ';', ',']
+        for char in chars_to_replace:
+            question = question.replace(char, '')
+        sanitized_question = " ".join(question.strip().lower().split())
+        return sanitized_question
 
     def se_dice(self, user, channel, commands, *args):
         u"@se_dice: le enseña a lalita qué responder"
