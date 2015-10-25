@@ -13,7 +13,7 @@ servers = {
 
             # this is the character that will indicate that a command to lalita
             # is issued
-            command_char = '@'
+            command_char = '@',
 
             # the encoding used to connect to the server
             encoding='utf8',
