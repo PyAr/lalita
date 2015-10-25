@@ -24,8 +24,8 @@ as a guideline, and run::
 
 	ircbot.py -c <configfile> <server>
 
-There're a lot of test cases! You can try them running `./test` (you
-need to have `fades <https://github.com/PyAr/fades>` installed).
+There're a lot of test cases! You can try them running ``./test`` (you
+need to have `fades <https://github.com/PyAr/fades>`_ installed).
 
 To create a plugin, check the plugins/example.py one, and use it as a start.
 
