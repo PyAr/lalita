@@ -17,17 +17,15 @@ lalita is written with some goals in mind:
 All the code in lalita is licensed under GNU GPL v3. See LICENSE.txt for
 further info.
 
-The project page is::
-
-	https://edge.launchpad.net/lalita
+The project page is `https://github.com/PyAr/lalita`
 
 To run the bot, create a config file (you can use the sample lalita.cfg.sample)
 as a guideline, and run::
 
 	ircbot.py -c <configfile> <server>
 
-There're a lot of test cases! You can try them running "nosetests" (you
-need to have Nose installed).
+There're a lot of test cases! You can try them running `./test` (you
+need to have `fades <https://github.com/PyAr/fades>` installed).
 
 To create a plugin, check the plugins/example.py one, and use it as a start.
 
@@ -68,14 +66,22 @@ configure with --manhole-port) is accesible from internet or other machines.
 How to run lalita without installing
 ====================================
 
-From the top-level directory run::
+First you have to install the dependecies (maybe you want to do it inside a virtualenv)::
 
-    PYTHONPATH=. python lalita/ircbot.py
+    pip install -r requirements.txt 
+
+From the top-level directory and inside a virtualenv run::
+
+    python lalita/ircbot.py
 
 For example, setting logs in debug mode, pointing to the sample
 configuration, and choosing a server in localhost::
 
-    PYTHONPATH=. python lalita/ircbot.py -o DEBUG lalita.cfg.sample localhost
+    python lalita/ircbot.py -o DEBUG lalita.cfg.sample localhost
+
+Or if you have `fades` installed just run::
+   
+    ./run_lalita -o DEBUG lalita.cfg.sample localhost
 
 
 How To do a source release

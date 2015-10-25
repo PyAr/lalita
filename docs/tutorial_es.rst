@@ -108,13 +108,12 @@ Las siguientes lineas muestran el diálogo con el bot (que llamamos
 ----------------------
 
 Para probar Lalita no hace falta realizar ninguna instalación en particular.
-Se puede bajar y descomprimir un tarball, o incluso bajar todo el proyecto
-entero haciendo ``bzr branch lp:lalita``, y usarlo directamente.
+Podés chequear los pasos de instalación en el archivo `README.rst`.
 
 En los siguientes párrafos explicamos qué es cada cosa, pero para
 directamente probar lalita, entrar al directorio con el proyecto y hacer::
 
-    PYTHONPATH=. python lalita/ircbot.py lalita.cfg.sample example-freenode
+   python lalita/ircbot.py lalita.cfg.sample example-freenode
 
 Luego entrar con nuestro cliente preferido a Freenode, al canal
 ``#lalita-example``, y probamos::
