@@ -1,0 +1,15 @@
+#!/bin/bash
+#
+
+set -eu
+
+if [ $# -ne 0 ]; then
+    TARGET="$@"
+else
+    TARGET="lalita"
+fi
+
+FADES='fades -r requirements.txt --python=python2'
+
+$FADES -x nosetests -v -s $TARGET
+$FADES -x flake8 -- $TARGET --max-line-length=99 --select=E,W,F,C,N
