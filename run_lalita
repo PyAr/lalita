@@ -1,0 +1,5 @@
+#!/bin/bash
+#
+FADES='fades -r requirements.txt --python=python2'
+
+$FADES lalita/ircbot.py $@
