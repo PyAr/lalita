@@ -37,6 +37,7 @@ class Welcome(Plugin):
 
     def add_user(self, channel, user):
         self.known_users[self.serialize(channel, user)] = True
+        self.known_users.sync()
 
     def user_joined(self, user, channel):
         self.logger.debug("%s joined %s", user, channel)
