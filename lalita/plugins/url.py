@@ -378,6 +378,11 @@ class Url (Plugin):
         if str (failure.value).startswith ('206'):
             # this is not a failure, but a response to a '206 partial content'
             return self.guessFile (failure.value.response, user, channel, url, date, time)
+        elif str (failure.value).startswith ('416'):
+            # this is not an error either, it's just that the stupid web server
+            # does not know how to do range requets
+            # try again
+            self.getPage (url, user, channel, date, time)
         else:
             self.say(channel, u"%s: error con la página: %s" % (user, failure.value))
             return url, False, failure.value
