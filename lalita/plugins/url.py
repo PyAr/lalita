@@ -186,17 +186,19 @@ class Url (Plugin):
                 self.say(channel, self.config['found_format'] % data)
                 self.urlsInDb += 1
             else:
-                # go fetch it
-                self.logger.debug ('fetching %r' % url)
-                url = _sanitize(url)
-                if url is None:
-                    return
-                promise= web_client.getPage (str (url), headers=dict (
-                    Range='bytes=1-%d' % self.config['block_size'])
-                    )
-                promise.addCallback (self.guessFile, user, channel, url, date, time)
-                promise.addErrback (self.failed, user, channel, url, date, time)
-                return promise
+                return self.getPage(url, user, channel, date, time,
+                                    Range='bytes=1-%d' % self.config['block_size'])
+
+    def getPage (self, url, *data, **headers):
+        # go fetch it
+        self.logger.debug('fetching %r' % url)
+        url = _sanitize(url)
+        if url is None:
+            return
+        promise= web_client.getPage(str(url), headers=headers)
+        promise.addCallback(self.guessFile, url, *data)
+        promise.addErrback(self.failed, url, *data)
+        return promise
 
     def rename(self, user, channel, command, *what):
         u'''Renombra el título de una URL anterior'''
@@ -370,7 +372,7 @@ class Url (Plugin):
         self.urlsOk += 1
         return url, True, title
 
-    def failed (self, failure, user, channel, url, date, time):
+    def failed (self, failure, url, user, channel, date, time):
         self.urlsFailed += 1
         self.logger.debug (failure)
         if str (failure.value).startswith ('206'):
