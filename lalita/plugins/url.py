@@ -8,7 +8,7 @@ import os
 import re
 import urlparse
 
-from twisted.web import client
+from twisted.web import client as web_client
 from twisted.internet import defer, reactor
 from twisted.python import failure
 
@@ -191,7 +191,7 @@ class Url (Plugin):
                 url = _sanitize(url)
                 if url is None:
                     return
-                promise= client.getPage (str (url), headers=dict (
+                promise= web_client.getPage (str (url), headers=dict (
                     Range='bytes=1-%d' % self.config['block_size'])
                     )
                 promise.addCallback (self.guessFile, user, channel, url, date, time)
