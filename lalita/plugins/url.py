@@ -8,7 +8,7 @@ import os
 import re
 import urlparse
 
-from twisted.web import client
+from twisted.web import client as web_client
 from twisted.internet import defer, reactor
 from twisted.python import failure
 
@@ -186,17 +186,19 @@ class Url (Plugin):
                 self.say(channel, self.config['found_format'] % data)
                 self.urlsInDb += 1
             else:
-                # go fetch it
-                self.logger.debug ('fetching %r' % url)
-                url = _sanitize(url)
-                if url is None:
-                    return
-                promise= client.getPage (str (url), headers=dict (
-                    Range='bytes=1-%d' % self.config['block_size'])
-                    )
-                promise.addCallback (self.guessFile, user, channel, url, date, time)
-                promise.addErrback (self.failed, user, channel, url, date, time)
-                return promise
+                return self.getPage(url, user, channel, date, time,
+                                    Range='bytes=1-%d' % self.config['block_size'])
+
+    def getPage (self, url, *data, **headers):
+        # go fetch it
+        self.logger.debug('fetching %r' % url)
+        url = _sanitize(url)
+        if url is None:
+            return
+        promise= web_client.getPage(str(url), headers=headers)
+        promise.addCallback(self.guessFile, url, *data)
+        promise.addErrback(self.failed, url, *data)
+        return promise
 
     def rename(self, user, channel, command, *what):
         u'''Renombra el título de una URL anterior'''
@@ -370,12 +372,17 @@ class Url (Plugin):
         self.urlsOk += 1
         return url, True, title
 
-    def failed (self, failure, user, channel, url, date, time):
+    def failed (self, failure, url, user, channel, date, time):
         self.urlsFailed += 1
         self.logger.debug (failure)
         if str (failure.value).startswith ('206'):
             # this is not a failure, but a response to a '206 partial content'
             return self.guessFile (failure.value.response, user, channel, url, date, time)
+        elif str (failure.value).startswith ('416'):
+            # this is not an error either, it's just that the stupid web server
+            # does not know how to do range requets
+            # try again
+            self.getPage (url, user, channel, date, time)
         else:
             self.say(channel, u"%s: error con la página: %s" % (user, failure.value))
             return url, False, failure.value
