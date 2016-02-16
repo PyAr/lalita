@@ -279,7 +279,7 @@ class Url (Plugin):
 
         return mimetype, encoding
 
-    def guessFile (self, page, user, channel, url, date, time):
+    def guessFile (self, page, url, user, channel, date, time):
         mimetype_enc= self.magic.buffer (page)
         self.logger.debug('mime type found with magic: %s',  mimetype_enc)
 
@@ -377,7 +377,8 @@ class Url (Plugin):
         self.logger.debug (failure)
         if str (failure.value).startswith ('206'):
             # this is not a failure, but a response to a '206 partial content'
-            return self.guessFile (failure.value.response, user, channel, url, date, time)
+            return self.guessFile (failure.value.response, url, user, channel, date, time)
+
         elif str (failure.value).startswith ('416'):
             # this is not an error either, it's just that the stupid web server
             # does not know how to do range requets
