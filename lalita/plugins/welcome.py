@@ -15,6 +15,7 @@ class Welcome(Plugin):
     def init(self, config):
         self.logger.info('Welcome plugin init! config: %s', config)
         self.welcome_message = config.get('welcome', '%s: Bienvenido a %s!')
+        self.welcome_detailed_message = config.get('welcome_detailed', '%s: Bienvenido a %s!')
         self.instructions_message = config.get('instructions', 'Aqui van algunas instrucciones')
 
         # self.register_translation(self, TRANSLATION_TABLE)
@@ -42,7 +43,7 @@ class Welcome(Plugin):
     def user_joined(self, user, channel):
         self.logger.debug("%s joined %s", user, channel)
         if user.startswith(u'pyarense'):
-            self.say(channel, self.welcome_message, user, channel)
+            self.say(channel, self.welcome_detailed_message, user, channel)
             self.say(user, self.instructions_message)
         elif self.new_user(channel, user):
             self.add_user(channel, user)
