@@ -41,6 +41,9 @@ servers = {
                 
                     # if True, when talking to the bot will be considered a command
                     indirect_command=True,
+
+                    # if present, use this key for +k channels
+                    key="sarasa",
                 ),
                 '#perrites': dict (
                     lang='en',

@@ -132,7 +132,9 @@ class IrcBot (irc.IRCClient):
         for channel in self.server_config.get('channels', []):
             logger.debug("joining %s on %s:%d",
                          channel, self.server_config['host'], self.server_config['port'])
-            self.join(channel)
+            channel_config = self.server_config['channels'][channel]
+            key = channel_config.get('key', None)
+            self.join(channel, key=key)
 
     def receivedMOTD(self, motd):
         logger.debug("motd from %s:%d",
