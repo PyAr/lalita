@@ -65,8 +65,6 @@ class Url (Plugin):
         self.config.update (config)
         self.logger.debug (self.config)
         self.titleFound= False
-        self.magic= magic.open (magic.MAGIC_MIME)
-        self.magic.load ()
 
         self.register(self.events.COMMAND, self.dig, ['dig'])
         self.register(self.events.COMMAND, self.delete, ['del'])
@@ -280,7 +278,7 @@ class Url (Plugin):
         return mimetype, encoding
 
     def guessFile (self, page, url, user, channel, date, time):
-        mimetype_enc= self.magic.buffer (page)
+        mimetype_enc= magic.from_buffer (page)
         self.logger.debug('mime type found with magic: %s',  mimetype_enc)
 
         mimetype, encoding= self.mimetype_enc (mimetype_enc)
@@ -300,7 +298,7 @@ class Url (Plugin):
             else:
                 w_mimetype= mimetype
                 w_encoding= encoding
-                mimetype_enc= self.magic.buffer (page)
+                mimetype_enc= magic.from_buffer (page)
                 self.logger.debug ('mime type found inside compressed blob: %s' % mimetype_enc)
                 mimetype, encoding= self.mimetype_enc (mimetype_enc)
 
