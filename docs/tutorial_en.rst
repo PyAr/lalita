@@ -85,19 +85,9 @@ The next dialogue is an example of this example running in real life::
 
 
 How do I test this example?
-----------------------
+---------------------------
 
-Lalita is a Python module. To run Lalita, you need to install Python,
-``http://www.python.org/getit`` and the Twisted module for Python
-``http://twistedmatrix.com/trac/wikiDonwloads``.
-
-If you have setuptools, you can install Lalita by entering
-``easy_install lalita`` in a terminal. also you can get Lalita in a tarball,
-from ``https://edge.launchpad.net/lalita`` or if you have bazaar, you can
-download the complete project with ``bzr branch lp:lalita``.
-
-If you have already downloaded Lalita you can uncompress it in any folder, go
-to that folder and run ``python setup.py install``.
+First you have to install lalita. Check the instructions in the `README.rst` file.
 
 After installing, you can access the installed folder, there you will see many
 files, now we will focus on three.

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2009-2013 laliputienses
+# Copyright 2009-2015 laliputienses
 # License: GPL v3
 # For further info, see LICENSE file
 
@@ -17,8 +17,22 @@ from traceback import print_exc
 from twisted.internet import reactor, protocol, ssl
 from twisted.words.protocols import irc
 
+# this will be replaced at install time
+INSTALLED_BASE_DIR = "@ INSTALLED_BASE_DIR @"
+
+# get the replaced-at-install-time name if exists, or the project one
+if os.path.exists(INSTALLED_BASE_DIR):
+    project_basedir = INSTALLED_BASE_DIR
+else:
+    project_basedir = os.path.abspath(os.path.dirname(os.path.dirname(
+        os.path.realpath(sys.argv[0]))))
+
+if project_basedir not in sys.path:
+    sys.path.insert(0, project_basedir)
+
+
 # local imports
-from lalita import dispatcher, events
+from lalita.core import dispatcher, events
 
 LOG_LEVELS = {
     "debug": logging.DEBUG,
